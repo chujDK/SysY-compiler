@@ -1,7 +1,8 @@
+#ifndef _SYDEBUG_H_
+#define _SYDEBUG_H_
 #include "sy.h"
 
-void debugInfoInit();
-char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
+extern const char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
 
 // this class is mainly for test
 class CharStream : public InputStream {
@@ -38,3 +39,7 @@ public:
     FileStream(const char* file_name);
     ~FileStream();
 };
+
+void debugInfoInit();
+
+#endif

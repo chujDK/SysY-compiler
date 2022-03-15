@@ -4,6 +4,8 @@
 #include <cstring>
 #include "sydebug.h"
 
+const char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
+
 FileStream::FileStream(const char* file_name)
 {
     std::ifstream in(file_name);

@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 {
     debugInfoInit();
     FileStream* fileStream = new FileStream(argv[1]);
-    Lexer lexer(fileStream);    
+    Lexer lexer(fileStream);
     TokenPtr token;
     while (token = lexer.getNextToken()) {
         std::cout << SyAstTypeDebugInfo[(int)token->ast_type_] << " \"" << token->literal_ << "\"" << std::endl;
