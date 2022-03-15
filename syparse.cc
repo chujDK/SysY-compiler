@@ -32,6 +32,11 @@ void Lexer::lexError(std::string msg) {
     error_occured_ = 1;
 }
 
+void Parser::parseError(std::string msg) {
+    fprintf(stderr, "\033[31mError in parser\033[0m: line %d: %s\n", line_, msg.c_str());
+    error_occured_ = 1;
+}
+
 std::string Lexer::getString() {
     std::string str;
     while (true) {
@@ -410,13 +415,28 @@ TokenPtr Lexer::getNextToken() {
 }
 
 TokenPtr Lexer::getNextToken(TokenPtr token) {
-    return token->next_token_;
+    if (token == current_token_) {
+        return getNextToken();
+    } 
+    else {
+        return token->next_token_;
+    }
 }
 
 TokenPtr Lexer::getPrevToken(TokenPtr token) {
     return token->prev_token_;
 }
 
-AstNodePtr Parser::parse() {
+// start the parser code
 
+AstNodePtr Parser::BType(AstNodePtr node) {
+    return AstNodePtr();
+}
+
+AstNodePtr Parser::CompUnit(AstNodePtr node) {
+    return AstNodePtr();
+}
+
+AstNodePtr Parser::parse() {
+    return AstNodePtr();
 }

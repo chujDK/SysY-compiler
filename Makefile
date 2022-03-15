@@ -11,7 +11,7 @@ bin/sycompiler: ${SRC}
 
 test: bin/sycompiler
 	@echo "begin lexer test.. testcases: ${TESTCASES}"
-	@$(foreach x, ${TESTCASES}, echo ${x}; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
+	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
 	echo "----- \033[33mend of src\033[0m -----"; \
 	echo "----- \033[32mtokens\033[0m -----"; bin/sycompiler ${x}; \
 	echo "----- \033[33mend of tokens\033[0m -----";)

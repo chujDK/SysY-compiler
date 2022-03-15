@@ -124,12 +124,14 @@ private:
     InputStream* input_stream_;
     int line_;
     bool error_occured_;
+    TokenPtr current_token_;
+
     void lexError(std::string msg);
     std::string getString();
     std::string getNumber();
     TokenPtr getIdent();
-    TokenPtr current_token_;
     TokenPtr getNextTokenInternal();
+
 public:
     TokenPtr getNextToken();
     TokenPtr getNextToken(TokenPtr token);
@@ -140,6 +142,13 @@ public:
 class Parser {
 private:
     Lexer* lexer_;
+    int line_;
+    bool error_occured_;
+
+    void parseError(std::string msg);
+    AstNodePtr BType(AstNodePtr node);
+    AstNodePtr CompUnit(AstNodePtr node);
+
 public:
     AstNodePtr parse();
     Parser(InputStream* InputStream): lexer_(new Lexer(InputStream)) {}
