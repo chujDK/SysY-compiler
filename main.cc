@@ -1,6 +1,67 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstring>
+#include <cstdlib>
 #include "sy.h"
+
+void debugInfoInit();
+char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
+
+int main(int argc, char* argv[])
+{
+    debugInfoInit();
+    FileStream* fileStream = new FileStream(argv[1]);
+    Lexer lexer(fileStream);    
+    TokenPtr token;
+    while (token = lexer.getNextToken()) {
+        std::cout << SyAstTypeDebugInfo[(int)token->ast_type_] << " \"" << token->literal_ << "\"" << std::endl;
+        if (token->ast_type_ == SyAstType::EOF_TYPE) {
+            break;
+        }
+    }
+    return 0;
+}
+
+FileStream::FileStream(const char* file_name)
+{
+    std::ifstream in(file_name);
+    std::ostringstream tmp;
+    tmp << in.rdbuf();
+    buf_ = strdup(tmp.str().c_str());
+    char_stream_ = new CharStream(buf_, strlen(buf_));
+}
+
+char FileStream::getChar()
+{
+    return char_stream_->getChar();
+}
+
+char FileStream::peakChar()
+{
+    return char_stream_->peakChar();
+}
+
+char FileStream::peakNextChar()
+{
+    return char_stream_->peakNextChar();
+}
+
+void FileStream::ungetChar()
+{
+    return char_stream_->ungetChar();
+}
+
+std::string FileStream::getLine()
+{
+    return char_stream_->getLine();
+}
+
+FileStream::~FileStream()
+{
+    delete[] buf_;
+    delete char_stream_;
+}
 
 char CharStream::getChar() {
     if (buf_pos >= buf_size) {
@@ -41,7 +102,6 @@ std::string CharStream::getLine() {
     return line;
 }
 
-char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
 void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int) SyAstType::LEFT_PARENTHESE] = "LEFT_PARENTHESE";
     SyAstTypeDebugInfo[(int) SyAstType::RIGHT_PARENTHESE] = "RIGHT_PARENTHESE";
@@ -85,20 +145,3 @@ void SyAstTypeDebugInfoInit() {
 void debugInfoInit() {
     SyAstTypeDebugInfoInit();
 }
-
-int main()
-{
-    debugInfoInit();
-    CharStream* char_stream = new CharStream("int main()\n{\nreturn 0;\n}", 
-        strlen("int main()\n{\nreturn 0;\n}"));
-    Lexer lexer(char_stream);    
-    TokenPtr token;
-    while (token = lexer.getNextToken()) {
-        std::cout << SyAstTypeDebugInfo[(int)token->ast_type_] << " \"" << token->literal_ << "\"" << std::endl;
-        if (token->ast_type_ == SyAstType::EOF_TYPE) {
-            break;
-        }
-    }
-    return 0;
-}
-

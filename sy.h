@@ -31,9 +31,12 @@ public:
     ~CharStream() {}
 };
 
+// this class is very plain, just read all the file into a buffer
+// then delegate the work to CharStream
 class FileStream : public InputStream {
 private:
-    FILE* fp;
+    CharStream* char_stream_;
+    char* buf_;
 public:
     // this class is made to read the input "file"
     char getChar(); // get the current char
@@ -42,10 +45,8 @@ public:
     void ungetChar(); // unget the current char
     std::string getLine(); // get the current line
 
-    FileStream(const char* file_name): fp(fopen(file_name, "r")) {}
-    ~FileStream() {
-        fclose(fp);
-    }
+    FileStream(const char* file_name);
+    ~FileStream();
 };
 
 class SyCTX {

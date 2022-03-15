@@ -28,7 +28,7 @@ static inline bool isEndForIdentAndNumber(char c) {
 }
 
 void Lexer::lexError(std::string msg) {
-    fprintf(stderr, "\033[31mError in lexing\033: line %d: %s\n", line_, msg.c_str());
+    fprintf(stderr, "\033[31mError in lexing\033[0m: line %d: %s\n", line_, msg.c_str());
     error_occured_ = 1;
 }
 
@@ -50,8 +50,8 @@ std::string Lexer::getString() {
             }
         }
         if (c == '\\') {
-            if (input_stream_->peakNextChar() == 'n') {
-                str += '\n';
+            if (input_stream_->peakChar() == 'n') {
+                str += "\\n";
                 input_stream_->getChar(); // "\\n" -> "\n"
                 continue;
             }
