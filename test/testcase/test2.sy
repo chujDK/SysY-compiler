@@ -1,0 +1,14 @@
+int i;
+const int i_c;
+
+int main()
+{
+    printf("Hello world\n");
+    while (1) {
+        i = i + 1;
+        break;
+        continue;
+    }
+    return 0;
+}
+

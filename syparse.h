@@ -51,6 +51,7 @@ enum class SyAstType {
     STM_BREAK, // 'break'
     STM_CONTINUE, // 'continue'
     STM_RETURN, // 'return'
+    STM_CONST, // 'const'
 
     // number
     INT_IMM,

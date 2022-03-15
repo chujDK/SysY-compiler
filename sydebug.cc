@@ -118,6 +118,7 @@ void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int) SyAstType::STM_WHILE] = "STM_WHILE";
     SyAstTypeDebugInfo[(int) SyAstType::STM_BREAK] = "STM_BREAK";
     SyAstTypeDebugInfo[(int) SyAstType::STM_CONTINUE] = "STM_CONTINUE";
+    SyAstTypeDebugInfo[(int) SyAstType::STM_CONST] = "STM_CONST";
     SyAstTypeDebugInfo[(int) SyAstType::STM_RETURN] = "STM_RETURN";
     SyAstTypeDebugInfo[(int) SyAstType::INT_IMM] = "INT_IMM";
     SyAstTypeDebugInfo[(int) SyAstType::STRING] = "STRING";

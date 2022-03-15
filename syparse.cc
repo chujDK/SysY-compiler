@@ -184,10 +184,12 @@ TokenPtr Lexer::getIdent() {
         ident_jump['a'][(int)SyAstType::STM_BREAK] = SyAstType::STM_BREAK;
         ident_jump['k'][(int)SyAstType::STM_BREAK] = SyAstType::END_OF_ENUM;
 
-        // continue
+        // continue and const
         ident_jump['c'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_CONTINUE;
         ident_jump['o'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
         ident_jump['n'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
+        ident_jump['s'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONST;
+        ident_jump['t'][(int)SyAstType::STM_CONST] = SyAstType::END_OF_ENUM;
         ident_jump['t'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
         ident_jump['i'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
         ident_jump['n'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
