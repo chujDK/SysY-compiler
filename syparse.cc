@@ -404,6 +404,7 @@ TokenPtr Lexer::getNextToken() {
     }
     auto next_token = getNextTokenInternal();
     current_token_->next_token_ = next_token;
+    next_token->prev_token_ = current_token_;
     current_token_ = next_token;
     return current_token_;
 }
@@ -414,4 +415,8 @@ TokenPtr Lexer::getNextToken(TokenPtr token) {
 
 TokenPtr Lexer::getPrevToken(TokenPtr token) {
     return token->prev_token_;
+}
+
+AstNodePtr Parser::parse() {
+
 }

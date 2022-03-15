@@ -62,18 +62,58 @@ enum class SyAstType {
     END_OF_ENUM
 };
 
+enum class SyEbnfType {
+    CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
+    Decl, // Decl -> ConstDecl | VarDecl
+    ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+    BType, // BType -> 'int'
+    ConstDef, // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
+    ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+    VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
+    VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
+    InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+    FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+    FuncType, // FuncType -> 'void' | 'int'
+    FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
+    FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
+    Block, // Block -> '{' { BlockItem } '}' 
+    BlockItem, // BlockItem -> Decl | Stmt
+    Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+                                   //| 'if' '( Cond ')' Stmt [ 'else' Stmt ]
+                                   //| 'while' '(' Cond ')' Stmt
+                                   //| 'break' ';' | 'continue' ';'
+                                   //| 'return' [Exp] ';'
+    Exp, // Exp -> AddExp
+    Cond, // Cond -> LOrExp
+    LVal, // LVal -> Ident {'[' Exp ']'} 
+    PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
+    Number, // Number -> IntConst 
+    UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+    UnaryOp, // UnaryOp -> '+' | '-' | '!' 
+    FuncRParams, // FuncRParams -> Exp { ',' Exp } 
+    MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
+    AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+    RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+    EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
+    LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
+    LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
+    ConstExp, // ConstExp -> AddExp
+    END_OF_ENUM
+};
+
 struct AstNode;
 using TokenPtr = std::shared_ptr<AstNode>; 
 using AstNodePtr = std::shared_ptr<AstNode>;
 struct AstNode {
     enum SyAstType ast_type_;
+    enum SyEbnfType ebnf_type_;
     int line_;
     std::string literal_;
     TokenPtr next_token_;
     TokenPtr prev_token_;
     AstNodePtr parent_, a_, b_, c_, d_;
     AstNode(enum SyAstType ast_type, int line, std::string&& literal):
-        ast_type_(ast_type), line_(line), literal_(literal), 
+        ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
         next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) {}
 };
@@ -101,7 +141,8 @@ class Parser {
 private:
     Lexer* lexer_;
 public:
-
+    AstNodePtr parse();
+    Parser(InputStream* InputStream): lexer_(new Lexer(InputStream)) {}
 };
 
 #endif
