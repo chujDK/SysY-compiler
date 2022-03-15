@@ -56,7 +56,7 @@ std::string Lexer::getString() {
                 continue;
             }
             // every thing else is illegal for now
-            lexError(std::string("invalid escape character '") + std::string(1, input_stream_->peakNextChar()) + std::string("'"));
+            lexError(std::string("invalid escape character '") + std::string(1, input_stream_->peakChar()) + std::string("'"));
         }
         if (c == EOF) {
             lexError(std::string("unexpected EOF in string literal"));
