@@ -96,5 +96,11 @@ public:
     Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream) {}
 };
 
+class Parser {
+private:
+    Lexer* lexer_;
+public:
+
+};
 
 #endif

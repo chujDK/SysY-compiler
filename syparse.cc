@@ -144,7 +144,6 @@ TokenPtr Lexer::getIdent() {
     // --- ident_jump is the state change of the state machine ---
     // --- END_OF_ENUM represent the accept state ---
     // --- INIT ONEC ---
-    // if and int
     static SyAstType ident_jump[256][(int) SyAstType::END_OF_ENUM];
     static bool init = false;
     if (!init) {
@@ -153,6 +152,7 @@ TokenPtr Lexer::getIdent() {
                 ident_jump[i][j] = SyAstType::END_OF_ENUM;
             }
         }
+        // if and int
         ident_jump['i'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_IF;
         ident_jump['f'][(int)SyAstType::STM_IF] = SyAstType::END_OF_ENUM;
         ident_jump['n'][(int)SyAstType::STM_IF] = SyAstType::TYPE_INT;
