@@ -11,6 +11,7 @@ public:
     virtual char peakNextChar() = 0; // get the next char
     virtual void ungetChar() = 0; // unget the current char
     virtual std::string getLine() = 0; // get the current line
+    virtual ~InputStream() {}
 };
 
 class SyCTX {

@@ -429,14 +429,6 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 
 // start the parser code
 
-AstNodePtr Parser::BType(AstNodePtr node) {
-    return AstNodePtr();
-}
-
-AstNodePtr Parser::CompUnit(AstNodePtr node) {
-    return AstNodePtr();
-}
-
 AstNodePtr Parser::parse() {
     return AstNodePtr();
 }

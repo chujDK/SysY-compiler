@@ -116,8 +116,12 @@ struct AstNode {
         ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
         next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) {}
-};
 
+    AstNode(enum SyEbnfType ebnf_type, int line):
+        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(nullptr), 
+        next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
+        c_(nullptr), d_(nullptr) {}
+};
 
 class Lexer {
 private:
@@ -132,26 +136,82 @@ private:
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
 
+
 public:
+
     TokenPtr getNextToken();
     TokenPtr getNextToken(TokenPtr token);
     TokenPtr getPrevToken(TokenPtr token);
     Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream) {}
+    ~Lexer() {delete input_stream_;}
+};
+
+class LexerIterator {
+private:
+    TokenPtr current_token_;
+    Lexer* lexer_;
+public:
+    LexerIterator(TokenPtr token, Lexer* lexer): lexer_(lexer) {
+        if (token == nullptr) {
+            throw "token is nullptr";
+        } else {
+            current_token_ = token;
+        }
+    }
+    TokenPtr operator*() { return current_token_; }
+    TokenPtr operator->() { return current_token_; }
+    LexerIterator& operator++() { current_token_ = lexer_->getNextToken(current_token_); return *this; }
+    LexerIterator& operator--() { current_token_ = lexer_->getPrevToken(current_token_); return *this; }
+    bool operator!=(const LexerIterator& other) { return current_token_ != other.current_token_; }
 };
 
 class Parser {
 private:
     Lexer* lexer_;
+    LexerIterator* token_iter;
     int line_;
     bool error_occured_;
 
     void parseError(std::string msg);
     AstNodePtr BType(AstNodePtr node);
     AstNodePtr CompUnit(AstNodePtr node);
+    AstNodePtr Decl(AstNodePtr node);
+    AstNodePtr FuncDef(AstNodePtr node);
+    AstNodePtr FuncType(AstNodePtr node);
+    AstNodePtr ConstDecl(AstNodePtr node);
+    AstNodePtr ConstDef (AstNodePtr node);
+    AstNodePtr ConstInitVal (AstNodePtr node);
+    AstNodePtr VarDecl (AstNodePtr node);
+    AstNodePtr VarDef (AstNodePtr node);
+    AstNodePtr InitVal (AstNodePtr node);
+    AstNodePtr FuncFParams (AstNodePtr node);
+    AstNodePtr FuncFParam (AstNodePtr node);
+    AstNodePtr Block (AstNodePtr node);
+    AstNodePtr BlockItem (AstNodePtr node);
+    AstNodePtr Stmt (AstNodePtr node);
+    AstNodePtr Exp (AstNodePtr node);
+    AstNodePtr Cond (AstNodePtr node);
+    AstNodePtr LVal (AstNodePtr node);
+    AstNodePtr PrimaryExp (AstNodePtr node);
+    AstNodePtr Number (AstNodePtr node);
+    AstNodePtr UnaryExp (AstNodePtr node);
+    AstNodePtr UnaryOp (AstNodePtr node);
+    AstNodePtr FuncRParams (AstNodePtr node);
+    AstNodePtr MulExp (AstNodePtr node);
+    AstNodePtr AddExp (AstNodePtr node);
+    AstNodePtr RelExp (AstNodePtr node);
+    AstNodePtr EqExp (AstNodePtr node);
+    AstNodePtr LAndExp (AstNodePtr node);
+    AstNodePtr LOrExp (AstNodePtr node);
+    AstNodePtr ConstExp (AstNodePtr node);
 
 public:
     AstNodePtr parse();
-    Parser(InputStream* InputStream): lexer_(new Lexer(InputStream)) {}
+    Parser(InputStream* InputStream): error_occured_(false), line_(1) {
+        lexer_ = new Lexer(InputStream);
+        token_iter = new LexerIterator(lexer_->getNextToken(), lexer_);
+    }
+    ~Parser() {delete lexer_; delete token_iter;}
 };
 
 #endif

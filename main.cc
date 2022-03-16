@@ -8,14 +8,13 @@ int main(int argc, char* argv[])
 {
     debugInfoInit();
     FileStream* fileStream = new FileStream(argv[1]);
+    // this is the code for lexer
     Lexer lexer(fileStream);
-    TokenPtr token;
-    while (token = lexer.getNextToken()) {
-        std::cout << "\033[1m\033[34m" << SyAstTypeDebugInfo[(int)token->ast_type_] << "\033[0m" << " \""
-        "\033[32m" << token->literal_ << "\033[0m" << "\"" << std::endl;
-        if (token->ast_type_ == SyAstType::EOF_TYPE) {
-            break;
-        }
-    }
+    LexerIterator iter(lexer.getNextToken(), &lexer);
+    while (iter->ast_type_ != SyAstType::EOF_TYPE) {
+        std::cout << "\033[1m\033[34m" << SyAstTypeDebugInfo[(int)iter->ast_type_] << "\033[0m" << " \""
+        "\033[32m" << iter->literal_ << "\033[0m" << "\"" << std::endl;
+        ++iter;
+    } 
     return 0;
 }
