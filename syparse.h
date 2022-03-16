@@ -211,6 +211,7 @@ private:
     AstNodePtr UnaryOp();
     AstNodePtr FuncRParams();
     AstNodePtr MulExp();
+    AstNodePtr MulExpL();
     AstNodePtr AddExp();
     AstNodePtr AddExpL(); // to eliminate the left recursion
     AstNodePtr RelExp();

@@ -436,6 +436,10 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 5. 行数的维护尽量懒惰，不要每次都更新
 // 6. 匹配成功并返回的情况应该尽量在函数的最后
 
+// 可能出现的问题：
+// 1. 匹配时修改了某 token 的 parent_, a_... 字段，但是后来匹配失败了，
+// 可能会产生无效引用（由于使用了智能指针，应该不会是悬垂指针，但是仍可能有问题）
+
 AstNodePtr Parser::ConstInitVal() {}
 AstNodePtr Parser::VarDecl() {}
 AstNodePtr Parser::VarDef() {}
@@ -450,12 +454,96 @@ AstNodePtr Parser::Number() {}
 AstNodePtr Parser::UnaryExp() {}
 AstNodePtr Parser::UnaryOp() {}
 AstNodePtr Parser::FuncRParams() {}
-AstNodePtr Parser::MulExp() {}
 AstNodePtr Parser::RelExp() {}
 AstNodePtr Parser::EqExp() {}
 AstNodePtr Parser::LAndExp() {}
 AstNodePtr Parser::LOrExp() {}
 AstNodePtr Parser::ConstExp() {}
+
+// this two helper can adjust AddExp and MulExp
+// this comment inside uses AddExp as example
+// because the node->ebnf_type_ need to be reseted
+// so an isAddExp is used to distinguish the two cases
+static void adjustAddMulExpLAst(AstNodePtr node, bool isAddExp) {
+    // before addjust, node is already an AddExp
+    // but node->b_ is nullptr
+    // after addjust, node->b_ is an '+' or '-',
+    // and node->c_ is an AddExp, and node->c_->b_ is nullptr
+    if (node->c_->ebnf_type_ == SyEbnfType::E) {
+        // replace node to node->a_, then node turns to a MulExp
+        node = node->a_;
+        node->ebnf_type_ = isAddExp ? SyEbnfType::MulExp : SyEbnfType::UnaryExp;
+        return;
+    }
+    else {
+        auto add_exp_l = node->c_;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        node->ebnf_type_ = isAddExp ? SyEbnfType::AddExp : SyEbnfType::MulExp;
+        adjustAddMulExpLAst(add_exp_l, isAddExp);
+    }
+}
+
+static void adjustAddMulExpAst(AstNodePtr node, bool isAddExp) {
+    // before addjust, node->b_ is an AddExpL
+    // after addjust, node->b_ is an '+' or '-', 
+    // and node->c_ is an AddExp
+    if (node->b_ != nullptr) {
+        auto add_exp_l = node->b_;
+        node->c_ = add_exp_l;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        adjustAddMulExpLAst(add_exp_l, isAddExp);
+    }
+}
+
+// this parse won't return nullptr (it success all the time)
+AstNodePtr Parser::MulExpL() {
+    LexerIterator iter_back = *token_iter_;
+    // MulExpL -> ('*' | '/' | '%') UnaryExp MulExpL | e
+    if ((*token_iter_)->ast_type_ != SyAstType::ALU_MUL &&
+        (*token_iter_)->ast_type_ != SyAstType::ALU_DIV &&
+        (*token_iter_)->ast_type_ != SyAstType::ALU_MOD) {
+        // this is not an failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    auto mul_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    mul_exp_l->a_ = *(*token_iter_);
+    ++(*token_iter_);
+    auto unary_exp = UnaryExp();
+    if (unary_exp == nullptr) {
+        // this is no a failure
+        // just return e
+        *token_iter_ = iter_back;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    mul_exp_l->b_ = unary_exp;
+    auto mul_exp_l_ = MulExpL();
+    return mul_exp_l_;
+}
+
+AstNodePtr Parser::MulExp() {
+    // origin: MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
+    // rewrite: MulExp -> UnaryExp MulExpL
+    //          MulExpL -> ('*' | '/' | '%') UnaryExp MulExpL | e
+    auto mul_exp = std::make_shared<AstNode>(SyEbnfType::MulExp, (*token_iter_)->line_);
+    auto unary_exp = UnaryExp();
+    if (unary_exp == nullptr) {
+        return nullptr;
+    }
+    mul_exp->a_ = unary_exp;
+    unary_exp->parent_ = mul_exp;
+    auto mul_exp_l = MulExpL();
+    // merge mul_exp_l
+    if (mul_exp_l->ebnf_type_ != SyEbnfType::E) {
+        mul_exp->b_ = mul_exp_l;
+        mul_exp_l->parent_ = mul_exp;
+        adjustAddMulExpAst(mul_exp, 0);
+    }
+}
 
 // this parse won't return nullptr (it success all the time)
 AstNodePtr Parser::AddExpL() {
@@ -481,41 +569,6 @@ AstNodePtr Parser::AddExpL() {
     return add_exp_l;
 }
 
-static void adjustAddExpLAst(AstNodePtr node) {
-    // before addjust, node is already an AddExp
-    // but node->b_ is nullptr
-    // after addjust, node->b_ is an '+' or '-',
-    // and node->c_ is an AddExp, and node->c_->b_ is nullptr
-    if (node->c_->ebnf_type_ == SyEbnfType::E) {
-        // replace node to node->a_, then node turns to a MulExp
-        node = node->a_;
-        node->ebnf_type_ = SyEbnfType::MulExp;
-        return;
-    }
-    else {
-        auto add_exp_l = node->c_;
-        node->b_ = add_exp_l->a_;
-        add_exp_l->a_ = add_exp_l->b_;
-        add_exp_l->b_ = nullptr;
-        node->ebnf_type_ = SyEbnfType::AddExp;
-        adjustAddExpLAst(add_exp_l);
-    }
-}
-
-static void adjustAddExpAst(AstNodePtr node) {
-    // before addjust, node->b_ is an AddExpL
-    // after addjust, node->b_ is an '+' or '-', 
-    // and node->c_ is an AddExp
-    if (node->b_ != nullptr) {
-        auto add_exp_l = node->b_;
-        node->c_ = add_exp_l;
-        node->b_ = add_exp_l->a_;
-        add_exp_l->a_ = add_exp_l->b_;
-        add_exp_l->b_ = nullptr;
-        adjustAddExpLAst(add_exp_l);
-    }
-}
-
 AstNodePtr Parser::AddExp() {
     // origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp 
     // rewrite: AddExp -> MulExp AddExpL
@@ -525,18 +578,15 @@ AstNodePtr Parser::AddExp() {
     if (mul_exp == nullptr) {
         return nullptr;
     }
-    auto add_exp_l = AddExpL();
-    if (add_exp_l == nullptr) {
-        return nullptr;
-    }
     add_exp->a_ = mul_exp;
     mul_exp->parent_ = add_exp;
+    auto add_exp_l = AddExpL();
     // merge add_exp_l
-    while (add_exp_l->ebnf_type_ != SyEbnfType::E) {
+    if (add_exp_l->ebnf_type_ != SyEbnfType::E) {
         add_exp->b_ = add_exp_l;
         add_exp_l->parent_ = add_exp;
         // we need to change the AddExpL to AddExp
-        adjustAddExpAst(add_exp);
+        adjustAddMulExpAst(add_exp, 1);
     }
     return add_exp;
 }
