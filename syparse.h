@@ -108,6 +108,7 @@ enum class SyEbnfType {
     LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
     LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
     ConstExp, // ConstExp -> AddExp
+    E, // epsilon
     END_OF_ENUM
 };
 
@@ -211,7 +212,7 @@ private:
     AstNodePtr FuncRParams();
     AstNodePtr MulExp();
     AstNodePtr AddExp();
-    AstNodePtr AddExpL();
+    AstNodePtr AddExpL(); // to eliminate the left recursion
     AstNodePtr RelExp();
     AstNodePtr EqExp();
     AstNodePtr LAndExp();

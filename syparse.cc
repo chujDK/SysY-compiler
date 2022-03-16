@@ -434,6 +434,7 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 3. 进入生成函数时，迭代器应当指向将要被识别的 token，而不是识别过的 token
 // 4. 暂时不考虑错误处理
 // 5. 行数的维护尽量懒惰，不要每次都更新
+// 6. 匹配成功并返回的情况应该尽量在函数的最后
 
 AstNodePtr Parser::ConstInitVal() {}
 AstNodePtr Parser::VarDecl() {}
@@ -456,8 +457,63 @@ AstNodePtr Parser::LAndExp() {}
 AstNodePtr Parser::LOrExp() {}
 AstNodePtr Parser::ConstExp() {}
 
+// this parse won't return nullptr (it success all the time)
 AstNodePtr Parser::AddExpL() {
+    LexerIterator iter_back = *token_iter_;
     // AddExpL -> ('+' | '−') MulExp AddExpL | e
+    if ((*token_iter_)->ast_type_ != SyAstType::ALU_ADD && (*token_iter_)->ast_type_ != SyAstType::ALU_SUB) {
+        // this is not an failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    auto add_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    add_exp_l->a_ = *(*token_iter_);
+    ++(*token_iter_);
+    auto mul_exp = MulExp();
+    if (mul_exp == nullptr) {
+        // this is not an failure
+        // just return e
+        *token_iter_ = iter_back;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    add_exp_l->b_ = mul_exp;
+    add_exp_l->c_ = AddExpL();
+    return add_exp_l;
+}
+
+static void adjustAddExpLAst(AstNodePtr node) {
+    // before addjust, node is already an AddExp
+    // but node->b_ is nullptr
+    // after addjust, node->b_ is an '+' or '-',
+    // and node->c_ is an AddExp, and node->c_->b_ is nullptr
+    if (node->c_->ebnf_type_ == SyEbnfType::E) {
+        // replace node to node->a_, then node turns to a MulExp
+        node = node->a_;
+        node->ebnf_type_ = SyEbnfType::MulExp;
+        return;
+    }
+    else {
+        auto add_exp_l = node->c_;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        node->ebnf_type_ = SyEbnfType::AddExp;
+        adjustAddExpLAst(add_exp_l);
+    }
+}
+
+static void adjustAddExpAst(AstNodePtr node) {
+    // before addjust, node->b_ is an AddExpL
+    // after addjust, node->b_ is an '+' or '-', 
+    // and node->c_ is an AddExp
+    if (node->b_ != nullptr) {
+        auto add_exp_l = node->b_;
+        node->c_ = add_exp_l;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        adjustAddExpLAst(add_exp_l);
+    }
 }
 
 AstNodePtr Parser::AddExp() {
@@ -465,7 +521,24 @@ AstNodePtr Parser::AddExp() {
     // rewrite: AddExp -> MulExp AddExpL
     //          AddExpL -> ('+' | '−') MulExp AddExpL | e
     auto add_exp = std::make_shared<AstNode>(SyEbnfType::AddExp, (*token_iter_)->line_);
-
+    auto mul_exp = MulExp();
+    if (mul_exp == nullptr) {
+        return nullptr;
+    }
+    auto add_exp_l = AddExpL();
+    if (add_exp_l == nullptr) {
+        return nullptr;
+    }
+    add_exp->a_ = mul_exp;
+    mul_exp->parent_ = add_exp;
+    // merge add_exp_l
+    while (add_exp_l->ebnf_type_ != SyEbnfType::E) {
+        add_exp->b_ = add_exp_l;
+        add_exp_l->parent_ = add_exp;
+        // we need to change the AddExpL to AddExp
+        adjustAddExpAst(add_exp);
+    }
+    return add_exp;
 }
 
 AstNodePtr Parser::Exp() {
@@ -563,6 +636,7 @@ AstNodePtr Parser::FuncType() {
     }
 }
 
+// !!! this function should be rewritten according to the principle no.6
 AstNodePtr Parser::BType() {
     // origin: BType -> 'int'
     if ((*token_iter_)->ast_type_ == SyAstType::TYPE_INT) {
