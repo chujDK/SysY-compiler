@@ -3,7 +3,17 @@
 #include <memory>
 #include "utils.h"
 #include "sy.h"
-class InputStream;
+
+class InputStream {
+public:
+    // this class is made to read the input "file"
+    virtual char getChar() = 0; // get the current char
+    virtual char peakChar() = 0; // get the current char
+    virtual char peakNextChar() = 0; // get the next char
+    virtual void ungetChar() = 0; // unget the current char
+    virtual std::string getLine() = 0; // get the current line
+    virtual ~InputStream() {}
+};
 
 enum class SyAstType {
     LEFT_PARENTHESE, // '('
@@ -111,6 +121,9 @@ struct AstNode {
     std::string literal_;
     TokenPtr next_token_;
     TokenPtr prev_token_;
+    // in the ast, the meaning is self-explained;
+    // if the nodes are in a list, like FuncFParam to FuncFParams,
+    // parent_ and a_ link up a double linked list
     AstNodePtr parent_, a_, b_, c_, d_;
     AstNode(enum SyAstType ast_type, int line, std::string&& literal):
         ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
@@ -168,50 +181,51 @@ public:
 class Parser {
 private:
     Lexer* lexer_;
-    LexerIterator* token_iter;
+    LexerIterator* token_iter_;
     int line_;
     bool error_occured_;
 
     void parseError(std::string msg);
-    AstNodePtr BType(AstNodePtr node);
-    AstNodePtr CompUnit(AstNodePtr node);
-    AstNodePtr Decl(AstNodePtr node);
-    AstNodePtr FuncDef(AstNodePtr node);
-    AstNodePtr FuncType(AstNodePtr node);
-    AstNodePtr ConstDecl(AstNodePtr node);
-    AstNodePtr ConstDef (AstNodePtr node);
-    AstNodePtr ConstInitVal (AstNodePtr node);
-    AstNodePtr VarDecl (AstNodePtr node);
-    AstNodePtr VarDef (AstNodePtr node);
-    AstNodePtr InitVal (AstNodePtr node);
-    AstNodePtr FuncFParams (AstNodePtr node);
-    AstNodePtr FuncFParam (AstNodePtr node);
-    AstNodePtr Block (AstNodePtr node);
-    AstNodePtr BlockItem (AstNodePtr node);
-    AstNodePtr Stmt (AstNodePtr node);
-    AstNodePtr Exp (AstNodePtr node);
-    AstNodePtr Cond (AstNodePtr node);
-    AstNodePtr LVal (AstNodePtr node);
-    AstNodePtr PrimaryExp (AstNodePtr node);
-    AstNodePtr Number (AstNodePtr node);
-    AstNodePtr UnaryExp (AstNodePtr node);
-    AstNodePtr UnaryOp (AstNodePtr node);
-    AstNodePtr FuncRParams (AstNodePtr node);
-    AstNodePtr MulExp (AstNodePtr node);
-    AstNodePtr AddExp (AstNodePtr node);
-    AstNodePtr RelExp (AstNodePtr node);
-    AstNodePtr EqExp (AstNodePtr node);
-    AstNodePtr LAndExp (AstNodePtr node);
-    AstNodePtr LOrExp (AstNodePtr node);
-    AstNodePtr ConstExp (AstNodePtr node);
+    AstNodePtr BType();
+    AstNodePtr CompUnit();
+    AstNodePtr Decl();
+    AstNodePtr FuncDef();
+    AstNodePtr FuncType();
+    AstNodePtr ConstDecl();
+    AstNodePtr ConstDef();
+    AstNodePtr ConstInitVal();
+    AstNodePtr VarDecl();
+    AstNodePtr VarDef();
+    AstNodePtr InitVal();
+    AstNodePtr FuncFParams();
+    AstNodePtr FuncFParam();
+    AstNodePtr Block();
+    AstNodePtr BlockItem();
+    AstNodePtr Stmt();
+    AstNodePtr Exp();
+    AstNodePtr Cond();
+    AstNodePtr LVal();
+    AstNodePtr PrimaryExp();
+    AstNodePtr Number();
+    AstNodePtr UnaryExp();
+    AstNodePtr UnaryOp();
+    AstNodePtr FuncRParams();
+    AstNodePtr MulExp();
+    AstNodePtr AddExp();
+    AstNodePtr RelExp();
+    AstNodePtr EqExp();
+    AstNodePtr LAndExp();
+    AstNodePtr LOrExp();
+    AstNodePtr ConstExp();
+    AstNodePtr Ident();
 
 public:
     AstNodePtr parse();
     Parser(InputStream* InputStream): error_occured_(false), line_(1) {
         lexer_ = new Lexer(InputStream);
-        token_iter = new LexerIterator(lexer_->getNextToken(), lexer_);
+        token_iter_ = new LexerIterator(lexer_->getNextToken(), lexer_);
     }
-    ~Parser() {delete lexer_; delete token_iter;}
+    ~Parser() {delete lexer_; delete token_iter_;}
 };
 
 #endif

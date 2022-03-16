@@ -428,7 +428,235 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 }
 
 // start the parser code
+// 基本原则：
+// 1. 每个生成函数在匹配失败时不考虑返回时迭代器的正确性，此时由调用函数来保证迭代器的正确性
+// 2. 每个生成函数在匹配成功时，返回时的迭代器应当指向下一个要匹配的 token
+// 3. 进入生成函数时，迭代器应当指向将要被识别的 token，而不是识别过的 token
+
+AstNodePtr Parser::ConstInitVal() {}
+AstNodePtr Parser::VarDecl() {}
+AstNodePtr Parser::VarDef() {}
+AstNodePtr Parser::InitVal() {}
+AstNodePtr Parser::Block() {}
+AstNodePtr Parser::BlockItem() {}
+AstNodePtr Parser::Stmt() {}
+AstNodePtr Parser::Exp() {}
+AstNodePtr Parser::Cond() {}
+AstNodePtr Parser::LVal() {}
+AstNodePtr Parser::PrimaryExp() {}
+AstNodePtr Parser::Number() {}
+AstNodePtr Parser::UnaryExp() {}
+AstNodePtr Parser::UnaryOp() {}
+AstNodePtr Parser::FuncRParams() {}
+AstNodePtr Parser::MulExp() {}
+AstNodePtr Parser::AddExp() {}
+AstNodePtr Parser::RelExp() {}
+AstNodePtr Parser::EqExp() {}
+AstNodePtr Parser::LAndExp() {}
+AstNodePtr Parser::LOrExp() {}
+AstNodePtr Parser::ConstExp() {}
+
+AstNodePtr Parser::ConstDef() {
+    // origin: ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
+    // Ident
+    auto ident = Ident();
+    if (ident == nullptr) {
+        return nullptr;
+    }
+    // { '[' ConstExp ']' }
+    while ((*token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+        auto const_exp = ConstExp();
+        if (const_exp == nullptr) {
+            return nullptr;
+        }
+    }
+}
+
+AstNodePtr Parser::ConstDecl() {
+    // origin: ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+    auto const_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::STM_CONST) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+    auto b_type = BType();
+    if (b_type == nullptr) {
+        return nullptr;
+    }
+    auto const_def = ConstDef();
+}
+
+AstNodePtr Parser::Decl() {
+    // origin: Decl -> ConstDecl | VarDecl
+    LexerIterator iter_back = *token_iter_;
+    // ConstDecl
+    auto const_decl = ConstDecl();
+    if (const_decl != nullptr) {
+        return nullptr;
+    }
+    // VarDecl
+    *token_iter_ = iter_back;
+    auto var_decl = VarDecl();
+    if (var_decl != nullptr) {
+        return nullptr;
+    }
+}
+
+AstNodePtr Parser::FuncType() {
+    // origin: FuncType -> 'void' | 'int'
+    AstNodePtr token = **token_iter_;
+    if (token->ast_type_ == SyAstType::TYPE_VOID || token->ast_type_ == SyAstType::TYPE_INT) {
+        auto func_type = std::make_shared<AstNode>(SyEbnfType::FuncType, token->line_);
+        func_type->a_ = token;
+        token->parent_ = func_type;
+        ++(*token_iter_);
+        return func_type;
+    }
+    else {
+        return nullptr;
+    }
+}
+
+AstNodePtr Parser::BType() {
+    // origin: BType -> 'int'
+    if ((*token_iter_)->ast_type_ == SyAstType::TYPE_INT) {
+        auto b_type = std::make_shared<AstNode>(SyEbnfType::BType, (*token_iter_)->line_);
+        b_type->a_ = **token_iter_;
+        (*token_iter_)->parent_ = b_type;
+        ++(*token_iter_);
+        return b_type;
+    }
+    else {
+        return nullptr;
+    }
+}
+
+AstNodePtr Parser::FuncFParam() {
+    // origin: FuncFParam -> Type Ident
+    auto func_f_param = std::make_shared<AstNode>(SyEbnfType::FuncFParam, (*token_iter_)->line_);
+    auto b_type = BType();
+    // Type
+    if (b_type == nullptr) {
+        return nullptr;
+    }
+    // Ident
+    auto ident = Ident();
+    if (ident == nullptr) {
+        return nullptr;
+    }
+
+    // link when suceess
+    func_f_param->a_ = b_type;
+    b_type->parent_ = func_f_param;
+    func_f_param->b_ = ident;
+    ident->parent_ = func_f_param;
+    return func_f_param;
+}
+
+AstNodePtr Parser::FuncFParams() {
+    // origin: FuncFParams -> '(' FuncFParam {',' FuncFParam} ')'
+    // '('
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+    // FuncFParam
+    auto func_f_param_start = FuncFParam();
+    auto func_f_param_last = func_f_param_start;
+    // {',' FuncFParam}
+    while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
+        ++(*token_iter_);
+        auto func_f_param = FuncFParam();
+        if (func_f_param == nullptr) {
+            return nullptr;
+        }
+        // link when suceess
+        func_f_param_last->a_ = func_f_param;
+        func_f_param->parent_ = func_f_param_last;
+        func_f_param_last = func_f_param;
+    }
+    // ')'
+    if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+        return nullptr;
+    }
+    return func_f_param_start;
+}
+
+AstNodePtr Parser::FuncDef() {
+    // origin: FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block
+    auto func_def = std::make_shared<AstNode>(SyEbnfType::FuncDef, (*token_iter_)->line_);
+    // FuncType
+    auto func_type = FuncType();
+    if (func_type == nullptr) {
+        return nullptr;
+    }
+    // Ident
+    auto ident = Ident();
+    if (ident == nullptr) {
+        return nullptr;
+    }
+    // '('
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+    // [FuncFParams]
+    LexerIterator token_back = *token_iter_;
+    auto func_f_params = FuncFParams();
+    if (func_f_params == nullptr) {
+        // func_f_params can be nullptr
+        // however this means FuncFParams() failed
+        // so we need to reset token_iter_ to token_back
+        *token_iter_ = token_back;
+    }
+    if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+    auto block = Block();
+    if (block == nullptr) {
+        return nullptr;
+    }
+
+    // if we reach here, it means that we successed
+    // so we need to set the parent of all the nodes in func_def
+    // and set the children of func_def
+    func_def->a_ = func_type;
+    func_type->parent_ = func_def;
+    func_def->b_ = ident;
+    ident->parent_ = func_def;
+    func_def->c_ = func_f_params;
+    if (func_f_params != nullptr) {
+        func_f_params->parent_ = func_def;
+    }
+    func_def->d_ = block;
+    block->parent_ = func_def;
+    return func_def;
+}
+
+AstNodePtr Parser::CompUnit() {
+    // origin: CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
+    // changed: CompUnit -> Decl | FuncDef
+    LexerIterator iter_back = *token_iter_;
+    auto decl = Decl();
+    if (decl != nullptr) {
+        return decl;
+    }
+    *token_iter_ = iter_back;
+    auto func_def = FuncDef();
+    if (func_def != nullptr) {
+        return func_def;
+    }
+    return nullptr;
+}
+
+AstNodePtr Parser::Ident() {
+    if ((*token_iter_)->ast_type_ != SyAstType::IDENT) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+    return *(*token_iter_);
+}
 
 AstNodePtr Parser::parse() {
-    return AstNodePtr();
 }
