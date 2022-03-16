@@ -32,8 +32,8 @@ void Lexer::lexError(std::string msg) {
     error_occured_ = 1;
 }
 
-void Parser::parseError(std::string msg) {
-    fprintf(stderr, "\033[31mError in parser\033[0m: line %d: %s\n", line_, msg.c_str());
+void Parser::parseError(std::string msg, int line) {
+    fprintf(stderr, "\033[31mError in parser\033[0m: line %d: %s\n", line, msg.c_str());
     error_occured_ = 1;
 }
 
@@ -432,6 +432,8 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 1. 每个生成函数在匹配失败时不考虑返回时迭代器的正确性，此时由调用函数来保证迭代器的正确性
 // 2. 每个生成函数在匹配成功时，返回时的迭代器应当指向下一个要匹配的 token
 // 3. 进入生成函数时，迭代器应当指向将要被识别的 token，而不是识别过的 token
+// 4. 暂时不考虑错误处理
+// 5. 行数的维护尽量懒惰，不要每次都更新
 
 AstNodePtr Parser::ConstInitVal() {}
 AstNodePtr Parser::VarDecl() {}
@@ -440,7 +442,6 @@ AstNodePtr Parser::InitVal() {}
 AstNodePtr Parser::Block() {}
 AstNodePtr Parser::BlockItem() {}
 AstNodePtr Parser::Stmt() {}
-AstNodePtr Parser::Exp() {}
 AstNodePtr Parser::Cond() {}
 AstNodePtr Parser::LVal() {}
 AstNodePtr Parser::PrimaryExp() {}
@@ -449,35 +450,80 @@ AstNodePtr Parser::UnaryExp() {}
 AstNodePtr Parser::UnaryOp() {}
 AstNodePtr Parser::FuncRParams() {}
 AstNodePtr Parser::MulExp() {}
-AstNodePtr Parser::AddExp() {}
 AstNodePtr Parser::RelExp() {}
 AstNodePtr Parser::EqExp() {}
 AstNodePtr Parser::LAndExp() {}
 AstNodePtr Parser::LOrExp() {}
 AstNodePtr Parser::ConstExp() {}
 
+AstNodePtr Parser::AddExpL() {
+    // AddExpL -> ('+' | '−') MulExp AddExpL | e
+}
+
+AstNodePtr Parser::AddExp() {
+    // origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+    // rewrite: AddExp -> MulExp AddExpL
+    //          AddExpL -> ('+' | '−') MulExp AddExpL | e
+    auto add_exp = std::make_shared<AstNode>(SyEbnfType::AddExp, (*token_iter_)->line_);
+
+}
+
+AstNodePtr Parser::Exp() {
+    // origin: Exp -> AddExp
+    auto add_exp = AddExp();
+    if (add_exp == nullptr) {
+        return nullptr;
+    }
+    auto exp = std::make_shared<AstNode>(SyEbnfType::Exp, add_exp->line_);
+    exp->a_ = add_exp;
+    add_exp->parent_ = exp;
+    return exp;
+}
+
 AstNodePtr Parser::ConstDef() {
     // origin: ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
     // Ident
+    auto const_def = std::make_shared<AstNode>(SyEbnfType::ConstDef, (*token_iter_)->line_);
     auto ident = Ident();
     if (ident == nullptr) {
         return nullptr;
     }
     // { '[' ConstExp ']' }
-    while ((*token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
-        auto const_exp = ConstExp();
-        if (const_exp == nullptr) {
+    // get the first ConstExp (if there is any)
+    AstNodePtr const_exp_start = nullptr;
+    if ((*token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+        ++(*token_iter_);
+        const_exp_start = ConstExp();
+        if (const_exp_start == nullptr) {
             return nullptr;
         }
+        // get all ConstExps left, and link them
+        auto const_exp_last = const_exp_start;
+        while ((*token_iter_)->ast_type_ == SyAstType::RIGHT_BRACKET) {
+            ++(*token_iter_);
+            auto const_exp = ConstExp();
+            const_exp_last->a_ = const_exp;
+            const_exp->parent_ = const_exp_last;
+            const_exp_last = const_exp;
+        }
     }
+
+    // '='
+    if ((*token_iter_)->ast_type_ != SyAstType::ASSIGN) {
+        return nullptr;
+    }
+    ++(*token_iter_);
+
+    // ConstInitVal
+    // !!!TODO!!!
 }
 
 AstNodePtr Parser::ConstDecl() {
     // origin: ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-    auto const_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, line_);
     if ((*token_iter_)->ast_type_ != SyAstType::STM_CONST) {
         return nullptr;
     }
+    auto const_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, (*token_iter_)->line_);
     ++(*token_iter_);
     auto b_type = BType();
     if (b_type == nullptr) {
@@ -492,13 +538,13 @@ AstNodePtr Parser::Decl() {
     // ConstDecl
     auto const_decl = ConstDecl();
     if (const_decl != nullptr) {
-        return nullptr;
+        return const_decl;
     }
     // VarDecl
     *token_iter_ = iter_back;
     auto var_decl = VarDecl();
     if (var_decl != nullptr) {
-        return nullptr;
+        return var_decl;
     }
 }
 

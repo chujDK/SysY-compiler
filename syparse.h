@@ -182,10 +182,9 @@ class Parser {
 private:
     Lexer* lexer_;
     LexerIterator* token_iter_;
-    int line_;
     bool error_occured_;
 
-    void parseError(std::string msg);
+    void parseError(std::string msg, int line);
     AstNodePtr BType();
     AstNodePtr CompUnit();
     AstNodePtr Decl();
@@ -212,6 +211,7 @@ private:
     AstNodePtr FuncRParams();
     AstNodePtr MulExp();
     AstNodePtr AddExp();
+    AstNodePtr AddExpL();
     AstNodePtr RelExp();
     AstNodePtr EqExp();
     AstNodePtr LAndExp();
@@ -221,7 +221,7 @@ private:
 
 public:
     AstNodePtr parse();
-    Parser(InputStream* InputStream): error_occured_(false), line_(1) {
+    Parser(InputStream* InputStream): error_occured_(false) {
         lexer_ = new Lexer(InputStream);
         token_iter_ = new LexerIterator(lexer_->getNextToken(), lexer_);
     }
