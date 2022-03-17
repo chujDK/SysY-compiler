@@ -214,7 +214,9 @@ private:
     AstNodePtr MulExpL();
     AstNodePtr AddExp();
     AstNodePtr AddExpL(); // to eliminate the left recursion
+    AstNodePtr RelExpL();
     AstNodePtr RelExp();
+    AstNodePtr EqExpL();
     AstNodePtr EqExp();
     AstNodePtr LAndExp();
     AstNodePtr LAndExpL();

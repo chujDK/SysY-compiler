@@ -450,9 +450,9 @@ AstNodePtr Parser::Stmt() {}
 AstNodePtr Parser::Cond() {}
 AstNodePtr Parser::Number() {}
 AstNodePtr Parser::RelExp() {}
-AstNodePtr Parser::EqExp() {}
-AstNodePtr Parser::LAndExp() {}
 
+// todo: parser for MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp maybe can be
+// rewrited to a single template function
 // this two helper can adjust MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp 
 // they are all left recursive in the same form
 // this comment inside uses AddExp as example
@@ -548,6 +548,106 @@ static void adjustExpAst(AstNodePtr node) {
     }
 }
 
+AstNodePtr Parser::EqExpL() {
+    LexerIterator iter_back = *token_iter_;
+    // EqExpL -> ('==' | '!=') RelExp EqExpL | e
+    auto eq_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::EQ &&
+        (*token_iter_)->ast_type_ != SyAstType::NEQ) {
+        // no need to reset the token_iter_ 
+        // this is not a failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    eq_exp_l->a_ = *(*token_iter_); // link the '==' or '!='
+    ++(*token_iter_);
+    auto rel_exp = RelExp();
+    if (rel_exp == nullptr) {
+        // this is a failure
+        // reset the token_iter_
+        *token_iter_ = iter_back;
+        // unlink the '==' or '!='
+        eq_exp_l->a_ = nullptr;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    eq_exp_l->b_ = rel_exp;
+    rel_exp->parent_ = eq_exp_l;
+    eq_exp_l->c_ = EqExpL();
+    eq_exp_l->c_->parent_ = eq_exp_l;
+    return eq_exp_l;
+}
+
+AstNodePtr Parser::EqExp() {
+    // origin: EqExp -> RelExp | EqExp ('==' | '!=') RelExp
+    // rewrite: EqExp -> RelExp EqExpL
+    //          EqExpL -> ('==' | '!=') RelExp EqExpL | e
+    auto eq_exp = std::make_shared<AstNode>(SyEbnfType::EqExp, (*token_iter_)->line_);
+    auto rel_exp = RelExp();
+    if (rel_exp == nullptr) {
+        return nullptr;
+    }
+    // need not to check the return value of EqExpL
+    auto eq_exp_l = EqExpL();
+    eq_exp->a_ = rel_exp;
+    rel_exp->parent_ = eq_exp;
+    if (eq_exp_l->ebnf_type_ != SyEbnfType::E) {
+        eq_exp->b_ = eq_exp_l;
+        eq_exp_l->parent_ = eq_exp;
+        adjustExpAst(eq_exp);
+    }
+    return eq_exp;
+}
+
+// this parse won't return nullptr (it success all the time)
+AstNodePtr Parser::LAndExpL() {
+    LexerIterator iter_back = *token_iter_;
+    // LAndExpL -> '&&' EqExp LAndExpL | e
+    auto l_and_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::LOGIC_AND) {
+        // no need to reset the token_iter_ 
+        // this is not a failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    l_and_exp_l->a_ = *(*token_iter_); // link the '&&'
+    ++(*token_iter_);
+    auto eq_exp = EqExp();
+    if (eq_exp == nullptr) {
+        // this is a failure
+        // reset the token_iter_
+        *token_iter_ = iter_back;
+        // unlink the '&&'
+        l_and_exp_l->a_ = nullptr;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    l_and_exp_l->b_ = eq_exp;
+    eq_exp->parent_ = l_and_exp_l;
+    l_and_exp_l->c_ = LAndExpL();
+    l_and_exp_l->c_->parent_ = l_and_exp_l;
+    return l_and_exp_l;
+}
+
+AstNodePtr Parser::LAndExp() {
+    // origin: LAndExp -> EqExp | LAndExp '&&' EqExp
+    // rewrite: LAndExp -> EqExp LAndExpL
+    //          LAndExpL -> '&&' EqExp LAndExpL | e
+    auto l_and_exp = std::make_shared<AstNode>(SyEbnfType::LAndExp, (*token_iter_)->line_);
+    auto eq_exp = EqExp();
+    if (eq_exp == nullptr) {
+        return nullptr;
+    }
+    // need not to check the return value of LAndExpL
+    auto l_and_exp_l = LAndExpL();
+    l_and_exp->a_ = eq_exp;
+    eq_exp->parent_ = l_and_exp;
+    if (l_and_exp_l->ebnf_type_ != SyEbnfType::E) {
+        l_and_exp->b_ = l_and_exp_l;
+        l_and_exp_l->parent_ = l_and_exp;
+        adjustExpAst(l_and_exp);
+    }
+    return l_and_exp;
+}
+
 // this parse won't return nullptr (it success all the time)
 AstNodePtr Parser::LOrExpL() {
     LexerIterator iter_back = *token_iter_;
@@ -566,6 +666,8 @@ AstNodePtr Parser::LOrExpL() {
         // this is not a failure
         // just return e
         *token_iter_ = iter_back;
+        // unlink the '||'
+        l_or_exp_l->a_ = nullptr;
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     l_or_exp_l->b_ = l_and_exp;
@@ -591,6 +693,7 @@ AstNodePtr Parser::LOrExp() {
     if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
         l_or_exp->b_ = l_or_exp_l;
         l_or_exp_l->parent_ = l_or_exp;
+        adjustExpAst(l_or_exp);
     }
     return l_or_exp;
 }
@@ -831,6 +934,8 @@ AstNodePtr Parser::MulExpL() {
         // this is no a failure
         // just return e
         *token_iter_ = iter_back;
+        // unlink the ('*' | '/' | '%')
+        mul_exp_l->a_ = nullptr;
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     mul_exp_l->b_ = unary_exp;
