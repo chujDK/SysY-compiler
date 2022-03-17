@@ -132,7 +132,7 @@ struct AstNode {
         c_(nullptr), d_(nullptr) {}
 
     AstNode(enum SyEbnfType ebnf_type, int line):
-        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(nullptr), 
+        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(std::string()), 
         next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) {}
 };

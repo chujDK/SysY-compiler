@@ -5,6 +5,7 @@
 #include "sydebug.h"
 
 const char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
+const char* SyEbnfTypeDebugInfo[(int) SyEbnfType::END_OF_ENUM];
 
 FileStream::FileStream(const char* file_name)
 {
@@ -85,7 +86,7 @@ std::string CharStream::getLine() {
     return line;
 }
 
-void SyAstTypeDebugInfoInit() {
+static void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int) SyAstType::LEFT_PARENTHESE] = "LEFT_PARENTHESE";
     SyAstTypeDebugInfo[(int) SyAstType::RIGHT_PARENTHESE] = "RIGHT_PARENTHESE";
     SyAstTypeDebugInfo[(int) SyAstType::LEFT_BRACKET] = "LEFT_BRACKET";
@@ -126,6 +127,47 @@ void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int) SyAstType::EOF_TYPE] = "EOF_TYPE";
 }
 
+static void SyEbnfTypeDebugInfoInit() {
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::CompUnit] =  "CompUnit";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Decl] =  "Decl";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::ConstDecl] =  "ConstDecl";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::BType] =  "BType";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::ConstDef] =  "ConstDef";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::ConstInitVal] =  "ConstInitVal";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::VarDecl] =  "VarDecl";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::VarDef] =  "VarDef";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::InitVal] =  "InitVal";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::FuncDef] =  "FuncDef";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::FuncType] =  "FuncType";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::FuncFParams] =  "FuncFParams";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::FuncFParam] =  "FuncFParam";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Block] =  "Block";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::BlockItem] =  "BlockItem";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Stmt] =  "Stmt";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Exp] =  "Exp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Cond] =  "Cond";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::LVal] =  "LVal";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::PrimaryExp] =  "PrimaryExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::Number] =  "Number";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::UnaryExp] =  "UnaryExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::UnaryOp] =  "UnaryOp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::FuncRParams] =  "FuncRParams";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::MulExp] =  "MulExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::AddExp] =  "AddExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::RelExp] =  "RelExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::EqExp] =  "EqExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::LAndExp] =  "LAndExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::LOrExp] =  "LOrExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::ConstExp] =  "ConstExp";
+    SyEbnfTypeDebugInfo[(int) SyEbnfType::E] =  "E";
+}
+
 void debugInfoInit() {
     SyAstTypeDebugInfoInit();
+    SyEbnfTypeDebugInfoInit();
+}
+
+void printSyToken(TokenPtr token) {
+    std::cout << "\033[1m\033[34m" << SyAstTypeDebugInfo[(int)token->ast_type_] << "\033[0m" << " \""
+    "\033[32m" << token->literal_ << "\033[0m" << "\"" << std::endl;
 }

@@ -1,5 +1,7 @@
+int i1, i2, i3 = 0200;
 int i;
-const int i_c;
+int i0 = 0200;
+const int i_c = 0x100;
 
 int main()
 {

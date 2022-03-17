@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+const int i_c; // error: conflicting type qualifiers for ‘a’
+
 int main()
 {
     printf("Hello world\n\b");

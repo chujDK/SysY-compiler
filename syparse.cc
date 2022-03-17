@@ -155,7 +155,7 @@ TokenPtr Lexer::getIdent() {
     if (!init) {
         for (int i = 0; i < 256; i++) {
             for (int j = 0; j < (int) SyAstType::END_OF_ENUM; j++) {
-                ident_jump[i][j] = SyAstType::END_OF_ENUM;
+                ident_jump[i][j] = SyAstType::IDENT;
             }
         }
         // if and int
@@ -654,9 +654,9 @@ AstNodePtr Parser::VarDef() {
             const_exp_last = const_exp;
         }
     }
-    ++(*token_iter_);
     AstNodePtr init_val = nullptr;
-    if ((*token_iter_)->ast_type_ == SyAstType::EQ) {
+    // '=' InitVal
+    if ((*token_iter_)->ast_type_ == SyAstType::ASSIGN) {
         // it's a var def with init val
         ++(*token_iter_);
         init_val = InitVal();
@@ -736,6 +736,8 @@ AstNodePtr Parser::InitVal() {
         // it ok to return nullptr
         // just reset the token_iter_
         *token_iter_ = iter_back;
+        // in src, it just uses the "{}" to init
+        return init_val;
     }
     else {
         while ((*token_iter_)->ast_type_ == SyAstType::COMMA)
@@ -1394,6 +1396,7 @@ AstNodePtr Parser::MulExp() {
         mul_exp_l->parent_ = mul_exp;
         adjustExpAst(mul_exp);
     }
+    return mul_exp;
 }
 
 // this parse won't return nullptr (it success all the time)
@@ -1511,10 +1514,13 @@ AstNodePtr Parser::ConstDef() {
     }
     const_def->a_ = ident;
     ident->parent_ = const_def;
-    const_def->b_ = const_exp_start;
-    const_exp_start->parent_ = const_def;
+    if (const_exp_start != nullptr) {
+        const_def->b_ = const_exp_start;
+        const_exp_start->parent_ = const_def;
+    }
     const_def->c_ = const_init_val;
     const_init_val->parent_ = const_def;
+    return const_def;
 }
 
 AstNodePtr Parser::ConstDecl() {
@@ -1528,7 +1534,33 @@ AstNodePtr Parser::ConstDecl() {
     if (b_type == nullptr) {
         return nullptr;
     }
-    auto const_def = ConstDef();
+    auto const_def_start = ConstDef();
+    auto const_def_last = const_def_start;
+    if (const_def_start == nullptr) {
+        return nullptr;
+    }
+    while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
+        ++(*token_iter_);
+        auto var_def = VarDef();
+        if (var_def == nullptr) {
+            // TODO: error handling
+            return nullptr;
+        }
+        const_def_last->a_ = var_def;
+        var_def->parent_ = const_def_last;
+        const_def_last = var_def;
+    }
+    if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+        // TODO: error handling
+        return nullptr;
+    }
+    ++(*token_iter_);
+    auto var_decl = std::make_shared<AstNode>(SyEbnfType::VarDecl, b_type->line_);
+    var_decl->a_ = b_type;
+    b_type->parent_ = var_decl;
+    var_decl->b_ = const_def_start;
+    const_def_start->parent_ = var_decl;
+    return var_decl;
 }
 
 AstNodePtr Parser::Decl() {
@@ -1545,6 +1577,7 @@ AstNodePtr Parser::Decl() {
     if (var_decl != nullptr) {
         return var_decl;
     }
+    return nullptr;
 }
 
 AstNodePtr Parser::FuncType() {
@@ -1700,9 +1733,11 @@ AstNodePtr Parser::Ident() {
     if ((*token_iter_)->ast_type_ != SyAstType::IDENT) {
         return nullptr;
     }
+    auto ident = *(*token_iter_);
     ++(*token_iter_);
-    return *(*token_iter_);
+    return ident;
 }
 
 AstNodePtr Parser::parse() {
+    return CompUnit();
 }

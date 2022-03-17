@@ -3,6 +3,7 @@
 #include "sy.h"
 
 extern const char* SyAstTypeDebugInfo[(int) SyAstType::END_OF_ENUM];
+extern const char* SyEbnfTypeDebugInfo[(int) SyEbnfType::END_OF_ENUM];
 
 // this class is mainly for test
 class CharStream : public InputStream {
@@ -41,5 +42,6 @@ public:
 };
 
 void debugInfoInit();
+void printSyToken(TokenPtr token);
 
 #endif
