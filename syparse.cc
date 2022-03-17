@@ -440,7 +440,6 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 1. 匹配时修改了某 token 的 parent_, a_... 字段，但是后来匹配失败了，
 // 可能会产生无效引用（由于使用了智能指针，应该不会是悬垂指针，但是仍可能有问题）
 
-AstNodePtr Parser::ConstInitVal() {}
 AstNodePtr Parser::VarDecl() {}
 AstNodePtr Parser::VarDef() {}
 AstNodePtr Parser::InitVal() {}
@@ -448,17 +447,271 @@ AstNodePtr Parser::Block() {}
 AstNodePtr Parser::BlockItem() {}
 AstNodePtr Parser::Stmt() {}
 AstNodePtr Parser::Cond() {}
-AstNodePtr Parser::LVal() {}
-AstNodePtr Parser::PrimaryExp() {}
 AstNodePtr Parser::Number() {}
-AstNodePtr Parser::UnaryExp() {}
-AstNodePtr Parser::UnaryOp() {}
-AstNodePtr Parser::FuncRParams() {}
 AstNodePtr Parser::RelExp() {}
 AstNodePtr Parser::EqExp() {}
 AstNodePtr Parser::LAndExp() {}
-AstNodePtr Parser::LOrExp() {}
-AstNodePtr Parser::ConstExp() {}
+
+// this parse won't return nullptr (it success all the time)
+AstNodePtr Parser::LOrExpL() {
+    LexerIterator iter_back = *token_iter_;
+    // LOrExpL -> '||' LAndExp LOrExpL | e
+    auto l_or_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::LOGIC_OR) {
+        // no need to reset the token_iter_ 
+        // this is not a failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    l_or_exp_l->a_ = *(*token_iter_); // link the '||'
+    ++(*token_iter_);
+    auto l_and_exp = LAndExp();
+    if (l_and_exp == nullptr) {
+        // this is not a failure
+        // just return e
+        *token_iter_ = iter_back;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    l_or_exp_l->b_ = l_and_exp;
+    l_and_exp->parent_ = l_or_exp_l;
+    l_or_exp_l->c_ = LOrExpL();
+    l_or_exp_l->c_->parent_ = l_or_exp_l;
+    return l_or_exp_l;
+}
+
+AstNodePtr Parser::LOrExp() {
+    // origin: LOrExp -> LAndExp | LOrExp '||' LAndExp
+    // rewrite: LOrExp -> LAndExp LOrExpL
+    //          LOrExpL -> '||' LAndExp LOrExpL | e
+    auto l_or_exp = std::make_shared<AstNode>(SyEbnfType::LOrExp, (*token_iter_)->line_);
+    auto l_and_exp = LAndExp();
+    if (l_and_exp == nullptr) {
+        return nullptr;
+    }
+    // need not to check the return value of LOrExpL
+    auto l_or_exp_l = LOrExpL();
+    l_or_exp->a_ = l_and_exp;
+    l_and_exp->parent_ = l_or_exp;
+    if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
+
+    }
+    return l_or_exp;
+}
+
+AstNodePtr Parser::LVal() {
+    // origin: LVal -> Ident {'[' Exp ']'} 
+    auto ident = Ident();
+    if (ident == nullptr) {
+        return nullptr;
+    }
+    // construct the exp list
+    AstNodePtr exp_start = nullptr;
+    AstNodePtr exp_last = nullptr;
+    while ((*token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+        ++(*token_iter_);
+        auto exp = Exp();
+        if (exp == nullptr) {
+            // this should be an error
+            return nullptr;
+        }
+        if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
+            // this should be an error
+            // break the link list
+            exp_start->a_ = nullptr;
+            return nullptr;
+        }
+        ++(*token_iter_);
+        // link the list
+        if (exp_start == nullptr) {
+            exp_start = exp;
+            exp_last = exp;
+        }
+        else {
+            exp_last->a_ = exp;
+            exp->parent_ = exp_last;
+            exp_last = exp;
+        }
+    }
+    auto l_val = std::make_shared<AstNode>(SyEbnfType::LVal, ident->line_);
+    l_val->a_ = ident;
+    ident->parent_ = l_val;
+    if (exp_start != nullptr) {
+        l_val->b_ = exp_start;
+        exp_start->parent_ = l_val;
+    }
+    return l_val;
+}
+
+AstNodePtr Parser::ConstInitVal() {
+    // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+    auto const_init_val = std::make_shared<AstNode>(SyEbnfType::ConstInitVal, (*token_iter_)->line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+        // ConstInitVal -> ConstExp
+        auto const_exp = ConstExp();
+        if (const_exp == nullptr) {
+            return nullptr;
+        }
+        const_init_val->a_ = const_exp;
+        const_exp->parent_ = const_init_val;
+        return const_init_val;
+    }
+    else {
+        // ConstInitVal -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+        ++(*token_iter_);
+        // build up the list
+        auto const_init_val_start = ConstInitVal();
+        auto const_init_val_last = const_init_val_start;
+        while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
+            ++(*token_iter_);
+            auto const_init_val_next = ConstInitVal();
+            if (const_init_val_next == nullptr) {
+                return nullptr;
+            }
+            // link
+            const_init_val_last->a_ = const_init_val_next;
+            const_init_val_next->parent_ = const_init_val_last;
+            const_init_val_last = const_init_val_next;
+        }
+        // '}'
+        if ((*token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
+            // there should be a error
+            return nullptr;
+        }
+        const_init_val->a_ = const_init_val_start;
+        const_init_val_start->parent_ = const_init_val;
+        return const_init_val;
+    }
+}
+
+AstNodePtr Parser::FuncRParams() {
+    // FuncRParams -> Exp { ',' Exp }
+    auto func_r_params = std::make_shared<AstNode>(SyEbnfType::FuncRParams, (*token_iter_)->line_);
+    auto exp_start = Exp();
+    auto exp_last = exp_start;
+    if (exp_start == nullptr) {
+        return nullptr;
+    }
+    while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
+        ++(*token_iter_);
+        auto exp = Exp();
+        if (exp == nullptr) {
+            return nullptr;
+        }
+        exp_last->a_ = exp;
+        exp->parent_ = exp_last;
+        exp_last = exp;
+    }
+    func_r_params->a_ = exp_start;
+    exp_start->parent_ = func_r_params;
+    return func_r_params;
+}
+
+AstNodePtr Parser::PrimaryExp() {
+    // PrimaryExp -> '(' Exp ')' | LVal | Number
+    auto primary_exp = std::make_shared<AstNode>(SyEbnfType::PrimaryExp, (*token_iter_)->line_);
+    LexerIterator iter_back = *token_iter_;
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+        // try PrimaryExp -> LVal
+        // there we don't need to use the backup iter
+        auto l_val = LVal();
+        if (l_val == nullptr) {
+            // try Number
+            *token_iter_ = iter_back;
+            auto number = Number();
+            if (number == nullptr) {
+                // this time really failed
+                return nullptr;
+            }
+            primary_exp->a_ = number;
+            number->parent_ = primary_exp;
+            return primary_exp;
+        }
+        primary_exp->a_ = l_val;
+        l_val->parent_ = primary_exp;
+        return primary_exp;
+    }
+    else {
+        // PrimaryExp -> '(' Exp ')'
+        ++(*token_iter_);
+        auto exp = Exp();
+        if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+            // this time really failed
+            return nullptr;
+        }
+        token_iter_++;
+        primary_exp->a_ = exp;
+        exp->parent_ = primary_exp;
+        return exp;
+    }
+}
+
+AstNodePtr Parser::UnaryExp() {
+    // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+    auto unary_exp = std::make_shared<AstNode>(SyEbnfType::UnaryExp, (*token_iter_)->line_);
+    LexerIterator iter_back = *token_iter_;
+    auto primary_exp = PrimaryExp();
+    if (primary_exp == nullptr) {
+        // try the UnaryExp -> UnaryOp UnaryExp
+        *token_iter_ = iter_back;
+        auto unary_op = UnaryOp();
+        if (unary_op == nullptr) {
+            // try the UnaryExp -> Ident '(' [FuncRParams] ')'
+            *token_iter_ = iter_back;
+            auto ident = Ident();
+            if (ident == nullptr) {
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+                // all three failed
+                return nullptr;
+            }
+            ++(*token_iter_);
+            auto func_r_params = FuncRParams();
+            if (func_r_params == nullptr) {
+                // all three failed
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                // all three failed
+                return nullptr;
+            }
+            ++(*token_iter_);
+            unary_exp->a_ = ident;
+            ident->parent_ = unary_exp;
+            unary_exp->b_ = func_r_params;
+            func_r_params->parent_ = unary_exp;
+            return unary_exp;
+        }
+        auto unary_exp_new = UnaryExp();
+        if (unary_exp_new == nullptr) {
+            return nullptr;
+        }
+        unary_exp->a_ = unary_op;
+        unary_op->parent_ = unary_exp;
+        unary_exp->b_ = unary_exp_new;
+        unary_exp_new->parent_ = unary_exp;
+        return unary_exp;
+    }
+    else {
+        // UnaryExp -> PrimaryExp
+        unary_exp->a_ = primary_exp;
+        primary_exp->parent_ = unary_exp;
+        return unary_exp;
+    }
+}
+
+AstNodePtr Parser::UnaryOp() {
+    // UnaryOp -> '+' | '-' | '!'
+    auto token = *(*token_iter_);
+    if (token->ast_type_ != SyAstType::ALU_ADD &&
+        token->ast_type_ != SyAstType::ALU_SUB &&
+        token->ast_type_ != SyAstType::LOGIC_NOT) {
+        return nullptr;
+    }
+    token->ebnf_type_ = SyEbnfType::UnaryOp;
+    ++(*token_iter_);
+    return token;
+}
 
 // this two helper can adjust AddExp and MulExp
 // this comment inside uses AddExp as example
@@ -521,8 +774,10 @@ AstNodePtr Parser::MulExpL() {
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     mul_exp_l->b_ = unary_exp;
-    auto mul_exp_l_ = MulExpL();
-    return mul_exp_l_;
+    unary_exp->parent_ = mul_exp_l;
+    mul_exp_l->c_ = MulExpL();
+    mul_exp_l->c_->parent_ = mul_exp_l;
+    return mul_exp_l;
 }
 
 AstNodePtr Parser::MulExp() {
@@ -565,7 +820,9 @@ AstNodePtr Parser::AddExpL() {
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     add_exp_l->b_ = mul_exp;
+    mul_exp->parent_ = add_exp_l;
     add_exp_l->c_ = AddExpL();
+    add_exp_l->c_->parent_ = add_exp_l;
     return add_exp_l;
 }
 
@@ -603,6 +860,18 @@ AstNodePtr Parser::Exp() {
     return exp;
 }
 
+AstNodePtr Parser::ConstExp() {
+    // origin: ConstExp -> AddExp
+    auto add_exp = AddExp();
+    if (add_exp == nullptr) {
+        return nullptr;
+    }
+    auto const_exp = std::make_shared<AstNode>(SyEbnfType::ConstExp, add_exp->line_);
+    const_exp->a_ = add_exp;
+    add_exp->parent_ = const_exp;
+    return const_exp;
+}
+
 AstNodePtr Parser::ConstDef() {
     // origin: ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
     // Ident
@@ -633,12 +902,22 @@ AstNodePtr Parser::ConstDef() {
 
     // '='
     if ((*token_iter_)->ast_type_ != SyAstType::ASSIGN) {
+        // this should be an error
         return nullptr;
     }
     ++(*token_iter_);
 
     // ConstInitVal
-    // !!!TODO!!!
+    auto const_init_val = ConstInitVal();
+    if (const_init_val == nullptr) {
+        return nullptr;
+    }
+    const_def->a_ = ident;
+    ident->parent_ = const_def;
+    const_def->b_ = const_exp_start;
+    const_exp_start->parent_ = const_def;
+    const_def->c_ = const_init_val;
+    const_init_val->parent_ = const_def;
 }
 
 AstNodePtr Parser::ConstDecl() {

@@ -217,7 +217,9 @@ private:
     AstNodePtr RelExp();
     AstNodePtr EqExp();
     AstNodePtr LAndExp();
+    AstNodePtr LAndExpL();
     AstNodePtr LOrExp();
+    AstNodePtr LOrExpL();
     AstNodePtr ConstExp();
     AstNodePtr Ident();
 
