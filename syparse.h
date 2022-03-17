@@ -89,7 +89,7 @@ enum class SyEbnfType {
     Block, // Block -> '{' { BlockItem } '}' 
     BlockItem, // BlockItem -> Decl | Stmt
     Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
-                                   //| 'if' '( Cond ')' Stmt [ 'else' Stmt ]
+                                   //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
                                    //| 'while' '(' Cond ')' Stmt
                                    //| 'break' ';' | 'continue' ';'
                                    //| 'return' [Exp] ';'
@@ -211,13 +211,14 @@ private:
     AstNodePtr UnaryOp();
     AstNodePtr FuncRParams();
     AstNodePtr MulExp();
+    // function with the L suffix means left recursion elimination
     AstNodePtr MulExpL();
     AstNodePtr AddExp();
-    AstNodePtr AddExpL(); // to eliminate the left recursion
-    AstNodePtr RelExpL();
+    AstNodePtr AddExpL();
     AstNodePtr RelExp();
-    AstNodePtr EqExpL();
+    AstNodePtr RelExpL();
     AstNodePtr EqExp();
+    AstNodePtr EqExpL();
     AstNodePtr LAndExp();
     AstNodePtr LAndExpL();
     AstNodePtr LOrExp();

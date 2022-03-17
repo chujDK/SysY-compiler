@@ -440,16 +440,394 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 可能出现的问题：
 // 1. 匹配时修改了某 token 的 parent_, a_... 字段，但是后来匹配失败了，
 // 可能会产生无效引用（由于使用了智能指针，应该不会是悬垂指针，但是仍可能有问题）
+// 2. 有些地方的产生是可选的，所以匹配失败时仍应继续，但是这里很可能会忘记恢复 token 迭代器
 
-AstNodePtr Parser::VarDecl() {}
-AstNodePtr Parser::VarDef() {}
-AstNodePtr Parser::InitVal() {}
-AstNodePtr Parser::Block() {}
-AstNodePtr Parser::BlockItem() {}
-AstNodePtr Parser::Stmt() {}
-AstNodePtr Parser::Cond() {}
-AstNodePtr Parser::Number() {}
-AstNodePtr Parser::RelExp() {}
+AstNodePtr Parser::Stmt() {
+    // origin: Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+    //                 | 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+    //                 | 'while' '(' Cond ')' Stmt
+    //                 | 'break' ';' | 'continue' ';'
+    //                 | 'return' [Exp] ';'
+    auto stmt = std::make_shared<AstNode>(SyEbnfType::Stmt, (*token_iter_)->line_);
+    AstNodePtr cond = nullptr;
+    AstNodePtr stmt_nest = nullptr;
+    AstNodePtr stmt_else = nullptr;
+    AstNodePtr exp = nullptr;
+    LexerIterator iter_back = *token_iter_;
+    switch ((*token_iter_)->ast_type_) {
+        case SyAstType::STM_IF:
+        // 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+            stmt->a_ = *(*token_iter_);
+            (*token_iter_)->parent_ = stmt;
+            ++(*token_iter_);
+            if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+                // TODO error handle
+                return nullptr;
+            }
+            cond = Cond();
+            if (cond == nullptr) {
+                // TODO error handle
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            stmt = Stmt();
+            if (stmt == nullptr) {
+                // TODO error handle
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ == SyAstType::STM_ELSE) {
+                stmt_else = Stmt();
+                if (stmt_else == nullptr) {
+                    // TODO error handle
+                    return nullptr;
+                }
+            }
+            stmt->b_ = cond;
+            cond->parent_ = stmt;
+            stmt->c_ = stmt_nest;
+            stmt_nest->parent_ = stmt;
+            stmt->d_ = stmt_else;
+            stmt_else->parent_ = stmt;
+            return stmt;
+        case SyAstType::STM_WHILE:
+        // 'while' '(' Cond ')' Stmt
+            stmt->a_ = *(*token_iter_);
+            (*token_iter_)->parent_ = stmt;
+            ++(*token_iter_);
+            if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+                // TODO error handle
+                return nullptr;
+            }
+            cond = Cond();
+            if (cond == nullptr) {
+                // TODO error handle
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            stmt_nest = Stmt();
+            if (stmt_nest == nullptr) {
+                // TODO error handle
+                return nullptr;
+            }
+            stmt->b_ = cond;
+            cond->parent_ = stmt;
+            stmt->c_ = stmt_nest;
+            stmt_nest->parent_ = stmt;
+            return stmt;
+        case SyAstType::STM_BREAK:
+        // 'break' ';'
+            stmt->a_ = *(*token_iter_);
+            (*token_iter_)->parent_ = stmt;
+            ++(*token_iter_);
+            if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            return stmt;
+        case SyAstType::STM_CONTINUE:
+        // 'continue' ';'
+            stmt->a_ = *(*token_iter_);
+            (*token_iter_)->parent_ = stmt;
+            ++(*token_iter_);
+            if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            return stmt;
+        case SyAstType::STM_RETURN:
+        // 'return' [Exp] ';'
+            stmt->a_ = *(*token_iter_);
+            (*token_iter_)->parent_ = stmt;
+            ++(*token_iter_);
+            iter_back = *token_iter_;
+            exp = Exp();
+            if (exp == nullptr) {
+                // that ok at least in the parsing phase
+                // typing phase will check if it is valid
+                // just reset the iterator
+                *token_iter_ = iter_back;
+            }
+            else {
+                // link
+                stmt->b_ = exp;
+                exp->parent_ = stmt;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            return stmt;
+        default:
+            break;
+    }
+    // now we should try Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+    // try LVal '=' Exp ';'
+    iter_back = *token_iter_;
+    auto l_val = LVal();
+    if (l_val != nullptr) {
+        if ((*token_iter_)->ast_type_ != SyAstType::EQ) {
+            return nullptr;
+        }
+        exp = Exp();
+        if (exp == nullptr) {
+            return nullptr;
+        }
+        if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+            // TODO error handle
+            return nullptr;
+        }
+        ++(*token_iter_);
+        stmt->a_ = l_val;
+        l_val->parent_ = stmt;
+        stmt->b_ = exp;
+        exp->parent_ = stmt;
+        return stmt;
+    }
+    // rewrite [exp] ';' => Exp ';' | ';'
+    // first we try ';'
+    if ((*token_iter_)->ast_type_ == SyAstType::SEMICOLON) {
+        ++(*token_iter_);
+        // for simplicity, we just return a null stmt
+        // no fancy optimization here
+        return stmt;
+    }
+    // then try Exp ';'
+    *token_iter_ = iter_back;
+    exp = Exp();
+    if (exp != nullptr) {
+        if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+            // TODO error handle
+            return nullptr;
+        }
+        ++(*token_iter_);
+        stmt->a_ = exp;
+        exp->parent_ = stmt;
+        return stmt;
+    }
+    // try Block
+    auto block = Block();
+    if (block == nullptr) {
+        return nullptr;
+    }
+    stmt->a_ = block;
+    block->parent_ = stmt;
+    return stmt;
+}
+
+AstNodePtr Parser::VarDef() {
+    // origin: VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
+    auto ident = Ident();
+    if (ident == nullptr) {
+        return nullptr;
+    }
+    AstNodePtr const_exp_start = nullptr;
+    AstNodePtr const_exp_last = nullptr;
+    while ((*token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+        ++(*token_iter_);
+        auto const_exp = ConstExp();
+        if (const_exp == nullptr) {
+            // TODO: error handling and unlink the const_exp_list
+            return nullptr;
+        }
+        if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
+            // TODO: error handling and unlink the const_exp_list
+            return nullptr;
+        }
+        ++(*token_iter_);
+        if (const_exp_start == nullptr) {
+            const_exp_start = const_exp;
+        }
+        else {
+            const_exp_last->a_ = const_exp;
+            const_exp->parent_ = const_exp_last;
+            const_exp_last = const_exp;
+        }
+    }
+    ++(*token_iter_);
+    AstNodePtr init_val = nullptr;
+    if ((*token_iter_)->ast_type_ == SyAstType::EQ) {
+        // it's a var def with init val
+        ++(*token_iter_);
+        init_val = InitVal();
+        if (init_val == nullptr) {
+            // TODO: error handling
+            return nullptr;
+        }
+    }
+    auto var_def = std::make_shared<AstNode>(SyEbnfType::VarDef, ident->line_);
+    var_def->a_ = ident;
+    ident->parent_ = var_def;
+    if (const_exp_start != nullptr) {
+        var_def->b_ = const_exp_start;
+        const_exp_start->parent_ = var_def;
+    }
+    if (init_val != nullptr) {
+        var_def->c_ = init_val;
+        init_val->parent_ = var_def;
+    }
+    return var_def;
+}
+
+AstNodePtr Parser::VarDecl() {
+    // origin: VarDecl -> BType VarDef { ',' VarDef } ';'
+    auto b_type = BType();
+    if (b_type == nullptr) {
+        return nullptr;
+    }
+    auto var_def_start = VarDef();
+    auto var_def_last = var_def_start;
+    if (var_def_start == nullptr) {
+        return nullptr;
+    }
+    while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
+        ++(*token_iter_);
+        auto var_def = VarDef();
+        if (var_def == nullptr) {
+            // TODO: error handling
+            return nullptr;
+        }
+        var_def_last->a_ = var_def;
+        var_def->parent_ = var_def_last;
+        var_def_last = var_def;
+    }
+    if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+        // TODO: error handling
+        return nullptr;
+    }
+    ++(*token_iter_);
+    auto var_decl = std::make_shared<AstNode>(SyEbnfType::VarDecl, b_type->line_);
+    var_decl->a_ = b_type;
+    b_type->parent_ = var_decl;
+    var_decl->b_ = var_def_start;
+    var_def_start->parent_ = var_decl;
+    return var_decl;
+}
+
+AstNodePtr Parser::InitVal() {
+    // origin: InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+    auto init_val = std::make_shared<AstNode>(SyEbnfType::InitVal, (*token_iter_)->line_);
+    // first we try to match '{'
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+        // then we try to match Exp
+        auto exp = Exp();
+        if (exp == nullptr) {
+            return nullptr;
+        }
+        init_val->a_ = exp;
+        exp->parent_ = init_val;
+        return init_val;
+    }
+    // '{' is matched
+    LexerIterator iter_back = *token_iter_;
+    AstNodePtr init_val_start = InitVal();
+    AstNodePtr init_val_last = init_val_start;
+    if (init_val_start == nullptr) {
+        // it ok to return nullptr
+        // just reset the token_iter_
+        *token_iter_ = iter_back;
+    }
+    else {
+        while ((*token_iter_)->ast_type_ == SyAstType::COMMA)
+        {
+            ++(*token_iter_);
+            auto init_val = InitVal();
+            if (init_val == nullptr) {
+                // that should be an error
+                return nullptr;
+            }
+            // link
+            init_val_last->a_ = init_val;
+            init_val->parent_ = init_val_last;
+            init_val_last = init_val;
+        }
+        init_val->a_ = init_val_start;
+        init_val_start->parent_ = init_val; 
+        return init_val;
+    }
+}
+
+AstNodePtr Parser::Block() {
+    // origin: '{' { BlockItem } '}'
+    if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+        return nullptr;
+    }
+    auto block = std::make_shared<AstNode>(SyEbnfType::Block, (*token_iter_)->line_);
+    ++(*token_iter_);
+    AstNodePtr block_item_start = nullptr;
+    AstNodePtr block_item_last = nullptr;
+    while ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
+        // if we reach here, then there must have a block item ahead
+        auto block_item = BlockItem();
+        if (block_item == nullptr) {
+            return nullptr;
+        }
+        if (block_item_start == nullptr) {
+            block_item_start = block_item;
+            block_item_last = block_item;
+        }
+        else {
+            // link
+            block_item_last->a_ = block_item;
+            block_item->parent_ = block_item_last;
+            block_item_last = block_item;
+        }
+    }
+    ++(*token_iter_);
+    block->a_ = block_item_start;
+    block_item_start->parent_ = block;
+    return block;
+}
+
+AstNodePtr Parser::BlockItem() {
+    // origin: BlockItem -> Decl | Stmt
+    LexerIterator iter_back = *token_iter_;
+    // try Decl
+    auto decl = Decl();
+    if (decl != nullptr) {
+        return decl;
+    }
+    // try Stmt
+    auto stmt = Stmt();
+    if (stmt == nullptr) {
+        return nullptr;
+    }
+    return stmt;
+}
+
+AstNodePtr Parser::Cond() {
+    // origin: Cond -> LOrExp
+    auto l_or_exp = LOrExp();
+    if (l_or_exp == nullptr) {
+        return nullptr;
+    }
+    auto cond = std::make_shared<AstNode>(SyEbnfType::Cond, l_or_exp->line_);
+    cond->a_ = l_or_exp;
+    l_or_exp->parent_ = cond;
+    return  cond;
+}
+
+AstNodePtr Parser::Number() {
+    // origin: Number -> IntConst
+    if ((*token_iter_)->ast_type_ != SyAstType::INT_IMM) {
+        return nullptr;
+    }
+    auto number = std::make_shared<AstNode>(SyEbnfType::Number, (*token_iter_)->line_);
+    number->a_ = *(*token_iter_);
+    (*token_iter_)->parent_ = number;
+    ++(*token_iter_);
+    return number;
+}
 
 // todo: parser for MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp maybe can be
 // rewrited to a single template function
@@ -548,6 +926,55 @@ static void adjustExpAst(AstNodePtr node) {
     }
 }
 
+AstNodePtr Parser::RelExpL() {
+    LexerIterator iter_back = *token_iter_;
+    // RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
+    auto rel_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    if ((*token_iter_)->ast_type_ != SyAstType::LNE ||
+        (*token_iter_)->ast_type_ != SyAstType::GNE ||
+        (*token_iter_)->ast_type_ != SyAstType::LE ||
+        (*token_iter_)->ast_type_ != SyAstType::GE) {
+        // no need to reset the token_iter_ 
+        // this is not a failure
+        // just return e
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    rel_exp_l->a_ = *(*token_iter_); // link the '<' or '>' or '<=' or '>='
+    (*token_iter_)->parent_ = rel_exp_l;
+    ++(*token_iter_);
+    auto add_exp = AddExp();
+    if (add_exp == nullptr) {
+        // this is not a failure
+        // reset the token_iter_
+        *token_iter_ = iter_back;
+        // unlink the '<' or '>' or '<=' or '>='
+        rel_exp_l->a_ = nullptr;
+        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+    }
+    return rel_exp_l;
+}
+
+AstNodePtr Parser::RelExp() {
+    // origin: RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+    // rewrite: RelExp -> AddExp RelExpL
+    //          RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
+    auto rel_exp = std::make_shared<AstNode>(SyEbnfType::RelExp, (*token_iter_)->line_);
+    auto add_exp = AddExp();
+    if (add_exp == nullptr) {
+        return nullptr;
+    }
+    // need not to check the return value of RelExpL
+    auto rel_exp_l = RelExpL();
+    rel_exp->a_ = add_exp;
+    add_exp->parent_ = rel_exp;
+    if (rel_exp_l->ebnf_type_ != SyEbnfType::E) {
+        rel_exp->b_ = rel_exp_l;
+        rel_exp_l->parent_ = rel_exp;
+        adjustExpAst(rel_exp);
+    }
+    return rel_exp;
+}
+
 AstNodePtr Parser::EqExpL() {
     LexerIterator iter_back = *token_iter_;
     // EqExpL -> ('==' | '!=') RelExp EqExpL | e
@@ -560,10 +987,11 @@ AstNodePtr Parser::EqExpL() {
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     eq_exp_l->a_ = *(*token_iter_); // link the '==' or '!='
+    (*token_iter_)->parent_ = eq_exp_l;
     ++(*token_iter_);
     auto rel_exp = RelExp();
     if (rel_exp == nullptr) {
-        // this is a failure
+        // this is not a failure
         // reset the token_iter_
         *token_iter_ = iter_back;
         // unlink the '==' or '!='
@@ -610,10 +1038,11 @@ AstNodePtr Parser::LAndExpL() {
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     l_and_exp_l->a_ = *(*token_iter_); // link the '&&'
+    (*token_iter_)->parent_ = l_and_exp_l;
     ++(*token_iter_);
     auto eq_exp = EqExp();
     if (eq_exp == nullptr) {
-        // this is a failure
+        // this is not a failure
         // reset the token_iter_
         *token_iter_ = iter_back;
         // unlink the '&&'
@@ -660,6 +1089,7 @@ AstNodePtr Parser::LOrExpL() {
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
     l_or_exp_l->a_ = *(*token_iter_); // link the '||'
+    (*token_iter_)->parent_ = l_or_exp_l;
     ++(*token_iter_);
     auto l_and_exp = LAndExp();
     if (l_and_exp == nullptr) {
@@ -928,6 +1358,7 @@ AstNodePtr Parser::MulExpL() {
     }
     auto mul_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     mul_exp_l->a_ = *(*token_iter_);
+    (*token_iter_)->parent_ = mul_exp_l;
     ++(*token_iter_);
     auto unary_exp = UnaryExp();
     if (unary_exp == nullptr) {
@@ -976,6 +1407,7 @@ AstNodePtr Parser::AddExpL() {
     }
     auto add_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     add_exp_l->a_ = *(*token_iter_);
+    (*token_iter_)->parent_ = add_exp_l;
     ++(*token_iter_);
     auto mul_exp = MulExp();
     if (mul_exp == nullptr) {
