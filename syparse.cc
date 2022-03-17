@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <cassert>
 #include "syparse.h"
 
 static inline bool isDigit(char c) {
@@ -452,6 +453,101 @@ AstNodePtr Parser::RelExp() {}
 AstNodePtr Parser::EqExp() {}
 AstNodePtr Parser::LAndExp() {}
 
+// this two helper can adjust MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp 
+// they are all left recursive in the same form
+// this comment inside uses AddExp as example
+static void adjustExpLAst(AstNodePtr node) {
+    // before addjust, node is already an AddExp
+    // but node->b_ is nullptr
+    // after addjust, node->b_ is an '+' or '-',
+    // and node->c_ is an AddExp, and node->c_->b_ is nullptr
+    if (node->c_->ebnf_type_ == SyEbnfType::E) {
+        // replace node to node->a_, then node turns to a MulExp
+        SyEbnfType ebnf_type;
+        // in the switch, node is an AddExp (for example)
+        // this switch get the MulExp (for example)
+        switch (node->ebnf_type_) {
+            case SyEbnfType::MulExp:
+                ebnf_type = SyEbnfType::UnaryExp;
+                break;
+            case SyEbnfType::AddExp:
+                ebnf_type = SyEbnfType::MulExp;
+                break;
+            case SyEbnfType::RelExp:
+                ebnf_type = SyEbnfType::AddExp;
+                break;
+            case SyEbnfType::EqExp:
+                ebnf_type = SyEbnfType::RelExp;
+                break;
+            case SyEbnfType::LAndExp:
+                ebnf_type = SyEbnfType::EqExp;
+                break;
+            case SyEbnfType::LOrExp:
+                ebnf_type = SyEbnfType::LAndExp;
+                break;
+            default:
+                // won't reach here
+                // trigger a bug
+                // just for debugging
+                assert(1==1);
+                break;
+        }
+        node = node->a_;
+        node->ebnf_type_ = ebnf_type;
+        return;
+    }
+    else {
+        auto add_exp_l = node->c_;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        add_exp_l->ebnf_type_ = node->ebnf_type_;
+        adjustExpLAst(add_exp_l);
+    }
+}
+
+// take AddExp ast as an example
+// origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+// ast:        AddExp
+//            /  |  \
+//       AddExp '+' MulExp
+//      /  |  \
+// AddExp '+' MulExp
+
+// rewrite: AddExp -> MulExp AddExpL
+//          AddExpL -> ('+' | '−') MulExp AddExpL | e
+// ast:       AddExp type: AddExp
+//           /      \
+//        MulExp  AddExpL type: END_OF_ENUM
+//               /   |   \
+//              '+' MulExp AddExpL type: END_OF_ENUM
+//                        /   |   \
+//                       '+' MulExp AddExpL type: E 
+
+// adjust:
+// ast:      AddExp
+//          /  |  \
+//     MulExp '+' AddExp(L) type: AddExp
+//               /   |   \
+//           MulExp '+' MulExp type: END_OF_ENUM => MulExp
+//
+// after adjust, all AddExpL is a AddExp
+// @input: root of the ast
+static void adjustExpAst(AstNodePtr node) {
+    // before addjust, node->b_ is an AddExpL
+    // after addjust, node->b_ is an '+' or '-', 
+    // and node->c_ is an AddExp
+    if (node->b_ != nullptr) {
+        auto add_exp_l = node->b_;
+        node->c_ = add_exp_l;
+        node->b_ = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        add_exp_l->ebnf_type_ = node->ebnf_type_;
+        adjustExpLAst(add_exp_l);
+    }
+}
+
 // this parse won't return nullptr (it success all the time)
 AstNodePtr Parser::LOrExpL() {
     LexerIterator iter_back = *token_iter_;
@@ -493,7 +589,8 @@ AstNodePtr Parser::LOrExp() {
     l_or_exp->a_ = l_and_exp;
     l_and_exp->parent_ = l_or_exp;
     if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
-
+        l_or_exp->b_ = l_or_exp_l;
+        l_or_exp_l->parent_ = l_or_exp;
     }
     return l_or_exp;
 }
@@ -713,44 +810,7 @@ AstNodePtr Parser::UnaryOp() {
     return token;
 }
 
-// this two helper can adjust AddExp and MulExp
-// this comment inside uses AddExp as example
-// because the node->ebnf_type_ need to be reseted
-// so an isAddExp is used to distinguish the two cases
-static void adjustAddMulExpLAst(AstNodePtr node, bool isAddExp) {
-    // before addjust, node is already an AddExp
-    // but node->b_ is nullptr
-    // after addjust, node->b_ is an '+' or '-',
-    // and node->c_ is an AddExp, and node->c_->b_ is nullptr
-    if (node->c_->ebnf_type_ == SyEbnfType::E) {
-        // replace node to node->a_, then node turns to a MulExp
-        node = node->a_;
-        node->ebnf_type_ = isAddExp ? SyEbnfType::MulExp : SyEbnfType::UnaryExp;
-        return;
-    }
-    else {
-        auto add_exp_l = node->c_;
-        node->b_ = add_exp_l->a_;
-        add_exp_l->a_ = add_exp_l->b_;
-        add_exp_l->b_ = nullptr;
-        node->ebnf_type_ = isAddExp ? SyEbnfType::AddExp : SyEbnfType::MulExp;
-        adjustAddMulExpLAst(add_exp_l, isAddExp);
-    }
-}
 
-static void adjustAddMulExpAst(AstNodePtr node, bool isAddExp) {
-    // before addjust, node->b_ is an AddExpL
-    // after addjust, node->b_ is an '+' or '-', 
-    // and node->c_ is an AddExp
-    if (node->b_ != nullptr) {
-        auto add_exp_l = node->b_;
-        node->c_ = add_exp_l;
-        node->b_ = add_exp_l->a_;
-        add_exp_l->a_ = add_exp_l->b_;
-        add_exp_l->b_ = nullptr;
-        adjustAddMulExpLAst(add_exp_l, isAddExp);
-    }
-}
 
 // this parse won't return nullptr (it success all the time)
 AstNodePtr Parser::MulExpL() {
@@ -796,7 +856,7 @@ AstNodePtr Parser::MulExp() {
     if (mul_exp_l->ebnf_type_ != SyEbnfType::E) {
         mul_exp->b_ = mul_exp_l;
         mul_exp_l->parent_ = mul_exp;
-        adjustAddMulExpAst(mul_exp, 0);
+        adjustExpAst(mul_exp);
     }
 }
 
@@ -843,7 +903,7 @@ AstNodePtr Parser::AddExp() {
         add_exp->b_ = add_exp_l;
         add_exp_l->parent_ = add_exp;
         // we need to change the AddExpL to AddExp
-        adjustAddMulExpAst(add_exp, 1);
+        adjustExpAst(add_exp);
     }
     return add_exp;
 }
