@@ -72,6 +72,9 @@ enum class SyAstType {
     END_OF_ENUM
 };
 
+// 如果需要修改语法，需要注意：
+// 1. 如果修改了语法，需要修改SyEbnfTypeDebugInfo
+// 2. 需要注意修改语法后，对链表类型的影响，链表类型假设 d_ 不会被使用
 enum class SyEbnfType {
     CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
     Decl, // Decl -> ConstDecl | VarDecl
@@ -124,7 +127,8 @@ struct AstNode {
     TokenPtr prev_token_;
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
-    // parent_ and a_ link up a double linked list
+    // parent_ and b_ link up a double linked list
+    // be careful when using it the d_, make sure the parent it's not in a list
     AstNodePtr parent_, a_, b_, c_, d_;
     AstNode(enum SyAstType ast_type, int line, std::string&& literal):
         ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 

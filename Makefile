@@ -4,18 +4,30 @@ TESTCASES=$(foreach x, $(TESTCASE_DIR), \
 		  $(addprefix ${x}/*,.sy)))
 SRC_DIR=./
 SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
+BIN_DIR=./bin
 
-bin/sycompiler: ${SRC}
-	@echo "making sycompiler..."
-	g++ -ggdb -o $@ $^
+syparser: ${SRC}
+	@echo "making syparser..."
+	g++ -DPARSER -ggdb -o $(BIN_DIR)/$@ $^
 
-test: bin/sycompiler
+sylexer: ${SRC}
+	@echo "making sylexer..."
+	g++ -DLEXER -ggdb -o $(BIN_DIR)/$@ $^
+
+test-parser: syparser
 	@echo "begin lexer test.. testcases: ${TESTCASES}"
 	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
 	echo "----- \033[33mend of src\033[0m -----"; \
-	echo "----- \033[32mtokens\033[0m -----"; bin/sycompiler ${x}; \
+	echo "----- \033[32mtokens\033[0m -----"; $(BIN_DIR)/$^ ${x}; \
+	echo "----- \033[33mend of tokens\033[0m -----";)
+
+test-lexer: sylexer
+	@echo "begin lexer test.. testcases: ${TESTCASES}"
+	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
+	echo "----- \033[33mend of src\033[0m -----"; \
+	echo "----- \033[32mtokens\033[0m -----"; $(BIN_DIR)/$^ ${x}; \
 	echo "----- \033[33mend of tokens\033[0m -----";)
 
 .PHONY:clean
-clean: bin/sycompiler
+clean: bin/*
 	$(shell rm $^)

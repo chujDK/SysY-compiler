@@ -23,8 +23,6 @@ void astWalkThrough(AstNodePtr node, int level) {
     return;
 }
 
-#define PARSER
-
 int main(int argc, char* argv[])
 {
     debugInfoInit();

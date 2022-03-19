@@ -442,6 +442,10 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 // 可能会产生无效引用（由于使用了智能指针，应该不会是悬垂指针，但是仍可能有问题）
 // 2. 有些地方的产生是可选的，所以匹配失败时仍应继续，但是这里很可能会忘记恢复 token 迭代器
 
+// 当前的问题：
+// 1. 链表的 next 指针复用了 a_ 指针，但是这个字段应当指向 ident 等 token。
+// 为了节省空间，改为复用 d_ 指针。
+
 AstNodePtr Parser::Stmt() {
     // origin: Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
     //                 | 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
@@ -649,7 +653,7 @@ AstNodePtr Parser::VarDef() {
             const_exp_start = const_exp;
         }
         else {
-            const_exp_last->a_ = const_exp;
+            const_exp_last->d_ = const_exp;
             const_exp->parent_ = const_exp_last;
             const_exp_last = const_exp;
         }
@@ -697,7 +701,7 @@ AstNodePtr Parser::VarDecl() {
             // TODO: error handling
             return nullptr;
         }
-        var_def_last->a_ = var_def;
+        var_def_last->d_ = var_def;
         var_def->parent_ = var_def_last;
         var_def_last = var_def;
     }
@@ -749,7 +753,7 @@ AstNodePtr Parser::InitVal() {
                 return nullptr;
             }
             // link
-            init_val_last->a_ = init_val;
+            init_val_last->d_ = init_val;
             init_val->parent_ = init_val_last;
             init_val_last = init_val;
         }
@@ -780,7 +784,7 @@ AstNodePtr Parser::Block() {
         }
         else {
             // link
-            block_item_last->a_ = block_item;
+            block_item_last->d_ = block_item;
             block_item->parent_ = block_item_last;
             block_item_last = block_item;
         }
@@ -800,6 +804,7 @@ AstNodePtr Parser::BlockItem() {
         return decl;
     }
     // try Stmt
+    *token_iter_ = iter_back;
     auto stmt = Stmt();
     if (stmt == nullptr) {
         return nullptr;
@@ -1159,7 +1164,7 @@ AstNodePtr Parser::LVal() {
             exp_last = exp;
         }
         else {
-            exp_last->a_ = exp;
+            exp_last->d_ = exp;
             exp->parent_ = exp_last;
             exp_last = exp;
         }
@@ -1200,7 +1205,7 @@ AstNodePtr Parser::ConstInitVal() {
                 return nullptr;
             }
             // link
-            const_init_val_last->a_ = const_init_val_next;
+            const_init_val_last->d_ = const_init_val_next;
             const_init_val_next->parent_ = const_init_val_last;
             const_init_val_last = const_init_val_next;
         }
@@ -1229,7 +1234,7 @@ AstNodePtr Parser::FuncRParams() {
         if (exp == nullptr) {
             return nullptr;
         }
-        exp_last->a_ = exp;
+        exp_last->d_ = exp;
         exp->parent_ = exp_last;
         exp_last = exp;
     }
@@ -1494,7 +1499,7 @@ AstNodePtr Parser::ConstDef() {
         while ((*token_iter_)->ast_type_ == SyAstType::RIGHT_BRACKET) {
             ++(*token_iter_);
             auto const_exp = ConstExp();
-            const_exp_last->a_ = const_exp;
+            const_exp_last->d_ = const_exp;
             const_exp->parent_ = const_exp_last;
             const_exp_last = const_exp;
         }
@@ -1546,7 +1551,7 @@ AstNodePtr Parser::ConstDecl() {
             // TODO: error handling
             return nullptr;
         }
-        const_def_last->a_ = var_def;
+        const_def_last->d_ = var_def;
         var_def->parent_ = const_def_last;
         const_def_last = var_def;
     }
@@ -1650,7 +1655,7 @@ AstNodePtr Parser::FuncFParams() {
             return nullptr;
         }
         // link when suceess
-        func_f_param_last->a_ = func_f_param;
+        func_f_param_last->d_ = func_f_param;
         func_f_param->parent_ = func_f_param_last;
         func_f_param_last = func_f_param;
     }
