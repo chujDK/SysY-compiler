@@ -432,6 +432,7 @@ TokenPtr Lexer::getPrevToken(TokenPtr token) {
 }
 
 // start the parser code
+// 简单的递归下降法 parser
 // 基本原则：
 // 1. 每个生成函数在匹配失败时不考虑返回时迭代器的正确性，此时由调用函数来保证迭代器的正确性
 // 2. 每个生成函数在匹配成功时，返回时的迭代器应当指向下一个要匹配的 token
@@ -884,8 +885,8 @@ static void adjustExpLAst(AstNodePtr node) {
                 assert(1!=1);
                 break;
         }
-        node = node->a_;
-        node->ebnf_type_ = ebnf_type;
+        node->parent_->c_ = node->a_;
+        node->parent_->c_->ebnf_type_ = ebnf_type;
         return;
     }
     else {
