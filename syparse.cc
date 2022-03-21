@@ -3,6 +3,9 @@
 #include <cassert>
 #include "syparse.h"
 
+static void adjustExpLAst(AstNodePtr node);
+static void adjustExpAst(AstNodePtr node);
+
 static inline bool isDigit(char c) {
     return c >= '0' && c <= '9';
 }
@@ -506,6 +509,7 @@ AstNodePtr Parser::Stmt() {
                 // TODO error handle
                 return nullptr;
             }
+            ++(*token_iter_);
             cond = Cond();
             if (cond == nullptr) {
                 // TODO error handle
@@ -580,26 +584,28 @@ AstNodePtr Parser::Stmt() {
     iter_back = *token_iter_;
     auto l_val = LVal();
     if (l_val != nullptr) {
-        if ((*token_iter_)->ast_type_ != SyAstType::EQ) {
-            return nullptr;
+        if ((*token_iter_)->ast_type_ == SyAstType::ASSIGN) {
+            ++(*token_iter_);
+            exp = Exp();
+            if (exp == nullptr) {
+                return nullptr;
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+                // TODO error handle
+                return nullptr;
+            }
+            ++(*token_iter_);
+            stmt->a_ = l_val;
+            l_val->parent_ = stmt;
+            stmt->b_ = exp;
+            exp->parent_ = stmt;
+            return stmt;
         }
-        exp = Exp();
-        if (exp == nullptr) {
-            return nullptr;
-        }
-        if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-            // TODO error handle
-            return nullptr;
-        }
-        ++(*token_iter_);
-        stmt->a_ = l_val;
-        l_val->parent_ = stmt;
-        stmt->b_ = exp;
-        exp->parent_ = stmt;
-        return stmt;
     }
-    // rewrite [exp] ';' => Exp ';' | ';'
+    // then try [Exp] ';'
+    // rewrite [Exp] ';' => Exp ';' | ';'
     // first we try ';'
+    *token_iter_ = iter_back;
     if ((*token_iter_)->ast_type_ == SyAstType::SEMICOLON) {
         ++(*token_iter_);
         // for simplicity, we just return a null stmt
@@ -620,6 +626,7 @@ AstNodePtr Parser::Stmt() {
         return stmt;
     }
     // try Block
+    *token_iter_ = iter_back;
     auto block = Block();
     if (block == nullptr) {
         return nullptr;
@@ -874,7 +881,7 @@ static void adjustExpLAst(AstNodePtr node) {
                 // won't reach here
                 // trigger a bug
                 // just for debugging
-                assert(1==1);
+                assert(1!=1);
                 break;
         }
         node = node->a_;
@@ -1275,7 +1282,7 @@ AstNodePtr Parser::PrimaryExp() {
             // this time really failed
             return nullptr;
         }
-        token_iter_++;
+        ++(*token_iter_);
         primary_exp->a_ = exp;
         exp->parent_ = primary_exp;
         return exp;
@@ -1284,57 +1291,63 @@ AstNodePtr Parser::PrimaryExp() {
 
 AstNodePtr Parser::UnaryExp() {
     // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+    // first, try UnaryOp UnaryExp
+    // second, try Ident '(' [FuncRParams] ')'
+    // third, try PrimaryExp
     auto unary_exp = std::make_shared<AstNode>(SyEbnfType::UnaryExp, (*token_iter_)->line_);
     LexerIterator iter_back = *token_iter_;
-    auto primary_exp = PrimaryExp();
-    if (primary_exp == nullptr) {
-        // try the UnaryExp -> UnaryOp UnaryExp
-        *token_iter_ = iter_back;
-        auto unary_op = UnaryOp();
-        if (unary_op == nullptr) {
-            // try the UnaryExp -> Ident '(' [FuncRParams] ')'
-            *token_iter_ = iter_back;
-            auto ident = Ident();
-            if (ident == nullptr) {
-                return nullptr;
-            }
-            if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
-                // all three failed
-                return nullptr;
-            }
+
+    // try UnaryOp UnaryExp
+    auto unary_op = UnaryOp();
+    if (unary_op != nullptr) {
+        auto unary_exp_new = UnaryExp();
+        if (unary_exp_new != nullptr) {
+            unary_exp->a_ = unary_op;
+            unary_op->parent_ = unary_exp;
+            unary_exp->b_ = unary_exp_new;
+            unary_exp_new->parent_ = unary_exp;
+            return unary_exp;
+        }
+    }
+    // try Ident '(' [FuncRParams] ')'
+    *token_iter_ = iter_back;
+    auto ident = Ident();
+    if (ident != nullptr) {
+        if ((*token_iter_)->ast_type_ == SyAstType::LEFT_PARENTHESE) {
             ++(*token_iter_);
+            LexerIterator iter_back_for_func_r_params = *token_iter_;
             auto func_r_params = FuncRParams();
             if (func_r_params == nullptr) {
-                // all three failed
-                return nullptr;
+                // it's ok the have null func_r_params
+                // just reset the token_iter
+                *token_iter_ = iter_back_for_func_r_params;
             }
             if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
-                // all three failed
+                // this time really failed
+                // this should be a syntax error
+                // TODO: error handling
                 return nullptr;
             }
             ++(*token_iter_);
             unary_exp->a_ = ident;
             ident->parent_ = unary_exp;
-            unary_exp->b_ = func_r_params;
-            func_r_params->parent_ = unary_exp;
+            if (func_r_params != nullptr) {
+                unary_exp->b_ = func_r_params;
+                func_r_params->parent_ = unary_exp;
+            }
             return unary_exp;
         }
-        auto unary_exp_new = UnaryExp();
-        if (unary_exp_new == nullptr) {
-            return nullptr;
-        }
-        unary_exp->a_ = unary_op;
-        unary_op->parent_ = unary_exp;
-        unary_exp->b_ = unary_exp_new;
-        unary_exp_new->parent_ = unary_exp;
-        return unary_exp;
     }
-    else {
-        // UnaryExp -> PrimaryExp
-        unary_exp->a_ = primary_exp;
-        primary_exp->parent_ = unary_exp;
-        return unary_exp;
+    // try PrimaryExp
+    *token_iter_ = iter_back;
+    auto primary_exp = PrimaryExp();
+    if (primary_exp == nullptr) {
+        // TODO: error handling
+        return nullptr;
     }
+    unary_exp->a_ = primary_exp;
+    primary_exp->parent_ = unary_exp;
+    return unary_exp;
 }
 
 AstNodePtr Parser::UnaryOp() {
