@@ -1,6 +1,6 @@
 //#include <stdio.h>
 
-void err_func () {
+void err_stmt () {
     int a;
     if (a == 1 {
         a = 0;
@@ -25,6 +25,27 @@ void err_func () {
     return
     return -1
     1 + 1 * 2
+}
+
+void err_var_def () {
+    int a = , b = , c, d = ;
+    int e[], f[a, g;
+}
+
+void err_var_decl () {
+    int a, , , d;
+    /* int e, f, , g // this is not recoverable */
+    int a,;
+}
+
+void err_init_val () {
+    int a1[0x10] = {};
+    int a2[0x10] = {1, ,};
+    int a3[0x10] = {1, , 2};
+    int a4[0x10] = {1, , 2;
+    int a5[0x10] = {, , 2};
+    /* int a5[0x10] = {, , 2; // this is not recoverable */
+    /* int a6[0x10] = , , ; // this won't de parsed as an initial list */
 }
 
 const int i_c; // error: conflicting type qualifiers for ‘a’

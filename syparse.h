@@ -199,9 +199,9 @@ private:
     AstNodePtr ConstDecl();
     AstNodePtr ConstDef();
     AstNodePtr ConstInitVal();
-    AstNodePtr VarDecl();
-    AstNodePtr VarDef();
-    AstNodePtr InitVal();
+    AstNodePtr VarDecl(); // error handling: DONE
+    AstNodePtr VarDef(); // error handling: DONE 
+    AstNodePtr InitVal(); // error handling: DONE
     AstNodePtr FuncFParams();
     AstNodePtr FuncFParam();
     AstNodePtr Block();

@@ -3,6 +3,9 @@ int i;
 int i0 = 0200;
 const int i_c = 0x100;
 
+int arr[0x200] = {};
+int arr1[0x200] = {1, 2, 3, 4};
+
 int main()
 {
     printf(i1);
