@@ -5,7 +5,6 @@ const int i_c = 0x100;
 
 int main()
 {
-//    printf("Hello world\n");
     printf(i1);
     while (1) {
         i = i + 1;
@@ -14,6 +13,9 @@ int main()
         i = i * i1 + i * i2 + i / i_c;
         break;
         continue;
+    }
+    if (i1 == 2) {
+        i1 = 3;
     }
     return 0;
 }

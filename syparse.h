@@ -149,6 +149,7 @@ private:
     TokenPtr current_token_;
 
     void lexError(std::string msg);
+    void lexWarning(std::string msg);
     std::string getString();
     std::string getNumber();
     TokenPtr getIdent();
@@ -205,7 +206,7 @@ private:
     AstNodePtr FuncFParam();
     AstNodePtr Block();
     AstNodePtr BlockItem();
-    AstNodePtr Stmt();
+    AstNodePtr Stmt(); // error handling: DONE
     AstNodePtr Exp();
     AstNodePtr Cond();
     AstNodePtr LVal();

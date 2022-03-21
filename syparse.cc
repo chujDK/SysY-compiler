@@ -28,21 +28,27 @@ static inline bool isEndForIdentAndNumber(char c) {
         || c == '=' || c == '!' || c == '*' || c == '+'
         || c == '-' || c == '/' || c == '%' || c == '('
         || c == ')' || c == '[' || c == ']' || c == '{'
-        || c == '}' || c == '\t';
+        || c == '}' || c == '\t' || c == '\n';
 }
 
 void Lexer::lexError(std::string msg) {
-    fprintf(stderr, "\033[31mError in lexing\033[0m: line %d: %s\n", line_, msg.c_str());
+    fprintf(stderr, "\033[1m\033[31mError in lexing\033[0m: line \033[1m%d\033[0m: %s\n", line_, msg.c_str());
     error_occured_ = 1;
 }
 
+void Lexer::lexWarning(std::string msg) {
+    fprintf(stderr, "\033[1m\033[33mWarning in lexing\033[0m: line \033[1m%d\033[0m: %s\n", line_, msg.c_str());
+}
+
 void Parser::parseError(std::string msg, int line) {
-    fprintf(stderr, "\033[31mError in parser\033[0m: line %d: %s\n", line, msg.c_str());
+    fprintf(stderr, "\033[1m\033[31mError in parser\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
     error_occured_ = 1;
 }
 
 std::string Lexer::getString() {
     std::string str;
+    lexWarning("string is no supported yet, complier will stop after scaning");
+    error_occured_ = 1;
     while (true) {
         char c = input_stream_->getChar();
         if (c == '"') {
@@ -462,6 +468,7 @@ AstNodePtr Parser::Stmt() {
     AstNodePtr stmt_else = nullptr;
     AstNodePtr exp = nullptr;
     LexerIterator iter_back = *token_iter_;
+    LexerIterator iter_back_tmp = *token_iter_;
     switch ((*token_iter_)->ast_type_) {
         case SyAstType::STM_IF:
         // 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
@@ -469,28 +476,58 @@ AstNodePtr Parser::Stmt() {
             (*token_iter_)->parent_ = stmt;
             ++(*token_iter_);
             if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
-                // TODO error handle
-                return nullptr;
-            }
-            cond = Cond();
-            if (cond == nullptr) {
-                // TODO error handle
-                return nullptr;
-            }
-            if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
-                // TODO error handle
-                return nullptr;
+                // here is status like
+                // ```
+                // if !a) {
+                //     ...
+                // }
+                // ```
+                // so we just ignore the missing '(' and report a error
+                parseError(std::string("expected \'\033[1m(\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                --(*token_iter_);
             }
             ++(*token_iter_);
-            stmt = Stmt();
-            if (stmt == nullptr) {
-                // TODO error handle
+            iter_back_tmp = *token_iter_;
+            cond = Cond();
+            if (cond == nullptr) {
+                // here we want to get a Cond expression, but we get nothing
+                // we just jump to the next ')', and report a error
+                parseError(std::string("expected a condition expression after \'\033[1m(\033[0m\'"), stmt->line_);
+                *token_iter_ = iter_back_tmp;
+                while ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                    if ((*token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+                        // there we giveup
+                        return nullptr;
+                    }
+                    ++(*token_iter_);
+                }
+                cond = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            }
+            if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                // here is status like
+                // ```
+                // if (!a {
+                //     ...
+                // }
+                // ```
+                // so we just ignore the missing ')' and report a error
+                parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                --(*token_iter_);
+            }
+            ++(*token_iter_);
+            stmt_nest = Stmt();
+            if (stmt_nest == nullptr) {
+                // here is really tricky, it's hard to tell whether the error is
+                // so we just return nullptr and maybe giveup this CompUnit
                 return nullptr;
             }
             if ((*token_iter_)->ast_type_ == SyAstType::STM_ELSE) {
                 stmt_else = Stmt();
                 if (stmt_else == nullptr) {
-                    // TODO error handle
+                    // here is really tricky, it's hard to tell whether the error is
+                    // so we just return nullptr and maybe giveup this CompUnit
                     return nullptr;
                 }
             }
@@ -498,32 +535,46 @@ AstNodePtr Parser::Stmt() {
             cond->parent_ = stmt;
             stmt->c_ = stmt_nest;
             stmt_nest->parent_ = stmt;
-            stmt->d_ = stmt_else;
-            stmt_else->parent_ = stmt;
+            if (stmt_else != nullptr) {
+                stmt->d_ = stmt_else;
+                stmt_else->parent_ = stmt;
+            }
             return stmt;
         case SyAstType::STM_WHILE:
         // 'while' '(' Cond ')' Stmt
+        // error handling is almost same as 'if'
             stmt->a_ = *(*token_iter_);
             (*token_iter_)->parent_ = stmt;
             ++(*token_iter_);
             if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
-                // TODO error handle
-                return nullptr;
+                parseError(std::string("expected \'\033[1m(\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                --(*token_iter_);
             }
             ++(*token_iter_);
             cond = Cond();
             if (cond == nullptr) {
-                // TODO error handle
-                return nullptr;
+                parseError(std::string("expected a condition expression after \'\033[1m(\033[0m\'"), stmt->line_);
+                *token_iter_ = iter_back_tmp;
+                while ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+                    if ((*token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+                        // there we giveup
+                        return nullptr;
+                    }
+                    ++(*token_iter_);
+                }
+                cond = std::make_shared<AstNode>(SyEbnfType::E, 0);
             }
             if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
-                // TODO error handle
-                return nullptr;
+                parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                --(*token_iter_);
             }
             ++(*token_iter_);
             stmt_nest = Stmt();
             if (stmt_nest == nullptr) {
-                // TODO error handle
+                // here is really tricky, it's hard to tell whether the error is
+                // so we just return nullptr and maybe giveup this CompUnit
                 return nullptr;
             }
             stmt->b_ = cond;
@@ -537,8 +588,10 @@ AstNodePtr Parser::Stmt() {
             (*token_iter_)->parent_ = stmt;
             ++(*token_iter_);
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-                // TODO error handle
-                return nullptr;
+                // ignore the missing ';' and report a error
+                parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 --(*token_iter_);
             }
             ++(*token_iter_);
             return stmt;
@@ -548,8 +601,10 @@ AstNodePtr Parser::Stmt() {
             (*token_iter_)->parent_ = stmt;
             ++(*token_iter_);
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-                // TODO error handle
-                return nullptr;
+                // ignore the missing ';' and report a error
+                parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 --(*token_iter_);
             }
             ++(*token_iter_);
             return stmt;
@@ -565,6 +620,9 @@ AstNodePtr Parser::Stmt() {
                 // typing phase will check if it is valid
                 // just reset the iterator
                 *token_iter_ = iter_back;
+                parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
+                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 --(*token_iter_);
             }
             else {
                 // link
@@ -572,8 +630,7 @@ AstNodePtr Parser::Stmt() {
                 exp->parent_ = stmt;
             }
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-                // TODO error handle
-                return nullptr;
+                // ignore the missing ';' and report a error
             }
             ++(*token_iter_);
             return stmt;
@@ -618,8 +675,10 @@ AstNodePtr Parser::Stmt() {
     exp = Exp();
     if (exp != nullptr) {
         if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-            // TODO error handle
-            return nullptr;
+            // ignore the missing ';' and report a error
+            parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
+             + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+             --(*token_iter_);
         }
         ++(*token_iter_);
         stmt->a_ = exp;
@@ -630,6 +689,7 @@ AstNodePtr Parser::Stmt() {
     *token_iter_ = iter_back;
     auto block = Block();
     if (block == nullptr) {
+        // here we giveup
         return nullptr;
     }
     stmt->a_ = block;
@@ -806,9 +866,12 @@ AstNodePtr Parser::Block() {
 AstNodePtr Parser::BlockItem() {
     // origin: BlockItem -> Decl | Stmt
     LexerIterator iter_back = *token_iter_;
+    auto block_item = std::make_shared<AstNode>(SyEbnfType::BlockItem, (*token_iter_)->line_);
     // try Decl
     auto decl = Decl();
     if (decl != nullptr) {
+        block_item->a_ = decl;
+        decl->parent_ = block_item;
         return decl;
     }
     // try Stmt
@@ -817,6 +880,8 @@ AstNodePtr Parser::BlockItem() {
     if (stmt == nullptr) {
         return nullptr;
     }
+    block_item->a_ = stmt;
+    stmt->parent_ = block_item;
     return stmt;
 }
 

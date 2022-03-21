@@ -1,9 +1,37 @@
-#include <stdio.h>
+//#include <stdio.h>
+
+void err_func () {
+    int a;
+    if (a == 1 {
+        a = 0;
+    }
+    if a == 1) {
+        a = 1;
+    }
+    if () {
+        a = 2;
+    }
+    while (a == 3 {
+        a = 3;
+    }
+    while a == 4) {
+        a = 4;
+    }
+    while () {
+        a = 5;
+    }
+    break
+    continue
+    return
+    return -1
+    1 + 1 * 2
+}
 
 const int i_c; // error: conflicting type qualifiers for ‘a’
 
 int main()
 {
+// sadly, SysY doesn't support string
     printf("Hello world\n\b");
     return 0;
 }

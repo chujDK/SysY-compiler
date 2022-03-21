@@ -25,6 +25,7 @@ void astWalkThrough(AstNodePtr node, int level) {
             std::cout << "\033[1m\033[34m" << SyAstTypeDebugInfo[(int) node->ast_type_] << "\033[0m \"\033[32m" << node->literal_ << "\033[0m\"";
         }
     }
+    #ifdef AST_WALK_SHOW_CHILDERN
     if (node->a_ != nullptr) {
         std::cout << "\033[35m\ta\033[0m";
     }
@@ -37,6 +38,7 @@ void astWalkThrough(AstNodePtr node, int level) {
     if (node->d_ != nullptr) {
         std::cout << "\033[35m\td\033[0m";
     }
+    #endif
     std::cout << std::endl;
     astWalkThrough(node->a_, level + 1);
     astWalkThrough(node->b_, level + 1);
