@@ -189,51 +189,52 @@ private:
     Lexer* lexer_;
     LexerIterator* token_iter_;
     bool error_occured_;
+    bool end_parse_;
 
     void parseError(std::string msg, int line);
-    AstNodePtr BType();
-    AstNodePtr CompUnit();
-    AstNodePtr Decl();
-    AstNodePtr FuncDef();
-    AstNodePtr FuncType();
-    AstNodePtr ConstDecl();
-    AstNodePtr ConstDef();
-    AstNodePtr ConstInitVal();
+    AstNodePtr BType(); // no error handling
+    AstNodePtr CompUnit(); // no error handling
+    AstNodePtr Decl(); // no error handling
+    AstNodePtr FuncDef(); // error handling: DONE
+    AstNodePtr FuncType(); // no error handling
+    AstNodePtr ConstDecl(); // error handling: DONE
+    AstNodePtr ConstDef(); // error handling: DONE
+    AstNodePtr ConstInitVal(); // error handling: DONE
     AstNodePtr VarDecl(); // error handling: DONE
     AstNodePtr VarDef(); // error handling: DONE 
     AstNodePtr InitVal(); // error handling: DONE
-    AstNodePtr FuncFParams();
-    AstNodePtr FuncFParam();
-    AstNodePtr Block();
-    AstNodePtr BlockItem();
+    AstNodePtr FuncFParams(); // error handling: DONE
+    AstNodePtr FuncFParam(); // no error handling
+    AstNodePtr Block(); // error handling: DONE
+    AstNodePtr BlockItem(); // error handling: DONE
     AstNodePtr Stmt(); // error handling: DONE
-    AstNodePtr Exp();
-    AstNodePtr Cond();
-    AstNodePtr LVal();
-    AstNodePtr PrimaryExp();
-    AstNodePtr Number();
-    AstNodePtr UnaryExp();
-    AstNodePtr UnaryOp();
-    AstNodePtr FuncRParams();
-    AstNodePtr MulExp();
-    // function with the L suffix means left recursion elimination
-    AstNodePtr MulExpL();
-    AstNodePtr AddExp();
-    AstNodePtr AddExpL();
-    AstNodePtr RelExp();
-    AstNodePtr RelExpL();
-    AstNodePtr EqExp();
-    AstNodePtr EqExpL();
-    AstNodePtr LAndExp();
-    AstNodePtr LAndExpL();
-    AstNodePtr LOrExp();
-    AstNodePtr LOrExpL();
-    AstNodePtr ConstExp();
-    AstNodePtr Ident();
+    AstNodePtr Exp(); // no error handling
+    AstNodePtr Cond(); // no errror handling
+    AstNodePtr LVal(); // no error handling TODO: check if it really needn't error handling
+    AstNodePtr PrimaryExp(); // no error handling
+    AstNodePtr Number(); // no error handling
+    AstNodePtr UnaryExp(); // no error handling
+    AstNodePtr UnaryOp(); // no error handling
+    AstNodePtr FuncRParams(); // error handling: DONE
+    // following function with the L suffix means left recursion elimination
+    AstNodePtr MulExp(); // no error handling
+    AstNodePtr MulExpL(); // won't error
+    AstNodePtr AddExp(); // no error handling
+    AstNodePtr AddExpL(); // won't error
+    AstNodePtr RelExp(); // no error handling
+    AstNodePtr RelExpL(); // won't error
+    AstNodePtr EqExp(); // no error handling
+    AstNodePtr EqExpL(); // won't error
+    AstNodePtr LAndExp(); // no error handling
+    AstNodePtr LAndExpL(); // won't error
+    AstNodePtr LOrExp(); // no error handling
+    AstNodePtr LOrExpL(); // won't error
+    AstNodePtr ConstExp(); // no error handling
+    AstNodePtr Ident(); // no error handling
 
 public:
     AstNodePtr parse();
-    Parser(InputStream* InputStream): error_occured_(false) {
+    Parser(InputStream* InputStream): error_occured_(false), end_parse_(false) {
         lexer_ = new Lexer(InputStream);
         token_iter_ = new LexerIterator(lexer_->getNextToken(), lexer_);
     }

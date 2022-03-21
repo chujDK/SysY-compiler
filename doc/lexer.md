@@ -9,9 +9,9 @@
 项目提供了 Makefile。
 
 ```
-make sycompiler # 构建 lexer
-make test # 使用 lexer 执行所有的 testcases （在 /test/testcase 目录下）
-make clean # 删除构建出的 lexer
+make sylexer # 构建 lexer
+make test-lexer # 使用 lexer 执行所有的 testcases （在 /test/testcase 目录下的 *.sy）
+make clean # 删除构建出的文件
 ```
 
 ### 程序亮点

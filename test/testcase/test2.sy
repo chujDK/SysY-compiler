@@ -1,12 +1,60 @@
+void stmt () {
+    int a;
+    if (a == 1) {
+        a = 0;
+    }
+    while (a == 3) {
+        a = 3;
+    }
+    break;
+    continue;
+    return;
+    return -1;
+    1 + 1 * 2;
+}
+
+const int arr_c = 0x100;
+void var_def () {
+    int a = 0, b = 1, c, d = 2;
+    int e[10], f[020], g[0x10], h[arr_c];
+}
+
+void var_decl () {
+    int a, b, c, d;
+}
+
+void init_val () {
+    int a1[0x10] = {};
+    int a2[0x10] = {1, 2, 3};
+}
+
+void const_init_val () {
+    const int a1[0x10] = {};
+    const int a2[0x10] = {1, 2, 3};
+}
+
+void func_def (int a, int b, int c) {
+    int a;
+}
+
+void unary_exp () {
+    int a;
+    init_val1();
+    init_val2(a,a,b,b,c);
+}
+
+const int i_c = 1;
+const int i_c_2 = 2, i_c_3 = 3, i_c_4 = 0x200;
+const int i_c_5 = 0x200;
+
 int i1, i2 = 0x300, i3 = 0200;
 int i;
 int i0 = 0200;
-const int i_c = 0x100;
 
 int arr[0x200] = {};
 int arr1[0x200] = {1, 2, 3, 4};
 
-int main()
+int main(int argc, int argv)
 {
     printf(i1);
     while (1) {

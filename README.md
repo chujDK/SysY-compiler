@@ -2,6 +2,6 @@
 
 ### TODO
 - [x] lexer
-- [ ] parser
+- [x] parser
 - [ ] interpreter
 - [ ] jit compiler

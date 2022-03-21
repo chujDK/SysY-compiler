@@ -44,11 +44,37 @@ void err_init_val () {
     int a3[0x10] = {1, , 2};
     int a4[0x10] = {1, , 2;
     int a5[0x10] = {, , 2};
+    int a6[] = {};
     /* int a5[0x10] = {, , 2; // this is not recoverable */
     /* int a6[0x10] = , , ; // this won't de parsed as an initial list */
 }
 
+void const_err_init_val () {
+    const int a1[0x10] = {};
+    const int a2[0x10] = {1, ,};
+    const int a3[0x10] = {1, , 2};
+    const int a4[0x10] = {1, , 2;
+    const int a5[0x10] = {, , 2};
+    const int a6[] = {};
+    /* int a5[0x10] = {, , 2; // this is not recoverable */
+    /* int a6[0x10] = , , ; // this won't de parsed as an initial list */
+}
+
+void err_func_def (int a,, {
+    int a;
+}
+
+void err_unary_exp () {
+    int a;
+    err_init_val1();
+    err_init_val2(a,,b,,c);
+}
+
 const int i_c; // error: conflicting type qualifiers for ‘a’
+const int i_c_1 = ;
+const int i_c_2 = , i_c_3, i_c_4 = 0x200
+const int i_c_5 = 0x200
+/* ConstDecl like `const int i = ` is not recoverable */
 
 int main()
 {
