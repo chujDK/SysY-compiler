@@ -130,9 +130,13 @@ struct AstNode {
     enum SyEbnfType ebnf_type_;
     unsigned int line_;
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
-    // luckily, the array_size_ and the line_ are both 4 bytes, so it's no a waste of space
     // this also means that this complier can only support array size up to 2^32-1
-    unsigned int array_size_; 
+    // only to the EBnfType::ConstDef, array_size_ can be used
+    // it's tempting to move the line_ into this union, but giveup
+    union {
+        unsigned int array_size_;
+        unsigned int const_val_;
+    } u;
     std::string literal_;
     TokenPtr next_token_;
     TokenPtr prev_token_;

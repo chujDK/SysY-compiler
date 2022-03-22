@@ -25,7 +25,7 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
         mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int)));
         return mem;
     case SyEbnfType::TYPE_INT_ARRAY:
-        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int) * ident->array_size_));
+        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int) * ident->u.array_size_));
         return mem;
     default:
         // shouldn't reach here
@@ -35,24 +35,31 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
     }
 }
 
-void SymbolTable::addSymbol(TokenPtr ident) {
+inline void SymbolTable::addSymbol(TokenPtr ident) {
     // if this ident isn't exist in the current scope, delete won't hurt
     deleteSymbol(ident);
     IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
     symbol_table_[current_scope_][ident->literal_] = mem;
 }
 
+inline void SymbolTable::addGlobalSymbol(TokenPtr ident) {
+    // if this ident isn't exist in the current scope, delete won't hurt
+    symbol_table_[0].erase(ident->literal_);
+    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
+    symbol_table_[0][ident->literal_] = mem;
+}
+
 // note that this function can still work when ident isn't exist in the current scope
-void SymbolTable::deleteSymbol(TokenPtr ident) {
+inline void SymbolTable::deleteSymbol(TokenPtr ident) {
     symbol_table_[current_scope_].erase(ident->literal_);
 }
 
-void SymbolTable::enterScope() {
+inline void SymbolTable::enterScope() {
     symbol_table_.push_back(std::map<std::string, IdentMemoryPtr>());
     current_scope_++;
 }
 
-void SymbolTable::exitScope() {
+inline void SymbolTable::exitScope() {
     symbol_table_.pop_back();
     current_scope_--;
 }
