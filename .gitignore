@@ -32,5 +32,11 @@
 *.app
 .gdb_history
 
+# validate-commit-msg
+node_modules/*
+package-lock.json
+package.json
+.vcmrc
+
 bin/*
 .vscode/*
