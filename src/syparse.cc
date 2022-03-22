@@ -2010,14 +2010,19 @@ AstNodePtr Parser::CompUnit() {
     // origin: CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
     // changed: CompUnit -> Decl | FuncDef
     LexerIterator iter_back = *token_iter_;
+    auto comp_unit = std::make_shared<AstNode>(SyEbnfType::CompUnit, (*token_iter_)->line_);
     auto decl = Decl();
     if (decl != nullptr) {
-        return decl;
+        comp_unit->a_ = decl;
+        decl->parent_ = comp_unit;
+        return comp_unit;
     }
     *token_iter_ = iter_back;
     auto func_def = FuncDef();
     if (func_def != nullptr) {
-        return func_def;
+        comp_unit->a_ = func_def;
+        func_def->parent_ = comp_unit;
+        return comp_unit;
     }
     return nullptr;
 }
