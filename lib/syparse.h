@@ -2,7 +2,6 @@
 #define _SYPARSE_H_
 #include <memory>
 #include "utils.h"
-#include "sy.h"
 
 class InputStream {
 public:
@@ -72,6 +71,7 @@ enum class SyAstType {
     END_OF_ENUM
 };
 
+// SyEbnfType 同样存储类型信息 ( 虽然只有 int, int[] 和 void :( )
 // 如果需要修改语法，需要注意：
 // 1. 如果修改了语法，需要修改SyEbnfTypeDebugInfo
 // 2. 需要注意修改语法后，对链表类型的影响，链表类型假设 d_ 不会被使用
@@ -112,6 +112,11 @@ enum class SyEbnfType {
     LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
     ConstExp, // ConstExp -> AddExp
     E, // epsilon
+
+    // typing
+    TYPE_INT, // 'int'
+    TYPE_VOID, // 'void'
+    TYPE_INT_ARRAY, // 'int[]'
     END_OF_ENUM
 };
 
@@ -121,7 +126,11 @@ using AstNodePtr = std::shared_ptr<AstNode>;
 struct AstNode {
     enum SyAstType ast_type_;
     enum SyEbnfType ebnf_type_;
-    int line_;
+    unsigned int line_;
+    // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
+    // luckily, the array_size_ and the line_ are both 4 bytes, so it's no a waste of space
+    // this also means that this complier can only support array size up to 2^32-1
+    unsigned int array_size_; 
     std::string literal_;
     TokenPtr next_token_;
     TokenPtr prev_token_;
@@ -155,7 +164,6 @@ private:
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
 
-
 public:
 
     TokenPtr getNextToken();
@@ -184,9 +192,14 @@ public:
     bool operator!=(const LexerIterator& other) { return current_token_ != other.current_token_; }
 };
 
-class Parser {
+class ParserAPI {
+public:
+    virtual AstNodePtr parse() = 0;
+    virtual ~ParserAPI() {}
+};
+
+class Parser : ParserAPI {
 private:
-    Lexer* lexer_;
     LexerIterator* token_iter_;
     bool error_occured_;
     bool end_parse_;
@@ -235,10 +248,11 @@ private:
 public:
     AstNodePtr parse();
     Parser(InputStream* InputStream): error_occured_(false), end_parse_(false) {
-        lexer_ = new Lexer(InputStream);
-        token_iter_ = new LexerIterator(lexer_->getNextToken(), lexer_);
+        auto lexer = new Lexer(InputStream);
+        token_iter_ = new LexerIterator(lexer->getNextToken(), lexer);
     }
-    ~Parser() {delete lexer_; delete token_iter_;}
+    ~Parser() {delete token_iter_;}
 };
+
 
 #endif

@@ -72,6 +72,9 @@ int main(int argc, char* argv[])
         }
     }
     #endif
+    #ifdef INTERPRETER
+    // this is the code for interpreter
+    #endif
     
     return 0;
 }
