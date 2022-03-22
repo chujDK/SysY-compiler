@@ -47,6 +47,7 @@ void astWalkThrough(AstNodePtr node, int level) {
     return;
 }
 
+#ifndef UNIT_TEST
 int main(int argc, char* argv[])
 {
     debugInfoInit();
@@ -78,3 +79,4 @@ int main(int argc, char* argv[])
     
     return 0;
 }
+#endif

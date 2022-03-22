@@ -8,7 +8,7 @@ extern const char* SyEbnfTypeDebugInfo[(int) SyEbnfType::END_OF_ENUM];
 // this class is mainly for test
 class CharStream : public InputStream {
 private:
-    char* buf;
+    const char* buf;
     int buf_size;
     int buf_pos;
 public:
@@ -19,7 +19,7 @@ public:
     void ungetChar(); // unget the current char
     std::string getLine(); // get the current line
 
-    CharStream(char* buf, int buf_size): buf(buf), buf_size(buf_size), buf_pos(0) {}
+    CharStream(const char* buf, int buf_size): buf(buf), buf_size(buf_size), buf_pos(0) {}
     ~CharStream() {}
 };
 

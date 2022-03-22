@@ -1,3 +1,4 @@
+TESTFILE_DIR=./test/testfile
 TESTCASE_DIR=./test/testcase
 TESTCASES=$(foreach x, $(TESTCASE_DIR), \
           $(wildcard \
@@ -30,6 +31,18 @@ test-lexer: sylexer
 	echo "----- \033[33mend of src\033[0m -----"; \
 	echo "----- \033[32mtokens\033[0m -----"; $(BIN_DIR)/$^ ${x}; \
 	echo "----- \033[33mend of tokens\033[0m -----";)
+
+.ONESHELL:
+.PHONY:AstNodeIterator_test
+AstNodeIterator_test: ${SRC} ${TESTFILE_DIR}/AstNodeIterator_test.cc
+	g++ -I $(LIB_DIR) -DUNIT_TEST -ggdb -o $(BIN_DIR)/$@ $^
+	$(BIN_DIR)/$@ > /tmp/_$@_output
+	diff /tmp/_$@_output ${TESTFILE_DIR}/$@_output_expect
+	if [ $$? -eq 0 ]; then
+		echo "\033[1;32m[+]\033\0[m $@ \033[1;32msuccess!\033[0m"
+	else
+		echo "\033[1;31m[-]\033\0[m $@ \033[1;31mfailed!\033[0m"
+	fi
 
 .PHONY:clean
 clean: bin/*
