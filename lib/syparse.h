@@ -148,12 +148,12 @@ struct AstNode {
     AstNode(enum SyAstType ast_type, int line, std::string&& literal):
         ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
         next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
-        c_(nullptr), d_(nullptr) {}
+        c_(nullptr), d_(nullptr) { u.const_val_ = 0xFFFFFFFF; }
 
     AstNode(enum SyEbnfType ebnf_type, int line):
         ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(std::string()), 
         next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
-        c_(nullptr), d_(nullptr) {}
+        c_(nullptr), d_(nullptr) { u.const_val_ = 0xFFFFFFFF; }
 
     // in order to reduce the reduplicate code to walk through the list
     // here we implement an simple iterator

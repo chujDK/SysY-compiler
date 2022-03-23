@@ -757,6 +757,7 @@ AstNodePtr Parser::VarDef() {
         ++(*token_iter_);
         if (const_exp_start == nullptr) {
             const_exp_start = const_exp;
+            const_exp_last = const_exp;
         }
         else {
             const_exp_last->d_ = const_exp;
@@ -867,8 +868,17 @@ AstNodePtr Parser::InitVal() {
     // '{' is matched
     ++(*token_iter_);
     LexerIterator iter_back = *token_iter_;
-    AstNodePtr init_val_start = InitVal();
-    AstNodePtr init_val_last = init_val_start;
+    // init_val_can be nested, so this init_val list is just a list, a_ point
+    // to the real init_val (list)
+    AstNodePtr init_val_nest = InitVal();
+    AstNodePtr init_val_start(nullptr);
+    AstNodePtr init_val_last(nullptr);
+    if (init_val_nest != nullptr) {
+        init_val_start = std::make_shared<AstNode>(SyEbnfType::InitVal, init_val_nest->line_);
+        init_val_start->a_ = init_val_nest;
+        init_val_nest->parent_ = init_val_start;
+        init_val_last = init_val_start;
+    }
     if (init_val_start == nullptr) {
         // it ok to return nullptr if the next token is '}'
         // it means in src, it just uses the "{}" to init
@@ -898,7 +908,13 @@ AstNodePtr Parser::InitVal() {
         {
             ++(*token_iter_);
             iter_back = *token_iter_;
-            auto init_val_next = InitVal();
+            auto init_val_nest = InitVal();
+            AstNodePtr init_val_next(nullptr);
+            if (init_val_nest != nullptr) {
+                init_val_next = std::make_shared<AstNode>(SyEbnfType::InitVal, init_val_nest->line_);
+                init_val_next->a_ = init_val_nest;
+                init_val_nest->parent_ = init_val_next;
+            }
             if (init_val_next == nullptr) {
                 // here we just find the nearest '}' or ',' and report an error
                 *token_iter_ = iter_back;
@@ -1768,6 +1784,7 @@ AstNodePtr Parser::ConstDef() {
         ++(*token_iter_);
         if (const_exp_start == nullptr) {
             const_exp_start = const_exp;
+            const_exp_last = const_exp;
         }
         else {
             const_exp_last->d_ = const_exp;
