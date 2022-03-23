@@ -202,7 +202,8 @@ public:
 class ParserAPI {
 public:
     virtual AstNodePtr parse() = 0;
-    virtual ~ParserAPI() {}
+    virtual bool end() = 0;
+    virtual bool error() = 0;
 };
 
 class Parser : ParserAPI {
@@ -254,6 +255,8 @@ private:
 
 public:
     AstNodePtr parse();
+    bool end() { return end_parse_; }
+    bool error() { return error_occured_; }
     Parser(InputStream* InputStream): error_occured_(false), end_parse_(false) {
         auto lexer = new Lexer(InputStream);
         token_iter_ = new LexerIterator(lexer->getNextToken(), lexer);

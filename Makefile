@@ -8,20 +8,19 @@ SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
 BIN_DIR=./bin
 CXXFLAGS=-ggdb
-
-all: ${BIN_DIR}/syparser ${BIN_DIR}/sylexer ${BIN_DIR}/syinterpreter
+DEFINE=-DDEBUG 
 
 syparser: ${SRC}
 	@echo "making syparser..."
-	g++ -I $(LIB_DIR) -DPARSER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 
 sylexer: ${SRC}
 	@echo "making sylexer..."
-	g++ -I $(LIB_DIR) -DLEXER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DLEXER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 
 syinterpreter: ${SRC}
 	@echo "making syinterpreter..."
-	g++ -I $(LIB_DIR) -DINTERPRETER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 
 .PHONY:test-parser
 test-parser: syparser
@@ -39,10 +38,16 @@ test-lexer: sylexer
 	echo "----- \033[32mtokens\033[0m -----"; $(BIN_DIR)/$^ ${x}; \
 	echo "----- \033[33mend of tokens\033[0m -----";)
 
+.PHONY:test-interpreter
+test-interpreter: syinterpreter
+	@echo "begin interpreter test.. testcases: ${TESTCASES}"
+	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
+	echo "----- \033[33mend of src\033[0m -----";)
+
 .ONESHELL:
 .PHONY:UNIT_test
 UNIT_test: ${SRC} ${TESTFILE_DIR}/UNIT_test.cc
-	g++ -I $(LIB_DIR) -DUNIT_TEST $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DUNIT_TEST $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 	$(BIN_DIR)/$@ > /tmp/_$@_output
 	diff /tmp/_$@_output ${TESTFILE_DIR}/$@_output_expect
 	if [ $$? -eq 0 ]; then

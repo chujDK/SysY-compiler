@@ -2060,6 +2060,7 @@ AstNodePtr Parser::Ident() {
 
 AstNodePtr Parser::parse() {
     if ((*token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+        end_parse_ = 1;
         return nullptr;
     }
     auto node = CompUnit();
