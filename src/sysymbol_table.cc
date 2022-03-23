@@ -35,18 +35,20 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
     }
 }
 
-inline void SymbolTable::addSymbol(TokenPtr ident) {
+inline IdentMemoryPtr SymbolTable::addSymbol(TokenPtr ident) {
     // if this ident isn't exist in the current scope, delete won't hurt
     deleteSymbol(ident);
     IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
     symbol_table_[current_scope_][ident->literal_] = mem;
+    return mem;
 }
 
-inline void SymbolTable::addGlobalSymbol(TokenPtr ident) {
+inline IdentMemoryPtr SymbolTable::addGlobalSymbol(TokenPtr ident) {
     // if this ident isn't exist in the current scope, delete won't hurt
     symbol_table_[0].erase(ident->literal_);
     IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
     symbol_table_[0][ident->literal_] = mem;
+    return mem;
 }
 
 // note that this function can still work when ident isn't exist in the current scope

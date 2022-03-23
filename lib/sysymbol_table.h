@@ -45,7 +45,8 @@ class SymbolTableAPI {
 public:
     virtual IdentMemoryPtr searchTable(TokenPtr ident) = 0;
     virtual IdentMemoryPtr searchCurrentScope(TokenPtr ident) = 0;
-    virtual void addSymbol(TokenPtr ident) = 0;
+    virtual IdentMemoryPtr addGlobalSymbol(TokenPtr ident) = 0;
+    virtual IdentMemoryPtr addSymbol(TokenPtr ident) = 0;
     virtual void deleteSymbol(TokenPtr ident) = 0;
     virtual void enterScope() = 0;
     virtual void exitScope() = 0;
@@ -62,10 +63,11 @@ private:
 public:
     IdentMemoryPtr searchTable(TokenPtr ident);
     IdentMemoryPtr searchCurrentScope(TokenPtr ident);
-    void addSymbol(TokenPtr ident);
-    void deleteSymbol(TokenPtr ident);
-    void enterScope();
-    void exitScope();
+    inline IdentMemoryPtr addSymbol(TokenPtr ident);
+    inline IdentMemoryPtr addGlobalSymbol(TokenPtr ident);
+    inline void deleteSymbol(TokenPtr ident);
+    inline void enterScope();
+    inline void exitScope();
     SymbolTable() {
         current_scope_ = 0;
         symbol_table_.push_back(Scope());
