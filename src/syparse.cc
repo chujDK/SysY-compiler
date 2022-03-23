@@ -46,28 +46,6 @@ void Parser::parseError(std::string msg, int line) {
     error_occured_ = 1;
 }
 
-AstNodeIterator AstNode::begin() {
-    return AstNodeIterator(std::make_shared<AstNode>(*this));
-}
-
-AstNodeIterator AstNode::end() {
-    return AstNodeIterator(nullptr);
-}
-
-AstNodePtr AstNodeIterator::operator* () const {
-    return node_;
-}
-AstNodeIterator& AstNodeIterator::operator++ () {
-    node_ = node_->d_;
-    return *this;
-}
-bool AstNodeIterator::operator== (const AstNodeIterator& rhs) const {
-    return node_ == rhs.node_;
-}
-bool AstNodeIterator::operator!= (const AstNodeIterator& rhs) const {
-    return node_ != rhs.node_;
-}
-
 std::string Lexer::getString() {
     std::string str;
     lexWarning("string is no supported yet, complier will stop after scaning");

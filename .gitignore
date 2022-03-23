@@ -30,7 +30,10 @@
 *.exe
 *.out
 *.app
+
+# debuging
 .gdb_history
+gdb.sh
 
 # validate-commit-msg
 node_modules/*

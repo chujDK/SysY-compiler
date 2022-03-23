@@ -53,6 +53,7 @@ int i0 = 0200;
 
 int arr[0x200] = {};
 int arr1[0x200] = {1, 2, 3, 4};
+int arr2[0x10][0x20][0x30] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
 
 int main(int argc, int argv)
 {

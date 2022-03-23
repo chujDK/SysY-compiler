@@ -7,14 +7,21 @@ SRC_DIR=./src
 SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
 BIN_DIR=./bin
+CXXFLAGS=-fsanitize=address -ggdb
+
+all: ${BIN_DIR}/syparser ${BIN_DIR}/sylexer ${BIN_DIR}/syinterpreter
 
 syparser: ${SRC}
 	@echo "making syparser..."
-	g++ -I $(LIB_DIR) -DPARSER -ggdb -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DPARSER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 
 sylexer: ${SRC}
 	@echo "making sylexer..."
-	g++ -I $(LIB_DIR) -DLEXER -ggdb -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DLEXER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+
+syinterpreter: ${SRC}
+	@echo "making syinterpreter..."
+	g++ -I $(LIB_DIR) -DINTERPRETER $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 
 .PHONY:test-parser
 test-parser: syparser
@@ -33,9 +40,9 @@ test-lexer: sylexer
 	echo "----- \033[33mend of tokens\033[0m -----";)
 
 .ONESHELL:
-.PHONY:AstNodeIterator_test
-AstNodeIterator_test: ${SRC} ${TESTFILE_DIR}/AstNodeIterator_test.cc
-	g++ -I $(LIB_DIR) -DUNIT_TEST -ggdb -o $(BIN_DIR)/$@ $^
+.PHONY:UNIT_test
+UNIT_test: ${SRC} ${TESTFILE_DIR}/UNIT_test.cc
+	g++ -I $(LIB_DIR) -DUNIT_TEST $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
 	$(BIN_DIR)/$@ > /tmp/_$@_output
 	diff /tmp/_$@_output ${TESTFILE_DIR}/$@_output_expect
 	if [ $$? -eq 0 ]; then

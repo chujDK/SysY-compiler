@@ -3,6 +3,6 @@
 #include <memory>
 #include "syparse.h"
 #include "sysymbol_table.h"
-//#include "syinterpret.h"
+#include "syinterpret.h"
 
 #endif

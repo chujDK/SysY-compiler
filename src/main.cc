@@ -75,8 +75,10 @@ int main(int argc, char* argv[])
     #endif
     #ifdef INTERPRETER
     // this is the code for interpreter
+    ParserAPI* parser = (ParserAPI*)new Parser(fileStream);
+    Interpreter interpreter(parser);
+    interpreter.exec();
     #endif
-    
     return 0;
 }
 #endif

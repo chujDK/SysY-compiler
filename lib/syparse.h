@@ -121,7 +121,6 @@ enum class SyEbnfType {
 };
 
 struct AstNode;
-class AstNodeIterator;
 using TokenPtr = std::shared_ptr<AstNode>; 
 using AstNodePtr = std::shared_ptr<AstNode>;
 
@@ -144,35 +143,19 @@ struct AstNode {
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and b_ link up a double linked list
     // be careful when using it the d_, make sure the parent it's not in a list
-    AstNodePtr parent_, a_, b_, c_, d_;
+    std::weak_ptr<AstNode> parent_;
+    AstNodePtr a_, b_, c_, d_;
     AstNode(enum SyAstType ast_type, int line, std::string&& literal):
         ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
-        next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
+        next_token_(nullptr), a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u.const_val_ = 0xFFFFFFFF; }
 
     AstNode(enum SyEbnfType ebnf_type, int line):
         ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(std::string()), 
-        next_token_(nullptr), parent_(nullptr), a_(nullptr), b_(nullptr), 
+        next_token_(nullptr), a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u.const_val_ = 0xFFFFFFFF; }
 
-    // in order to reduce the reduplicate code to walk through the list
-    // here we implement an simple iterator
-    AstNodeIterator begin();
-    AstNodeIterator end();
 };
-
-class AstNodeIterator {
-private:
-    AstNodePtr node_;
-public:
-    AstNodePtr operator* () const;
-    AstNodeIterator& operator++ ();
-    bool operator== (const AstNodeIterator& rhs) const;
-    bool operator!= (const AstNodeIterator& rhs) const;
-    AstNodeIterator(AstNodePtr node) : node_(node) {}
-};
-
-
 
 class Lexer {
 private:
@@ -200,7 +183,7 @@ public:
 class LexerIterator {
 private:
     TokenPtr current_token_;
-    Lexer* lexer_;
+    std::shared_ptr<Lexer> lexer_;
 public:
     LexerIterator(TokenPtr token, Lexer* lexer): lexer_(lexer) {
         if (token == nullptr) {

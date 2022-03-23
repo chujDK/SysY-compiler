@@ -43,7 +43,7 @@ std::string FileStream::getLine()
 
 FileStream::~FileStream()
 {
-    delete[] buf_;
+    free(buf_);
     delete char_stream_;
 }
 
