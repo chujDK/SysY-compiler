@@ -1062,8 +1062,8 @@ static void adjustExpLAst(AstNodePtr node) {
                 assert(1!=1);
                 break;
         }
-        node->parent_->c_ = node->a_;
-        node->parent_->c_->ebnf_type_ = ebnf_type;
+        node->parent_.lock()->c_ = node->a_;
+        node->parent_.lock()->c_->ebnf_type_ = ebnf_type;
         return;
     }
     else {

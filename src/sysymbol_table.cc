@@ -25,7 +25,7 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
         mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int)));
         return mem;
     case SyEbnfType::TYPE_INT_ARRAY:
-        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int) * ident->u.array_size_));
+        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int) * ident->u_.array_size_));
         return mem;
     default:
         // shouldn't reach here
