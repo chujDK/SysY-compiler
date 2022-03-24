@@ -321,13 +321,13 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
     }
 }
 
-SYFunctionPtr FunctionTalbe::addFunc(AstNodePtr func_ast) {
+SYFunctionPtr FunctionTable::addFunc(AstNodePtr func_ast) {
     auto sy_function = std::make_shared<SYFunction>(func_ast);
     func_table_[func_ast->b_->literal_] = sy_function;
     return sy_function;
 }
 
-SYFunctionPtr FunctionTalbe::getFunc(std::string func_name) {
+SYFunctionPtr FunctionTable::getFunc(std::string func_name) {
     return func_table_[func_name];
 }
 
