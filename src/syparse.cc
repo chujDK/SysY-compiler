@@ -980,7 +980,7 @@ AstNodePtr Parser::BlockItem() {
     if (decl != nullptr) {
         block_item->a_ = decl;
         decl->parent_ = block_item;
-        return decl;
+        return block_item;
     }
     // try Stmt
     *token_iter_ = iter_back;
@@ -992,7 +992,7 @@ AstNodePtr Parser::BlockItem() {
     }
     block_item->a_ = stmt;
     stmt->parent_ = block_item;
-    return stmt;
+    return block_item;
 }
 
 AstNodePtr Parser::Cond() {
