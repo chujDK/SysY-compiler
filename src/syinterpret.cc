@@ -13,6 +13,7 @@ void Interpreter::interpretError(std::string msg, int line) {
     error_occured_ = 1;
 }
 
+// !!!TODO!!!: ALL EXP HANDLER CAN INTEGRETE TO ONE FUNCTION
 Value Interpreter::expDispatcher(AstNodePtr exp) {
     switch (exp->ebnf_type_) {
         case SyEbnfType::ConstExp:
@@ -36,7 +37,7 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
         case SyEbnfType::PrimaryExp:
             return primaryExpHandler(exp);
         case SyEbnfType::LVal:
-            return lValHandler(exp);
+            return lValRightHandler(exp);
         case SyEbnfType::Number:
             return numberHandler(exp);
         default:
@@ -46,7 +47,8 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
     }
 }
 
-Value Interpreter::lValHandler(AstNodePtr exp) {
+// !!!TODO!!!
+Value Interpreter::lValRightHandler(AstNodePtr exp) {
     return Value();
 }
 
@@ -327,15 +329,15 @@ inline Value Interpreter::expHandler(AstNodePtr exp) {
 // need test
 // this is currently quiet plain, we can use template to make it more
 // generic to handle all types
-// TODO: currently just support exact init_val, 
+// just support exact init_val, 
 // this is not support 
 // `int arr1[0x10][0x20][0x30] = {{{0x10, 0x11, 0x12}}, {{0x20, 0x21, 0x22}}, {{0x30, 0x31, 0x32}}}`
 void Interpreter::initValHandler(AstNodePtr init_val, AstNodePtr const_exp, 
-char* mem_raw, int demention, int size_delta) {
+char* mem_raw, int dimension, int size_delta) {
     // we have pretty much confidence that all the const_exp is already computed
     assert(mem_raw != nullptr);
 
-    if (demention == 0) {
+    if (dimension == 0) {
         #ifdef DEBUG
         if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
             init_val->a_->ebnf_type_ != SyEbnfType::Exp) {
@@ -349,13 +351,43 @@ char* mem_raw, int demention, int size_delta) {
     size_delta = size_delta / const_exp->u_.const_val_;
     auto init_val_list_current = init_val->a_;
     for (int i = 0; i < const_exp->u_.const_val_; i++) {
-        initValHandler(init_val_list_current->a_, const_exp->d_, mem_raw, demention - 1, size_delta);
+        initValHandler(init_val_list_current->a_, const_exp->d_, mem_raw, dimension - 1, size_delta);
         init_val_list_current = init_val_list_current->d_;
         if (init_val_list_current == nullptr) {
             return;
         }
         mem_raw += size_delta;
     }
+}
+
+// !!!TODO!!!: THIS IS FAR FROM DONE
+AstNodePtr Interpreter::initValValidater(AstNodePtr init_val, AstNodePtr const_exp, \
+int dimension) {
+    // make the init_list valid
+    if (dimension == 0) {
+        return init_val;
+    }
+    int init_val_dimension = 0;
+    auto init_val_walker = init_val;
+    while (init_val_walker->a_->ebnf_type_ != SyEbnfType::ConstExp &&
+            init_val_walker->a_->ebnf_type_ != SyEbnfType::Exp) {
+        init_val_walker = init_val_walker->a_;
+        init_val_dimension++;
+    }
+    for (int i = init_val_dimension; i < 2 * dimension; i++) {
+        auto fake_parent = std::make_shared<AstNode>(SyEbnfType::InitVal, 0);
+        fake_parent->a_ = init_val;
+        init_val = fake_parent;
+    }
+    auto init_val_list_current = init_val->a_;
+    for (int i = 0; i < const_exp->u_.const_val_; i++) {
+        init_val_list_current->a_ = initValValidater(init_val_list_current->a_, const_exp->d_, dimension - 1);
+        init_val_list_current = init_val_list_current->d_;
+        if (init_val_list_current == nullptr) {
+            return init_val;
+        }
+    }
+    return init_val;
 }
 
 void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
@@ -370,7 +402,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
     for (auto def = decl->a_->b_; def != nullptr; def = def->d_) {
         auto ident = def->a_;
         if (def->b_ != nullptr) {
-            int demension = 0;
+            int dimension = 0;
             int length;
             uint64_t arr_size = 1; // arr_size is the number of elements in the array
             for (auto const_exp = def->b_; const_exp != nullptr; const_exp = const_exp->d_) {
@@ -381,7 +413,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
                 // const_exp: 10, 0x10
 
                 // b won't enter this loop
-                demension++;
+                dimension++;
                 if (const_exp->u_.const_val_ == 0xFFFFFFFF) {
                     // it's ok if the val of const_exp is really 0xFFFFFFFF
                     // we just recompute it
@@ -399,7 +431,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // add this ident to symbol_table_
             ident->ebnf_type_ = SyEbnfType::TYPE_INT_ARRAY;
             ident->u_.array_size_ = arr_size;
-            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : symbol_table_->addSymbol(ident));
+            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
+                                    symbol_table_->addSymbol(ident));
             auto mem_raw = mem->getMem();
             if (is_global) {
                 memset(mem_raw, 0, arr_size * sizeof(int));
@@ -410,7 +443,20 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             auto init_val = def->c_;
             auto const_exp = def->b_;
             if (init_val != nullptr) {
-                initValHandler(init_val, const_exp, mem_raw, demension, arr_size * sizeof(int));
+                if (init_val->a_->ebnf_type_ != init_val->ebnf_type_) {
+                    // init_val is not a list
+                    // throw an warning
+                    interpretWarning("init_val for array is not a list, skipping the init", init_val->line_);
+                }
+                else {
+                    if (!is_global) {
+                        // to a partail init, always init to 0
+                        // global is already init to 0
+                        memset(mem_raw, 0, arr_size * sizeof(int));
+                    }
+                    init_val = initValValidater(init_val, const_exp, dimension);
+                    initValHandler(init_val, const_exp, mem_raw, dimension, arr_size * sizeof(int));
+                }
             }
             if (is_global) {
                 // to a global variable, we can release all the tokens of it's init_val
@@ -423,8 +469,34 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // ident: a
             // init_val: nullptr
             // const_exp: nullptr
-
+            auto init_val = def->c_;
+            if (init_val != nullptr) {
+                if (init_val->a_->a_->ebnf_type_ != SyEbnfType::ConstExp &&
+                    init_val->a_->a_->ebnf_type_ != SyEbnfType::Exp) {
+                    interpretWarning("init_val for non-array is a list, skipping the init", init_val->line_);
+                }
+                else {
+                    ident->ebnf_type_ = SyEbnfType::TYPE_INT;
+                    auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
+                                        symbol_table_->addSymbol(ident));
+                    auto mem_raw = mem->getMem();
+                    *((int*) mem_raw) = expDispatcher(init_val->a_->a_).i32;
+                } 
+            }
         }
+    }
+}
+
+AstNodePtr SYFunction::getFuncAst() {
+    return func_;
+}
+
+Value SYFunction::exec() {
+    if (jited_) {
+        // call the jited function
+    }
+    else {
+        // call the interpreter
     }
 }
 
@@ -434,7 +506,14 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
         declHandler(comp_unit->a_, 1);
     }
     else if (comp_unit->a_->ebnf_type_ == SyEbnfType::FuncDef) {
-        // TODO: add a function_table_
+        func_table_->addFunc(comp_unit->a_);
+        if (comp_unit->a_->b_->literal_ == "main") {
+            // main function
+            // call it
+            symbol_table_->enterScope();
+            exec(comp_unit->a_, nullptr);
+            symbol_table_->exitScope();
+        }
     }
     else {
         // shouldn't reach here
@@ -442,6 +521,117 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
         assert(1!=1);
     }
     return 0;
+}
+
+std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
+    auto block_item = block->a_;
+    for (; block_item != nullptr; block_item = block_item) {
+        if (block_item->a_->ebnf_type_ == SyEbnfType::Decl) {
+            auto decl = block_item->a_;
+            declHandler(decl, 0);
+        }
+        if (block_item->a_->ebnf_type_ == SyEbnfType::Stmt) {
+            auto stmt = block_item->a_;
+            auto ret = stmtHandler(stmt);
+            if (ret.first == StmtState::RETURN) {
+                return ret;
+            }
+        }
+    }
+}
+
+Value Interpreter::exec(AstNodePtr func_ast, AstNodePtr args) {
+    // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+    auto ret = blockHandler(func_ast->c_);
+    return ret.second;
+}
+
+std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
+    // LVal -> Ident {'[' Exp ']'} 
+}
+
+std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
+// Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+    //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+    //| 'while' '(' Cond ')' Stmt
+    //| 'break' ';' | 'continue' ';'
+    //| 'return' [Exp] ';'
+    // no return value for Stmt(except return [exp]), use this to hint break
+    bool cond;
+    std::pair<StmtState, Value> ret(StmtState::END_OF_ENUM, Value());
+    std::pair<StmtState, Value> callee_ret(StmtState::END_OF_ENUM, Value());
+    if (stmt->a_ == nullptr) {
+        // null statement
+        return ret;
+    }
+    switch (stmt->a_->ast_type_)
+    {
+    case SyAstType::STM_IF:
+        // if (cond) stmt
+        cond = expDispatcher(stmt->b_->a_).i32;
+        symbol_table_->enterScope();
+        if (cond) {
+            stmtHandler(stmt->c_);
+        }
+        else {
+            if (stmt->d_ != nullptr) {
+                stmtHandler(stmt->d_);
+            }
+        }
+        symbol_table_->exitScope();
+        return ret;
+    case SyAstType::STM_WHILE:
+        cond = expDispatcher(stmt->b_->a_).i32;
+        symbol_table_->enterScope();
+        while (cond) {
+            callee_ret = stmtHandler(stmt->c_);
+            if (callee_ret.first == StmtState::BREAK) {
+                break;
+            }
+            if (callee_ret.first == StmtState::RETURN) {
+                return callee_ret;
+            }
+        }
+        symbol_table_->exitScope();
+        return ret;
+    case SyAstType::STM_BREAK:
+        ret.first = StmtState::BREAK;
+        return ret;
+    case SyAstType::STM_CONTINUE:
+        ret.first = StmtState::CONTINUE;
+        return ret;
+    case SyAstType::STM_RETURN:
+        // TODO: check if the return val type is correct
+        if (stmt->b_ != nullptr) {
+            ret.second = expDispatcher(stmt->b_);
+        }
+        ret.first = StmtState::RETURN;
+        return ret;
+    default:
+        break;
+    }
+    // LVal '=' Exp ';' | [Exp] ';' | Block
+    if (stmt->a_->ebnf_type_ == SyEbnfType::LVal) {
+        // LVal '=' Exp ';'
+        auto l_val = stmt->a_;
+        auto l_val_ret = lValLeftHandler(l_val);
+        auto exp = stmt->b_;
+        auto exp_val = expDispatcher(exp);
+        if (l_val_ret.second == SyEbnfType::TYPE_INT) {
+            *((int*) l_val_ret.first) = exp_val.i32;
+        }
+    }
+    else if (stmt->a_->ebnf_type_ == SyEbnfType::Exp) {
+        // Exp ';'
+        expDispatcher(stmt->a_);
+    }
+    else {
+        #ifdef DEBUG
+        assert(stmt->a_->ebnf_type_ == SyEbnfType::Block);
+        #endif
+        callee_ret = blockHandler(stmt->a_);
+        return callee_ret;
+    }
 }
 
 int Interpreter::exec() {
