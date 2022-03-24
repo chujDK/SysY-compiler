@@ -72,3 +72,4 @@ int main(int argc, int argv)
     return 0;
 }
 
+int c = (1 + 2 * 4 / 3 + (1 != (2 >= 1)));

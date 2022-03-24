@@ -1,5 +1,7 @@
 //#include <stdio.h>
 
+int c = (1 + 2 * 4 / 3 + (1 != (2 >= 1)));
+
 void err_stmt () {
     int a;
     if (a == 1 {

@@ -16,14 +16,16 @@ private:
 public:
     Value exec();
     AstNodePtr getFuncAst();
+    SYFunction(AstNodePtr func): func_(func), func_exec_mem_(nullptr), jited_(false), called_times_(0) {} ;
 };
+using SYFunctionPtr = std::shared_ptr<SYFunction>;
 
 class FunctionTalbe {
 private:
-    std::map<std::string, SYFunction> func_table_;
+    std::map<std::string, SYFunctionPtr> func_table_;
 public:
-    SYFunction* getFunc(std::string func_name);
-    SYFunction* addFunc(AstNodePtr func_ast);
+    SYFunctionPtr getFunc(std::string func_name);
+    SYFunctionPtr addFunc(AstNodePtr func_ast);
 };
 using FunctionTalbePtr = std::shared_ptr<FunctionTalbe>;
 
@@ -65,6 +67,7 @@ private:
     Value lValRightHandler(AstNodePtr exp);
     Value numberHandler(AstNodePtr exp);
     Value expDispatcher(AstNodePtr exp);
+    Value subExpHandler(AstNodePtr exp);
 
     std::pair<StmtState, Value> blockHandler(AstNodePtr block);
     std::pair<StmtState, Value> stmtHandler(AstNodePtr stmt);

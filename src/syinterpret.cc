@@ -18,22 +18,17 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
     switch (exp->ebnf_type_) {
         case SyEbnfType::ConstExp:
             return constExpHandler(exp);
-        case SyEbnfType::AddExp:
-            return addExpHandler(exp);
-        case SyEbnfType::MulExp:
-            return mulExpHandler(exp);
-        case SyEbnfType::RelExp:
-            return relExpHandler(exp);
-        case SyEbnfType::EqExp:
-            return eqExpHandler(exp);
-        case SyEbnfType::LAndExp:
-            return lAndExpHandler(exp);
-        case SyEbnfType::LOrExp:
-            return lOrExpHandler(exp);
-        case SyEbnfType::UnaryExp:
-            return unaryExpHandler(exp);
         case SyEbnfType::Exp:
             return expHandler(exp);
+        case SyEbnfType::AddExp:
+        case SyEbnfType::MulExp:
+        case SyEbnfType::RelExp:
+        case SyEbnfType::EqExp:
+        case SyEbnfType::LAndExp:
+        case SyEbnfType::LOrExp:
+            return subExpHandler(exp);
+        case SyEbnfType::UnaryExp:
+            return unaryExpHandler(exp);
         case SyEbnfType::PrimaryExp:
             return primaryExpHandler(exp);
         case SyEbnfType::LVal:
@@ -81,21 +76,7 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
 //           MulExp '+' MulExp type: END_OF_ENUM => MulExp
 //
 // after adjust, all AddExpL is a AddExp
-
-Value Interpreter::addExpHandler(AstNodePtr exp) {
-    // AddExp -> MulExp | AddExp ('+' | '-') MulExp 
-    // add_exp->a_->ebnf_type_ == MulExp;
-    // add_exp->b_->ast_type_ == ALU_ADD | ALU_SUB
-    // add_exp->c_->ebnf_type_ == MulExp | AddExp;
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::MulExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::ALU_ADD || 
-            exp->b_->ast_type_ == SyAstType::ALU_SUB);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::MulExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::AddExp);
-    }
-    #endif
+Value Interpreter::subExpHandler(AstNodePtr exp) {
     Value ret;
     auto exp_a = exp->a_;
     if (exp->b_ == nullptr) {
@@ -114,195 +95,37 @@ Value Interpreter::addExpHandler(AstNodePtr exp) {
         case SyAstType::ALU_SUB:
             ret.i32 = val_a.i32 - val_c.i32;
             break;
-        default:
-            // shouldn't reach here trigger a bug
-            assert(1!=1);
-            break;
-    }
-    return ret;
-}
-
-Value Interpreter::relExpHandler(AstNodePtr exp) {
-    // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::AddExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::LE ||
-            exp->b_->ast_type_ == SyAstType::LNE ||
-            exp->b_->ast_type_ == SyAstType::GE ||
-            exp->b_->ast_type_ == SyAstType::GNE);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::RelExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::AddExp);
-    }
-    #endif
-    Value ret;
-    auto exp_a = exp->a_;
-    if (exp->b_ == nullptr) {
-        #ifdef DEBUG
-        assert(exp->c_ == nullptr);
-        #endif
-        return expDispatcher(exp_a);
-    }
-    auto exp_c = exp->c_;
-    Value val_a = expDispatcher(exp_a);
-    Value val_c = expDispatcher(exp_c);
-    switch (exp->b_->ast_type_) {
-        case SyAstType::LE:
-            ret.i32 = val_a.i32 <= val_c.i32;
-            break;
-        case SyAstType::GE:
-            ret.i32 = val_a.i32 >= val_c.i32;
-            break;
-        case SyAstType::GNE:
-            ret.i32 = val_a.i32 > val_c.i32;
-            break;
-        case SyAstType::LNE:
-            ret.i32 = val_a.i32 < val_c.i32;
-            break;
-        default:
-            // shouldn't reach here trigger a bug
-            assert(1!=1);
-            break;
-    }
-    return ret;
-}
-
-Value Interpreter::mulExpHandler(AstNodePtr exp) {
-    // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::UnaryExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::ALU_MUL ||
-            exp->b_->ast_type_ == SyAstType::ALU_DIV ||
-            exp->b_->ast_type_ == SyAstType::ALU_DIV);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::UnaryExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::MulExp);
-    }
-    #endif
-    Value ret;
-    auto exp_a = exp->a_;
-    if (exp->b_ == nullptr) {
-        #ifdef DEBUG
-        assert(exp->c_ == nullptr);
-        #endif
-        return expDispatcher(exp_a);
-    }
-    auto exp_c = exp->c_;
-    Value val_a = expDispatcher(exp_a);
-    Value val_c = expDispatcher(exp_c);
-    switch (exp->b_->ast_type_) {
-        case SyAstType::ALU_MUL:
-            ret.i32 = val_a.i32 * val_c.i32;
-            break;
         case SyAstType::ALU_DIV:
             ret.i32 = val_a.i32 / val_c.i32;
+            break;
+        case SyAstType::ALU_MUL:
+            ret.i32 = val_a.i32 * val_c.i32;
             break;
         case SyAstType::ALU_MOD:
             ret.i32 = val_a.i32 % val_c.i32;
             break;
-        default:
-            // shouldn't reach here trigger a bug
-            assert(1!=1);
-            break;
-    }
-    return ret;
-
-}
-
-Value Interpreter::eqExpHandler(AstNodePtr exp) {
-    // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::RelExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::EQ ||
-            exp->b_->ast_type_ == SyAstType::NEQ);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::RelExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::EqExp);
-    }
-    #endif
-    Value ret;
-    auto exp_a = exp->a_;
-    if (exp->b_ == nullptr) {
-        #ifdef DEBUG
-        assert(exp->c_ == nullptr);
-        #endif
-        return expDispatcher(exp_a);
-    }
-    auto exp_c = exp->c_;
-    Value val_a = expDispatcher(exp_a);
-    Value val_c = expDispatcher(exp_c);
-    switch (exp->b_->ast_type_) {
         case SyAstType::EQ:
             ret.i32 = val_a.i32 == val_c.i32;
             break;
         case SyAstType::NEQ:
             ret.i32 = val_a.i32 != val_c.i32;
             break;
-        default:
-            // shouldn't reach here trigger a bug
-            assert(1!=1);
+        case SyAstType::LNE:
+            ret.i32 = val_a.i32 < val_c.i32;
             break;
-    }
-    return ret;
-}
-
-Value Interpreter::lAndExpHandler(AstNodePtr exp) {
-    // LAndExp -> EqExp | LAndExp '&&' EqExp
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::EqExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::LOGIC_AND);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::EqExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::LAndExp);
-    }
-    #endif
-    Value ret;
-    auto exp_a = exp->a_;
-    if (exp->b_ == nullptr) {
-        #ifdef DEBUG
-        assert(exp->c_ == nullptr);
-        #endif
-        return expDispatcher(exp_a);
-    }
-    auto exp_c = exp->c_;
-    Value val_a = expDispatcher(exp_a);
-    Value val_c = expDispatcher(exp_c);
-    switch (exp->b_->ast_type_) {
+        case SyAstType::LE:
+            ret.i32 = val_a.i32 <= val_c.i32;
+            break;
+        case SyAstType::GNE:
+            ret.i32 = val_a.i32 > val_c.i32;
+            break;
+        case SyAstType::GE:
+            ret.i32 = val_a.i32 >= val_c.i32;
+            break;
         case SyAstType::LOGIC_AND:
             ret.i32 = val_a.i32 && val_c.i32;
             break;
-        default:
-            // shouldn't reach here trigger a bug
-            assert(1!=1);
-            break;
-    }
-    return ret;
-
-}
-
-Value Interpreter::lOrExpHandler(AstNodePtr exp) {
-    // LOrExp -> LAndExp | LOrExp '||' LAndExp
-    #ifdef DEBUG
-    assert(exp->a_->ebnf_type_ == SyEbnfType::LAndExp);
-    if (exp->b_ != nullptr) {
-        assert(exp->b_->ast_type_ == SyAstType::LOGIC_OR);
-        assert(exp->c_->ebnf_type_ == SyEbnfType::LOrExp ||
-            exp->c_->ebnf_type_ == SyEbnfType::LAndExp);
-    }
-    #endif
-    Value ret;
-    auto exp_a = exp->a_;
-    if (exp->b_ == nullptr) {
-        #ifdef DEBUG
-        assert(exp->c_ == nullptr);
-        #endif
-        return expDispatcher(exp_a);
-    }
-    auto exp_c = exp->c_;
-    Value val_a = expDispatcher(exp_a);
-    Value val_c = expDispatcher(exp_c);
-    switch (exp->b_->ast_type_) {
-        case SyAstType::LOGIC_AND:
+        case SyAstType::LOGIC_OR:
             ret.i32 = val_a.i32 || val_c.i32;
             break;
         default:
@@ -315,7 +138,7 @@ Value Interpreter::lOrExpHandler(AstNodePtr exp) {
 
 inline Value Interpreter::constExpHandler(AstNodePtr const_exp) {
     if (const_exp->u_.const_val_ == 0xFFFFFFFF) {
-        const_exp->u_.const_val_ = addExpHandler(const_exp->a_).i32;
+        const_exp->u_.const_val_ = expDispatcher(const_exp->a_).i32;
     }
     Value val;
     val.i32 = const_exp->u_.const_val_;
@@ -323,7 +146,7 @@ inline Value Interpreter::constExpHandler(AstNodePtr const_exp) {
 }
 
 inline Value Interpreter::expHandler(AstNodePtr exp) {
-    return addExpHandler(exp->a_);
+    return expDispatcher(exp->a_);
 }
 
 // need test
@@ -471,8 +294,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // const_exp: nullptr
             auto init_val = def->c_;
             if (init_val != nullptr) {
-                if (init_val->a_->a_->ebnf_type_ != SyEbnfType::ConstExp &&
-                    init_val->a_->a_->ebnf_type_ != SyEbnfType::Exp) {
+                if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
+                    init_val->a_->ebnf_type_ != SyEbnfType::Exp) {
                     interpretWarning("init_val for non-array is a list, skipping the init", init_val->line_);
                 }
                 else {
@@ -485,6 +308,16 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             }
         }
     }
+}
+
+SYFunctionPtr FunctionTalbe::addFunc(AstNodePtr func_ast) {
+    auto sy_function = std::make_shared<SYFunction>(func_ast);
+    func_table_[func_ast->b_->literal_] = sy_function;
+    return sy_function;
+}
+
+SYFunctionPtr FunctionTalbe::getFunc(std::string func_name) {
+    return func_table_[func_name];
 }
 
 AstNodePtr SYFunction::getFuncAst() {
