@@ -7,7 +7,7 @@ SRC_DIR=./src
 SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
 BIN_DIR=./bin
-CXXFLAGS=-ggdb
+CXXFLAGS=-ggdb# -fsanitize=address
 DEFINE=-DDEBUG 
 
 syparser: ${SRC}

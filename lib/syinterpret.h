@@ -14,7 +14,8 @@ private:
     unsigned int called_times_;
 
 public:
-    Value exec();
+    Value exec(AstNodePtr args);
+    bool isJited() { return jited_; }
     AstNodePtr getFuncAst();
     SYFunction(AstNodePtr func): func_(func), func_exec_mem_(nullptr), jited_(false), called_times_(0) {} ;
 };
@@ -74,7 +75,7 @@ private:
     std::pair<char*, SyEbnfType> lValLeftHandler(AstNodePtr l_val);
 public:
     int exec();
-    Value exec(AstNodePtr func_ast, AstNodePtr args);
+    Value execFunction(AstNodePtr func_ast, AstNodePtr args);
     Interpreter(ParserAPI* parser): parser_(parser), symbol_table_((SymbolTableAPI*)new SymbolTable()) {}
     ~Interpreter() {
         delete parser_;

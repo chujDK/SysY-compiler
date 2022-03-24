@@ -25,7 +25,7 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
         mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int)));
         return mem;
     case SyEbnfType::TYPE_INT_ARRAY:
-        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int) * ident->u_.array_size_));
+        mem.reset((ArrayMemoryAPI*) new ArrayMemory(sizeof(int) * ident->u_.array_size_));
         return mem;
     default:
         // shouldn't reach here
@@ -45,7 +45,6 @@ inline IdentMemoryPtr SymbolTable::addSymbol(TokenPtr ident) {
 
 inline IdentMemoryPtr SymbolTable::addGlobalSymbol(TokenPtr ident) {
     // if this ident isn't exist in the current scope, delete won't hurt
-    symbol_table_[0].erase(ident->literal_);
     IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
     symbol_table_[0][ident->literal_] = mem;
     return mem;

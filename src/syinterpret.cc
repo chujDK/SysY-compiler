@@ -4,6 +4,9 @@
 #include <cstring>
 #include "syinterpret.h"
 
+// TODO:
+// handle all the lVal problem
+
 void Interpreter::interpretWarning(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[35mWarning in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
 }
@@ -225,8 +228,10 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
     for (auto def = decl->a_->b_; def != nullptr; def = def->d_) {
         auto ident = def->a_;
         if (def->b_ != nullptr) {
+            // array
             int dimension = 0;
             int length;
+            std::vector<unsigned int> dim_vec;
             uint64_t arr_size = 1; // arr_size is the number of elements in the array
             for (auto const_exp = def->b_; const_exp != nullptr; const_exp = const_exp->d_) {
                 // example: int a[10][0x10] = {{0}, {0}}, b;
@@ -236,7 +241,6 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
                 // const_exp: 10, 0x10
 
                 // b won't enter this loop
-                dimension++;
                 if (const_exp->u_.const_val_ == 0xFFFFFFFF) {
                     // it's ok if the val of const_exp is really 0xFFFFFFFF
                     // we just recompute it
@@ -248,6 +252,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
                     interpretError("array size overflow", const_exp->line_);
                     return;
                 }
+                dim_vec.push_back(length);
+                dimension++;
             }
             // example: int a[10][0x10] = {{0}, {0}}, b;
             // arr_size: 10 * 0x10
@@ -256,6 +262,11 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             ident->u_.array_size_ = arr_size;
             auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
                                     symbol_table_->addSymbol(ident));
+            ArrayMemoryPtr array_mem = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
+            array_mem->setDimension(dimension);
+            for (int i = 0; i < dimension; i++) {
+                array_mem->setSizeForDimension(i, dim_vec[i]);
+            }
             auto mem_raw = mem->getMem();
             if (is_global) {
                 memset(mem_raw, 0, arr_size * sizeof(int));
@@ -292,6 +303,10 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // ident: a
             // init_val: nullptr
             // const_exp: nullptr
+            ident->ebnf_type_ = SyEbnfType::TYPE_INT;
+            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
+                                symbol_table_->addSymbol(ident));
+            auto mem_raw = mem->getMem();
             auto init_val = def->c_;
             if (init_val != nullptr) {
                 if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
@@ -299,10 +314,6 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
                     interpretWarning("init_val for non-array is a list, skipping the init", init_val->line_);
                 }
                 else {
-                    ident->ebnf_type_ = SyEbnfType::TYPE_INT;
-                    auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
-                                        symbol_table_->addSymbol(ident));
-                    auto mem_raw = mem->getMem();
                     *((int*) mem_raw) = expDispatcher(init_val->a_->a_).i32;
                 } 
             }
@@ -321,16 +332,15 @@ SYFunctionPtr FunctionTalbe::getFunc(std::string func_name) {
 }
 
 AstNodePtr SYFunction::getFuncAst() {
+    called_times_++;
     return func_;
 }
 
-Value SYFunction::exec() {
+Value SYFunction::exec(AstNodePtr) {
     if (jited_) {
         // call the jited function
     }
-    else {
-        // call the interpreter
-    }
+    return Value();
 }
 
 int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
@@ -344,7 +354,7 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
             // main function
             // call it
             symbol_table_->enterScope();
-            exec(comp_unit->a_, nullptr);
+            execFunction(comp_unit->a_, nullptr);
             symbol_table_->exitScope();
         }
     }
@@ -371,9 +381,10 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
             }
         }
     }
+    return std::make_pair(StmtState::END_OF_ENUM, Value());
 }
 
-Value Interpreter::exec(AstNodePtr func_ast, AstNodePtr args) {
+Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
     auto ret = blockHandler(func_ast->c_);
     return ret.second;
@@ -381,6 +392,7 @@ Value Interpreter::exec(AstNodePtr func_ast, AstNodePtr args) {
 
 std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
     // LVal -> Ident {'[' Exp ']'} 
+    return std::make_pair(nullptr, SyEbnfType::END_OF_ENUM);
 }
 
 std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
@@ -389,7 +401,6 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
     //| 'while' '(' Cond ')' Stmt
     //| 'break' ';' | 'continue' ';'
     //| 'return' [Exp] ';'
-    // no return value for Stmt(except return [exp]), use this to hint break
     bool cond;
     std::pair<StmtState, Value> ret(StmtState::END_OF_ENUM, Value());
     std::pair<StmtState, Value> callee_ret(StmtState::END_OF_ENUM, Value());
@@ -465,6 +476,7 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
         callee_ret = blockHandler(stmt->a_);
         return callee_ret;
     }
+    return callee_ret;
 }
 
 int Interpreter::exec() {

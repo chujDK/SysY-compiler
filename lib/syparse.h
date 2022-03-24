@@ -204,6 +204,7 @@ public:
     virtual AstNodePtr parse() = 0;
     virtual bool end() = 0;
     virtual bool error() = 0;
+    virtual ~ParserAPI() {};
 };
 
 class Parser : ParserAPI {
