@@ -20,6 +20,7 @@ class ArrayMemoryAPI : public IdentMemoryAPI {
 public:
     virtual unsigned int getDimension() = 0;
     virtual unsigned int getSizeForDimension(unsigned int dimension) = 0;
+    virtual unsigned int getArraySize() = 0;
     virtual void setDimension(unsigned int dimension) = 0;
     virtual void setSizeForDimension(unsigned int dimension, unsigned int size) = 0;
     virtual ~ArrayMemoryAPI() {}
@@ -56,6 +57,7 @@ class ArrayMemory: public IdentMemory, public ArrayMemoryAPI {
 private:
     unsigned int dimension_;
     std::vector<unsigned int> size_for_dimension_;
+    unsigned int array_size_;
 public:
     void setDimension(unsigned int dimension) {
         size_for_dimension_.resize(dimension);
@@ -63,6 +65,7 @@ public:
     }
     void setSizeForDimension(unsigned int dimension, unsigned int size) {
         size_for_dimension_[dimension] = size;
+        array_size_ *= size;
     }
     unsigned int getDimension() {
         return dimension_;
@@ -70,10 +73,14 @@ public:
     unsigned int getSizeForDimension(unsigned int dimension) {
         return size_for_dimension_[dimension];
     }
+    unsigned int getArraySize() {
+        return array_size_;
+    }
     char* getMem() { return IdentMemory::getMem(); }
     size_t getSize() { return IdentMemory::getSize(); }
     ArrayMemory(size_t size) : IdentMemory(size) {
         dimension_ = 0;
+        array_size_ = 1;
     }
 };
 

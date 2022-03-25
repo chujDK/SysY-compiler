@@ -6,6 +6,7 @@ TESTCASES=$(foreach x, $(TESTCASE_DIR), \
 SRC_DIR=./src
 SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
+LIB=$(foreach x, $(LIB_DIR), ${x}/*.h)
 BIN_DIR=./bin
 CXXFLAGS=-ggdb# -fsanitize=address
 DEFINE=-DDEBUG 
@@ -44,7 +45,7 @@ test-interpreter: syinterpreter
 	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
 	echo "----- \033[33mend of src\033[0m -----";)
 
-.ONESHELL:
+#.ONESHELL:
 .PHONY:UNIT_test
 UNIT_test: ${SRC} ${TESTFILE_DIR}/UNIT_test.cc
 	g++ -I $(LIB_DIR) -DUNIT_TEST $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^

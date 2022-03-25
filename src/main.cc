@@ -76,8 +76,9 @@ int main(int argc, char* argv[])
     #ifdef INTERPRETER
     // this is the code for interpreter
     ParserAPI* parser = (ParserAPI*)new Parser(fileStream);
-    Interpreter interpreter(parser);
-    interpreter.exec();
+    InterpreterAPI* interpreter = new Interpreter(parser);
+    syRuntimeInitForAnInterpreter(interpreter);
+    interpreter->exec();
     #endif
     return 0;
 }

@@ -1,34 +1,53 @@
 #ifndef _SYINTERPRET_H_
 #define _SYINTERPRET_H_
-#include "sy.h"
+#include <string>
+#include "syparse.h"
+#include "sysymbol_table.h"
+
+class InterpreterAPI;
 
 union Value {
     int32_t i32;
+    uint32_t u32;
 } ;
-
 class SYFunction {
 private:
     AstNodePtr func_;
     char* func_exec_mem_;
+    Value (*exec_call_back_)(char*, AstNodePtr, InterpreterAPI*); // this function should handle the args
     bool jited_;
+    bool no_fail_;
     unsigned int called_times_;
 
 public:
-    Value exec(AstNodePtr args);
+    Value exec(AstNodePtr args, InterpreterAPI* interpreter);
     bool isJited() { return jited_; }
     AstNodePtr getFuncAst();
     SYFunction(AstNodePtr func): func_(func), func_exec_mem_(nullptr), jited_(false), called_times_(0) {} ;
+    SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*)): func_(nullptr), 
+    func_exec_mem_(reinterpret_cast<char*>(func)), jited_(true), no_fail_(no_fail), 
+    called_times_(0), exec_call_back_(exec_call_back) {} ;
 };
 using SYFunctionPtr = std::shared_ptr<SYFunction>;
 
-class FunctionTalbe {
+class InterpreterAPI {
+public:
+    virtual ~InterpreterAPI() {};
+    virtual int exec() = 0;
+    virtual Value execFunction(AstNodePtr func_ast, AstNodePtr args) = 0;
+    virtual Value expDispatcher(AstNodePtr exp) = 0;
+    virtual void addFunction(SYFunctionPtr function, std::string name) = 0;
+};
+
+class FunctionTable {
 private:
     std::map<std::string, SYFunctionPtr> func_table_;
 public:
     SYFunctionPtr getFunc(std::string func_name);
     SYFunctionPtr addFunc(AstNodePtr func_ast);
+    SYFunctionPtr addFunc(SYFunctionPtr function, std::string name);
 };
-using FunctionTalbePtr = std::shared_ptr<FunctionTalbe>;
+using FunctionTalbePtr = std::shared_ptr<FunctionTable>;
 
 enum class StmtState {
     BREAK,
@@ -38,7 +57,7 @@ enum class StmtState {
 };
 
 // this interpreter is a simple tree walking and executing interpreter
-class Interpreter {
+class Interpreter: public InterpreterAPI {
 private:
     ParserAPI* parser_;
     SymbolTablePtr symbol_table_;
@@ -67,7 +86,6 @@ private:
     Value primaryExpHandler(AstNodePtr exp);
     Value lValRightHandler(AstNodePtr exp);
     Value numberHandler(AstNodePtr exp);
-    Value expDispatcher(AstNodePtr exp);
     Value subExpHandler(AstNodePtr exp);
 
     std::pair<StmtState, Value> blockHandler(AstNodePtr block);
@@ -76,7 +94,10 @@ private:
 public:
     int exec();
     Value execFunction(AstNodePtr func_ast, AstNodePtr args);
-    Interpreter(ParserAPI* parser): parser_(parser), symbol_table_((SymbolTableAPI*)new SymbolTable()) {}
+    Value expDispatcher(AstNodePtr exp);
+    void addFunction(SYFunctionPtr function, std::string name);
+    Interpreter(ParserAPI* parser): parser_(parser), symbol_table_((SymbolTableAPI*)new SymbolTable()), 
+    func_table_(new FunctionTable()) {}
     ~Interpreter() {
         delete parser_;
     }

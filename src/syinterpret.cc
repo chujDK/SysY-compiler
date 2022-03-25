@@ -4,9 +4,7 @@
 #include <cstring>
 #include "syinterpret.h"
 
-// TODO:
-// handle all the lVal problem
-
+// TODO: test lval, runtime function
 void Interpreter::interpretWarning(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[35mWarning in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
 }
@@ -16,7 +14,6 @@ void Interpreter::interpretError(std::string msg, int line) {
     error_occured_ = 1;
 }
 
-// !!!TODO!!!: ALL EXP HANDLER CAN INTEGRETE TO ONE FUNCTION
 Value Interpreter::expDispatcher(AstNodePtr exp) {
     switch (exp->ebnf_type_) {
         case SyEbnfType::ConstExp:
@@ -45,11 +42,6 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
     }
 }
 
-// !!!TODO!!!
-Value Interpreter::lValRightHandler(AstNodePtr exp) {
-    return Value();
-}
-
 Value Interpreter::numberHandler(AstNodePtr exp) {
     Value ret;
     ret.i32 = std::stoi(exp->a_->literal_);
@@ -67,6 +59,16 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
     // currently only retunr the val of PrimaryExp
     if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
         return primaryExpHandler(exp);
+    }
+    if (exp->a_->ast_type_ == SyAstType::IDENT) {
+        auto function = func_table_->getFunc(exp->a_->literal_);
+        auto args = exp->b_;
+        if (function && function->isJited()) {
+            return function->exec(args, this);
+        }
+        else {
+            interpretError(std::string("function") + std::string(" \"\033[1;31m") + exp->a_->literal_ + std::string("\033[0m\" not found"), exp->a_->line_);
+        }
     }
     return Value();
 }
@@ -186,7 +188,7 @@ char* mem_raw, int dimension, int size_delta) {
     }
 }
 
-// !!!TODO!!!: THIS IS FAR FROM DONE
+// TODO: THIS IS FAR FROM DONE
 AstNodePtr Interpreter::initValValidater(AstNodePtr init_val, AstNodePtr const_exp, \
 int dimension) {
     // make the init_list valid
@@ -327,6 +329,11 @@ SYFunctionPtr FunctionTable::addFunc(AstNodePtr func_ast) {
     return sy_function;
 }
 
+SYFunctionPtr FunctionTable::addFunc(SYFunctionPtr function, std::string name) {
+    func_table_[name] = function;
+    return function;
+}
+
 SYFunctionPtr FunctionTable::getFunc(std::string func_name) {
     return func_table_[func_name];
 }
@@ -336,11 +343,16 @@ AstNodePtr SYFunction::getFuncAst() {
     return func_;
 }
 
-Value SYFunction::exec(AstNodePtr) {
+Value SYFunction::exec(AstNodePtr args, InterpreterAPI* interpreter) {
     if (jited_) {
         // call the jited function
+        return exec_call_back_(func_exec_mem_, args, interpreter);
     }
     return Value();
+}
+
+void Interpreter::addFunction(SYFunctionPtr function, std::string name) {
+    func_table_->addFunc(function, name);
 }
 
 int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
@@ -368,7 +380,7 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
 
 std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
     auto block_item = block->a_;
-    for (; block_item != nullptr; block_item = block_item) {
+    for (; block_item != nullptr; block_item = block_item->d_) {
         if (block_item->a_->ebnf_type_ == SyEbnfType::Decl) {
             auto decl = block_item->a_;
             declHandler(decl, 0);
@@ -386,12 +398,61 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 
 Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
-    auto ret = blockHandler(func_ast->c_);
+    auto ret = blockHandler(func_ast->d_);
     return ret.second;
+}
+
+Value Interpreter::lValRightHandler(AstNodePtr exp) {
+    auto l_val = lValLeftHandler(exp);
+    Value ret;
+    switch (l_val.second)
+    {
+    case SyEbnfType::TYPE_INT:
+        ret.i32 = *((int*) l_val.first);
+        break;
+    default:
+        break;
+    }
+    return ret;
 }
 
 std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
     // LVal -> Ident {'[' Exp ']'} 
+    auto mem = symbol_table_->searchTable(l_val->a_);
+    if (l_val->b_ == nullptr) {
+        // this is a non-array ident
+        return std::make_pair(mem->getMem(), SyEbnfType::TYPE_INT);
+    }
+    else {
+        ArrayMemoryPtr array = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
+        auto array_size = array->getArraySize();
+        auto exp = l_val->b_;
+        auto array_dimension = array->getDimension();
+        auto mem_raw = array->getMem();
+        uint32_t mem_delta = array->getSize();
+        // TODO: handle the array
+        for (int i = 0; i < array_dimension; i++) {
+            int32_t index = expDispatcher(exp).i32;
+            uint32_t size_this_demension = array->getSizeForDimension(i);
+            mem_delta /= size_this_demension;
+            if (index < 0 || index >= size_this_demension) {
+                // throw an error
+                interpretError("array index out of bound", exp->line_);
+                throw "array index out of bound";
+            }
+            else {
+                // get the next array's mem start address
+                mem_raw += index * mem_delta;
+            }
+            if (exp == nullptr) {
+                // throw an error
+                interpretError("pointer can't be a left value", exp->line_);
+                throw "pointer can't be a left value";
+            }
+            exp = exp->d_;
+        }
+        return std::make_pair(mem_raw, SyEbnfType::TYPE_INT);
+    }
     return std::make_pair(nullptr, SyEbnfType::END_OF_ENUM);
 }
 
