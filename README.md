@@ -9,6 +9,7 @@
 
 - type `make sylexer` to make the lexer
 - type `make syparser` to make the parser
+- type `make syinterpreter` to make the interpreter
 - type `make test-lexer` to feed all testcases in `/test/testcase/*.sy` to sylexer
 - type `make test-parser` to feed all testcases in `/test/testcase/*.sy` to syparser
 - type `make clean` to delete all binary

@@ -4,7 +4,6 @@
 #include <cstring>
 #include "syinterpret.h"
 
-// TODO: test lval, runtime function
 void Interpreter::interpretWarning(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[35mWarning in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
 }
@@ -56,7 +55,6 @@ Value Interpreter::primaryExpHandler(AstNodePtr exp) {
 
 Value Interpreter::unaryExpHandler(AstNodePtr exp) {
     // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
-    // TODO: FINISH THIS
     // currently only retunr the val of PrimaryExp
     if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
         return primaryExpHandler(exp);
@@ -69,6 +67,24 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
         }
         else {
             interpretError(std::string("function") + std::string(" \"\033[1;31m") + exp->a_->literal_ + std::string("\033[0m\" not found"), exp->a_->line_);
+        }
+    }
+    if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
+        Value ret = expDispatcher(exp->b_);
+        switch (exp->a_->a_->ast_type_)
+        {
+        case SyAstType::ALU_ADD:
+            return ret;
+        case SyAstType::ALU_SUB:
+            ret.i32 = -ret.i32;
+            return ret;
+        case SyAstType::LOGIC_NOT:
+            ret.i32 = !(ret.i32);
+            return ret; 
+        default:
+            // shouldn't reach here
+            assert(0);
+            break;
         }
     }
     return Value();
@@ -440,7 +456,6 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
         auto array_dimension = array->getDimension();
         auto mem_raw = array->getMem();
         uint32_t mem_delta = array->getSize();
-        // TODO: handle the array
         for (int i = 0; i < array_dimension; i++) {
             int32_t index = expDispatcher(exp).i32;
             uint32_t size_this_demension = array->getSizeForDimension(i);

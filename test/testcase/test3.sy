@@ -44,7 +44,14 @@ int main() {
     dimension_test[0][0][0][0][2] = 0x1337;
     dimension_test[0][0][0][0][3] = 0x7331;
     dimension_test[0][0][0][0][4] = 0x2333;
-    printInt(a);
+    dimension_test[0][0][2][0][0] = 0x3333;
+    printInt(-a);
+    printLn();
+    printInt(+a);
+    printLn();
+    printInt(!a);
+    printLn();
+    printInt(!0);
     printLn();
     printInt(dimension_test[0][0][0][0][0]);
     printLn();
@@ -65,6 +72,8 @@ int main() {
     printHex(dimension_test[0][0][0][0][3]);
     printLn();
     printHex(dimension_test[0][0][0][0][4]);
+    printLn();
+    printInt(dimension_test[0][0][2][0][0]);
     printLn();
     printInt(c);
     printLn();
