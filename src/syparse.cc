@@ -1122,9 +1122,9 @@ AstNodePtr Parser::RelExpL() {
     LexerIterator iter_back = *token_iter_;
     // RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
     auto rel_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
-    if ((*token_iter_)->ast_type_ != SyAstType::LNE ||
-        (*token_iter_)->ast_type_ != SyAstType::GNE ||
-        (*token_iter_)->ast_type_ != SyAstType::LE ||
+    if ((*token_iter_)->ast_type_ != SyAstType::LNE &&
+        (*token_iter_)->ast_type_ != SyAstType::GNE &&
+        (*token_iter_)->ast_type_ != SyAstType::LE &&
         (*token_iter_)->ast_type_ != SyAstType::GE) {
         // no need to reset the token_iter_ 
         // this is not a failure
@@ -1143,6 +1143,10 @@ AstNodePtr Parser::RelExpL() {
         rel_exp_l->a_ = nullptr;
         return std::make_shared<AstNode>(SyEbnfType::E, 0);
     }
+    rel_exp_l->b_ = add_exp;
+    add_exp->parent_ = rel_exp_l;
+    rel_exp_l->c_ = RelExpL();
+    rel_exp_l->c_->parent_ = rel_exp_l;
     return rel_exp_l;
 }
 
