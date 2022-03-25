@@ -1581,7 +1581,6 @@ AstNodePtr Parser::UnaryExp() {
     *token_iter_ = iter_back;
     auto primary_exp = PrimaryExp();
     if (primary_exp == nullptr) {
-        // TODO: error handling
         return nullptr;
     }
     unary_exp->a_ = primary_exp;
@@ -1597,9 +1596,11 @@ AstNodePtr Parser::UnaryOp() {
         token->ast_type_ != SyAstType::LOGIC_NOT) {
         return nullptr;
     }
-    token->ebnf_type_ = SyEbnfType::UnaryOp;
+    auto unary_op = std::make_shared<AstNode>(SyEbnfType::UnaryOp, (*token_iter_)->line_);
+    unary_op->a_ = token;
+    token->parent_ = unary_op;
     ++(*token_iter_);
-    return token;
+    return unary_op;
 }
 
 // this parse won't return nullptr (it success all the time)
