@@ -12,6 +12,7 @@ void Interpreter::interpretWarning(std::string msg, int line) {
 void Interpreter::interpretError(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[31mError in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
     error_occured_ = 1;
+    exit(-1);
 }
 
 Value Interpreter::expDispatcher(AstNodePtr exp) {
@@ -63,7 +64,7 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
     if (exp->a_->ast_type_ == SyAstType::IDENT) {
         auto function = func_table_->getFunc(exp->a_->literal_);
         auto args = exp->b_;
-        if (function && function->isJited()) {
+        if (function) {
             return function->exec(args, this);
         }
         else {
@@ -310,6 +311,9 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
                                 symbol_table_->addSymbol(ident));
             auto mem_raw = mem->getMem();
             auto init_val = def->c_;
+            if (is_global) {
+                memset(mem_raw, 0, sizeof(int));
+            }
             if (init_val != nullptr) {
                 if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
                     init_val->a_->ebnf_type_ != SyEbnfType::Exp) {
@@ -347,6 +351,9 @@ Value SYFunction::exec(AstNodePtr args, InterpreterAPI* interpreter) {
     if (jited_) {
         // call the jited function
         return exec_call_back_(func_exec_mem_, args, interpreter);
+    }
+    else {
+        return interpreter->execFunction(func_, args);
     }
     return Value();
 }
@@ -419,6 +426,9 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
 std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
     // LVal -> Ident {'[' Exp ']'} 
     auto mem = symbol_table_->searchTable(l_val->a_);
+    if (mem == nullptr) {
+        interpretError(std::string("undefined variable \"\033[1;31m") + l_val->a_->literal_ + std::string("\033[0m\""), l_val->a_->line_);
+    }
     if (l_val->b_ == nullptr) {
         // this is a non-array ident
         return std::make_pair(mem->getMem(), SyEbnfType::TYPE_INT);
@@ -496,6 +506,7 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
             if (callee_ret.first == StmtState::RETURN) {
                 return callee_ret;
             }
+            cond = expDispatcher(stmt->b_->a_).i32;
         }
         symbol_table_->exitScope();
         return ret;

@@ -21,21 +21,22 @@ int arr[0x10][0x10] = {
 };
 
 void printArr() {
-    int i = 0xF;
-    int j = 0xF;
-    while (i) {
-        while (j) {
+    int i = 0;
+    int j = 0;
+    while (i < 0x10) {
+        while (j < 0x10) {
             printHex(arr[i][j]);
-            j = j - 1;
+            j = j + 1;
         }
-        i = i - 1;
+        i = i + 1;
+        j = 0;
         printLn();
     }
 }
 
 int main() {
     a = 3;
-//    printArr();
+    printArr();
     dimension_test[0][0][0][0][0] = 0xDEAD;
     dimension_test[0][0][0][0][1] = 0xBEEF;
     dimension_test[0][0][0][0][2] = 0x1337;

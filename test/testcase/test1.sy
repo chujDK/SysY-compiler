@@ -1,8 +1,24 @@
-int a;
-int b[0x100];
+int i, j;
 
 int main()
 {
+    if (i <= 0x0) {
+        printInt(20);
+        printLn();
+    }
+    j = 16;
+    while (j < 0x10) {
+        printInt(30);
+        printLn();
+    }
+    i = i - 1;
+    i + j;
+    if (i < j) {
+        i = 1;
+        printInt(i);
+        printLn();
+        printHex(j);
+    }
     return 0;
 }
 
