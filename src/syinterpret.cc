@@ -550,7 +550,6 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
     }
     return callee_ret;
 }
-
 int Interpreter::exec() {
     while (1) {
         auto comp_unit = parser_->parse();

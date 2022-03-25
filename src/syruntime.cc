@@ -2,7 +2,7 @@
 #include <cassert>
 #include "syruntime.h"
 
-int printInt(int a) {
+int RTprintInt(int a) {
     return printf("%d", a);
 }
 
@@ -15,7 +15,7 @@ Value printIntExecCallBack(char* function, AstNodePtr args, InterpreterAPI* inte
     return ret;
 }
 
-int printHex(int a) {
+int RTprintHex(int a) {
     return printf("0x%x", a);
 }
 
@@ -39,11 +39,25 @@ Value printLnExecCallBack(char* function, AstNodePtr args, InterpreterAPI* inter
     return ret;
 }
 
+int RTputchar(int a) {
+    return std::putchar(a);
+}
+
+Value putcharExecCallBack(char* function, AstNodePtr args, InterpreterAPI* interpreter) {
+    using putcharType = int (*)(int);
+    Value ret;
+    int a = interpreter->expDispatcher(args->a_).i32;
+    ret.i32 = ((putcharType) function)(a);
+    return ret;
+}
+
 void syRuntimeInitForAnInterpreter(InterpreterAPI* interpreter) {
-    SYFunctionPtr sy_printInt = std::make_shared<SYFunction>((char*)printInt, false, printIntExecCallBack);
+    SYFunctionPtr sy_printInt = std::make_shared<SYFunction>((char*)RTprintInt, false, printIntExecCallBack);
     interpreter->addFunction(sy_printInt, "printInt");
-    SYFunctionPtr sy_printHex = std::make_shared<SYFunction>((char*)printHex, false, printHexExecCallBack);
+    SYFunctionPtr sy_printHex = std::make_shared<SYFunction>((char*)RTprintHex, false, printHexExecCallBack);
     interpreter->addFunction(sy_printHex, "printHex");
     SYFunctionPtr sy_printLn = std::make_shared<SYFunction>((char*)printLn, false, printLnExecCallBack);
     interpreter->addFunction(sy_printLn, "printLn");
+    SYFunctionPtr sy_putchar = std::make_shared<SYFunction>((char*) putchar, false, putcharExecCallBack);
+    interpreter->addFunction(sy_putchar, "putchar");
 }

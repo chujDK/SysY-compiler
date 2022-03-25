@@ -27,6 +27,8 @@ void printArr() {
         while (j < 0x10) {
             printHex(arr[i][j]);
             j = j + 1;
+            putchar(44);
+            putchar(32);
         }
         i = i + 1;
         j = 0;
