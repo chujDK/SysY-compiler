@@ -5,41 +5,41 @@
 #include "syinterpret.h"
 
 // TODO:
+// nested init_val is not well supported
 // [+] CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
-// [ ] Decl, // Decl -> ConstDecl | VarDecl
-// [ ] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-// [ ] BType, // BType -> 'int'
-// [ ] ConstDef, // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
+// [+] Decl, // Decl -> ConstDecl | VarDecl
+// [+] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+// [+] BType, // BType -> 'int'
 // [ ] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-// [ ] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
-// [ ] VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
+// [+] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
+// [+] VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
 // [ ] InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
-// [ ] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
-// [ ] FuncType, // FuncType -> 'void' | 'int'
+// [+] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+// [+] FuncType, // FuncType -> 'void' | 'int'
 // [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
 // [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
-// [ ] Block, // Block -> '{' { BlockItem } '}' 
-// [ ] BlockItem, // BlockItem -> Decl | Stmt
-// [ ] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
-// [ ]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
-// [ ]                                //| 'while' '(' Cond ')' Stmt
-// [ ]                                //| 'break' ';' | 'continue' ';'
-// [ ]                                //| 'return' [Exp] ';'
-// [ ] Exp, // Exp -> AddExp
-// [ ] Cond, // Cond -> LOrExp
-// [ ] LVal, // LVal -> Ident {'[' Exp ']'} 
-// [ ] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
-// [ ] Number, // Number -> IntConst 
-// [ ] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
-// [ ] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
+// [+] Block, // Block -> '{' { BlockItem } '}' 
+// [+] BlockItem, // BlockItem -> Decl | Stmt
+// [+] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+// [+]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+// [+]                                //| 'while' '(' Cond ')' Stmt
+// [+]                                //| 'break' ';' | 'continue' ';'
+// [+]                                //| 'return' [Exp] ';'
+// [+] Exp, // Exp -> AddExp
+// [+] Cond, // Cond -> LOrExp
+// [+] LVal, // LVal -> Ident {'[' Exp ']'} 
+// [+] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
+// [+] Number, // Number -> IntConst 
+// [+] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+// [+] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
 // [ ] FuncRParams, // FuncRParams -> Exp { ',' Exp } 
-// [ ] MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
-// [ ] AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
-// [ ] RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
-// [ ] EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
-// [ ] LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
-// [ ] LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
-// [ ] ConstExp, // ConstExp -> AddExp
+// [+] MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
+// [+] AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+// [+] RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+// [+] EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
+// [+] LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
+// [+] LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
+// [+] ConstExp, // ConstExp -> AddExp
 
 void Interpreter::interpretWarning(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[35mWarning in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
@@ -429,8 +429,9 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
             // main function
             // call it
             symbol_table_->enterScope();
-            execFunction(comp_unit->a_, nullptr);
+            auto val = execFunction(comp_unit->a_, nullptr);
             symbol_table_->exitScope();
+            exit(val.i32);
         }
     }
     else {
@@ -451,7 +452,7 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
         if (block_item->a_->ebnf_type_ == SyEbnfType::Stmt) {
             auto stmt = block_item->a_;
             auto ret = stmtHandler(stmt);
-            if (ret.first == StmtState::RETURN) {
+            if (ret.first == StmtState::RETURN || ret.first == StmtState::BREAK) {
                 return ret;
             }
         }
@@ -551,11 +552,11 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
         cond = expDispatcher(stmt->b_->a_).i32;
         symbol_table_->enterScope();
         if (cond) {
-            stmtHandler(stmt->c_);
+            ret = stmtHandler(stmt->c_);
         }
         else {
             if (stmt->d_ != nullptr) {
-                stmtHandler(stmt->d_);
+                ret = stmtHandler(stmt->d_);
             }
         }
         symbol_table_->exitScope();
@@ -566,7 +567,7 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
         while (cond) {
             callee_ret = stmtHandler(stmt->c_);
             if (callee_ret.first == StmtState::BREAK) {
-                break;
+                return ret;
             }
             if (callee_ret.first == StmtState::RETURN) {
                 return callee_ret;

@@ -41,7 +41,7 @@ int main() {
 //    a = 4;
     printHex(a);
     printLn();
-    printArr();
+//    printArr();
     dimension_test[0][0][0][0][0] = 0xDEAD;
     dimension_test[0][0][0][0][1] = 0xBEEF;
     dimension_test[0][0][0][0][2] = 0x1337;
@@ -80,6 +80,19 @@ int main() {
     printLn();
     printInt(c);
     printLn();
+    int i = 0;
+    while (i < 10) {
+        printHex(i);
+        putchar(32);
+        i = i + 1;
+        if (i == 1) {
+//            return 2;
+            break;
+        }
+    }
+    putchar(33);
+    putchar(10);
+    return -1;
 }
 
 int arr[0x2] = {0xDEAD, 0xBEEF};
