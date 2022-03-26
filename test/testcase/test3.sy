@@ -38,7 +38,7 @@ void printArr() {
 
 int main() {
     const int a = 3;
-    a = 4;
+//    a = 4;
     printHex(a);
     printLn();
     printArr();
