@@ -461,13 +461,68 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
     return std::make_pair(StmtState::END_OF_ENUM, Value());
 }
 
+void Interpreter::variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum) {
+    ident->ebnf_type_ = type_enum;
+}
+void Interpreter::variableIdentTyper(AstNodePtr ident, AstNodePtr type) {
+    switch (type->ast_type_)
+    {
+    case SyAstType::TYPE_INT:
+        ident->ebnf_type_ = SyEbnfType::TYPE_INT;
+        break;
+    default:
+        // shouldn't reach here
+        // cause an error
+        assert(0);
+        break;
+    }
+}
+
 Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+    // first add the args to the symbol table
+    symbol_table_->enterScope();
+    AstNodePtr arg_exp = nullptr;
+    if (args != nullptr) {
+        arg_exp = args->a_;
+    }
+    for (auto func_f_param = func_ast->c_; func_f_param != nullptr; func_f_param = func_f_param->d_) {
+        if (arg_exp == nullptr) {
+            // throw an error
+            interpretError("too few arguments when calling function \"\033[1m" + func_ast->b_->literal_ + std::string("\033[0m\""), args->line_);
+            return Value();
+        }
+        auto type = func_f_param->a_->a_;
+        auto ident = func_f_param->b_;
+        variableIdentTyper(ident, type);
+        auto exps = func_f_param->a_->c_;
+
+        // type checking is very lightly now
+        if (exps == nullptr) {
+            // non array
+            auto mem = symbol_table_->addSymbol(ident, false);
+            auto mem_raw = mem->getMem();
+            if (ident->ebnf_type_ == SyEbnfType::TYPE_INT) {
+                int init_val = expDispatcher(arg_exp->a_).i32;
+                memcpy(mem_raw, &init_val, sizeof(int));
+            }
+            else {
+                // shouldn't reach here
+                assert(1!=1);
+            }
+        }
+        else {
+            // TODO: currently not support multi-dimentional array
+        }
+        arg_exp = arg_exp->d_;
+    }
+
     auto ret = blockHandler(func_ast->d_);
     if (ret.first == StmtState::BREAK) {
         interpretWarning(std::string("\033[1;31mbreak signal\033[0m unhandled until function \"\033[1m") +
          func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop or switch "), func_ast->line_);
     }
+    symbol_table_->exitScope();
     return ret.second;
 }
 
@@ -476,6 +531,7 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
     Value ret;
     switch (l_val.second)
     {
+    case SyEbnfType::TYPE_CONST_INT:
     case SyEbnfType::TYPE_INT:
         ret.i32 = *((int*) l_val.first);
         break;

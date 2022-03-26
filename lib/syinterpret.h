@@ -87,6 +87,8 @@ private:
     Value lValRightHandler(AstNodePtr exp);
     Value numberHandler(AstNodePtr exp);
     Value subExpHandler(AstNodePtr exp);
+    void variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum);
+    void variableIdentTyper(AstNodePtr ident, AstNodePtr type);
 
     std::pair<StmtState, Value> blockHandler(AstNodePtr block);
     std::pair<StmtState, Value> stmtHandler(AstNodePtr stmt);

@@ -41,13 +41,20 @@ void print2Int(int a, int b) {
     putchar(32);
     printInt(b);
     putchar(32);
+    printLn();
+    printHex(a);
+    putchar(32);
+    printHex(b);
+    putchar(32);
+    putchar(10);
 }
 
 int main() {
-//    print2Int(0x2333, 0x3332);
     const int a = 3;
 //    a = 4;
     printHex(a);
+    putchar(10);
+    print2Int(0x2333, 0x3332);
     printLn();
     printArr();
     dimension_test[0][0][0][0][0] = 0xDEAD;
