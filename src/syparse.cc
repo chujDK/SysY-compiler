@@ -1829,7 +1829,6 @@ AstNodePtr Parser::ConstDecl() {
     if ((*token_iter_)->ast_type_ != SyAstType::STM_CONST) {
         return nullptr;
     }
-    auto const_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, (*token_iter_)->line_);
     ++(*token_iter_);
     auto b_type = BType();
     if (b_type == nullptr) {
@@ -1840,10 +1839,12 @@ AstNodePtr Parser::ConstDecl() {
     if (const_def_start == nullptr) {
         return nullptr;
     }
+    // the following code used the VarDecl()'s code
+    // just changed the type and add the const_def's parser
     while ((*token_iter_)->ast_type_ == SyAstType::COMMA) {
         ++(*token_iter_);
         LexerIterator iter_back = *token_iter_;
-        auto var_def = VarDef();
+        auto var_def = ConstDef();
         if (var_def == nullptr) {
             // here we just find the nearest ';' or ','
             // and report an error
@@ -1870,7 +1871,7 @@ AstNodePtr Parser::ConstDecl() {
         --(*token_iter_);
     }
     ++(*token_iter_);
-    auto var_decl = std::make_shared<AstNode>(SyEbnfType::VarDecl, b_type->line_);
+    auto var_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, b_type->line_);
     var_decl->a_ = b_type;
     b_type->parent_ = var_decl;
     var_decl->b_ = const_def_start;
