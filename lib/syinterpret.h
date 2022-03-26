@@ -8,7 +8,7 @@ class InterpreterAPI;
 
 union Value {
     int32_t i32;
-    uint32_t u32;
+//    uint32_t u32;
 } ;
 class SYFunction {
 private:

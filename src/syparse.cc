@@ -927,12 +927,17 @@ AstNodePtr Parser::InitVal() {
 }
 
 AstNodePtr Parser::Block() {
-    // origin: '{' { BlockItem } '}'
+    // origin: Block -> '{' { BlockItem } '}'
     if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
         return nullptr;
     }
     auto block = std::make_shared<AstNode>(SyEbnfType::Block, (*token_iter_)->line_);
     ++(*token_iter_);
+    if ((*token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
+        // this is a empty block
+        // just return
+        return block;
+    }
     AstNodePtr block_item_start = nullptr;
     AstNodePtr block_item_last = nullptr;
     while ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
@@ -942,7 +947,9 @@ AstNodePtr Parser::Block() {
         if (block_item == nullptr) {
             // here we couldn't get any BlockItem, 
             // so we can just try to find the nearest '}'
+            // and report an error
             *token_iter_ = iter_back;
+            parseError(std::string("expected a block item after \'\033[1m{\033[0m\'"), (*token_iter_)->line_);
             while ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
                 if ((*token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
                     // there we giveup
@@ -2051,6 +2058,7 @@ AstNodePtr Parser::CompUnit() {
         func_def->parent_ = comp_unit;
         return comp_unit;
     }
+    parseError("\033[1m\033[35mFATAL ERROR, STOP NOW\033[0m", (*token_iter_)->line_);
     return nullptr;
 }
 

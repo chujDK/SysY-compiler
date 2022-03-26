@@ -13,6 +13,7 @@ class IdentMemoryAPI {
 public:
     virtual char* getMem() = 0;
     virtual size_t getSize() = 0;
+    virtual bool isConst() = 0;
     virtual ~IdentMemoryAPI() {}
 };
 
@@ -30,26 +31,31 @@ using IdentMemoryPtr = std::shared_ptr<IdentMemoryAPI>;
 using ArrayMemoryPtr = std::shared_ptr<ArrayMemoryAPI>;
 class IdentMemory: IdentMemoryAPI {
 private:
-    char* mem;
-    size_t size;
+    char* mem_;
+    size_t size_;
+    bool is_const_;
 public:
     // this is a factory method
-    static IdentMemoryPtr AllocMemoryForIdent(TokenPtr ident);
-    IdentMemory(size_t size) {
-        this->size = size;
+    static IdentMemoryPtr AllocMemoryForIdent(TokenPtr ident, bool is_const);
+    IdentMemory(size_t size, bool is_const) {
+        this->size_ = size;
         // TODO: this can cause a serious memory waste
         // when too much small memory (< 0x18 with glibc) is allocated
         // consider to make a pool
-        mem = new char[size];
+        mem_ = new char[size];
+        is_const_ = is_const;
     }
     ~IdentMemory() {
-        delete[] mem;
+        delete[] mem_;
     }
     char* getMem() {
-        return mem;
+        return mem_;
     }
     size_t getSize() {
-        return size;
+        return size_;
+    }
+    bool isConst() {
+        return is_const_;
     }
 };
 
@@ -78,18 +84,19 @@ public:
     }
     char* getMem() { return IdentMemory::getMem(); }
     size_t getSize() { return IdentMemory::getSize(); }
-    ArrayMemory(size_t size) : IdentMemory(size) {
+    ArrayMemory(size_t size, bool is_const) : IdentMemory(size, is_const) {
         dimension_ = 0;
         array_size_ = 1;
     }
+    bool isConst() { return IdentMemory::isConst(); }
 };
 
 class SymbolTableAPI {
 public:
     virtual IdentMemoryPtr searchTable(TokenPtr ident) = 0;
     virtual IdentMemoryPtr searchCurrentScope(TokenPtr ident) = 0;
-    virtual IdentMemoryPtr addGlobalSymbol(TokenPtr ident) = 0;
-    virtual IdentMemoryPtr addSymbol(TokenPtr ident) = 0;
+    virtual IdentMemoryPtr addGlobalSymbol(TokenPtr ident, bool is_const) = 0;
+    virtual IdentMemoryPtr addSymbol(TokenPtr ident, bool is_const) = 0;
     virtual void deleteSymbol(TokenPtr ident) = 0;
     virtual void enterScope() = 0;
     virtual void exitScope() = 0;
@@ -107,8 +114,8 @@ private:
 public:
     IdentMemoryPtr searchTable(TokenPtr ident);
     IdentMemoryPtr searchCurrentScope(TokenPtr ident);
-    inline IdentMemoryPtr addSymbol(TokenPtr ident);
-    inline IdentMemoryPtr addGlobalSymbol(TokenPtr ident);
+    inline IdentMemoryPtr addSymbol(TokenPtr ident, bool is_const);
+    inline IdentMemoryPtr addGlobalSymbol(TokenPtr ident, bool is_const);
     inline void deleteSymbol(TokenPtr ident);
     inline void enterScope();
     inline void exitScope();

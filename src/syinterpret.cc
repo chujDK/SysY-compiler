@@ -4,6 +4,43 @@
 #include <cstring>
 #include "syinterpret.h"
 
+// TODO:
+// [+] CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
+// [ ] Decl, // Decl -> ConstDecl | VarDecl
+// [ ] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+// [ ] BType, // BType -> 'int'
+// [ ] ConstDef, // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
+// [ ] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+// [ ] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
+// [ ] VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
+// [ ] InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+// [ ] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+// [ ] FuncType, // FuncType -> 'void' | 'int'
+// [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
+// [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
+// [ ] Block, // Block -> '{' { BlockItem } '}' 
+// [ ] BlockItem, // BlockItem -> Decl | Stmt
+// [ ] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+// [ ]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+// [ ]                                //| 'while' '(' Cond ')' Stmt
+// [ ]                                //| 'break' ';' | 'continue' ';'
+// [ ]                                //| 'return' [Exp] ';'
+// [ ] Exp, // Exp -> AddExp
+// [ ] Cond, // Cond -> LOrExp
+// [ ] LVal, // LVal -> Ident {'[' Exp ']'} 
+// [ ] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
+// [ ] Number, // Number -> IntConst 
+// [ ] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+// [ ] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
+// [ ] FuncRParams, // FuncRParams -> Exp { ',' Exp } 
+// [ ] MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
+// [ ] AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+// [ ] RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+// [ ] EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
+// [ ] LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
+// [ ] LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
+// [ ] ConstExp, // ConstExp -> AddExp
+
 void Interpreter::interpretWarning(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[35mWarning in executing\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
 }
@@ -235,6 +272,8 @@ int dimension) {
     return init_val;
 }
 
+// TODO: 根据 symbol table 的实现方式，这里无法检出 init_val 里面是否
+// example: int a = a + 1;
 void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
     // Decl -> ConstDecl | VarDecl
     // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
@@ -244,6 +283,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
     // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
     // ConstExp -> AddExp
 
+    auto is_const = decl->a_->ebnf_type_ == SyEbnfType::ConstDecl;
     for (auto def = decl->a_->b_; def != nullptr; def = def->d_) {
         auto ident = def->a_;
         if (def->b_ != nullptr) {
@@ -279,8 +319,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // add this ident to symbol_table_
             ident->ebnf_type_ = SyEbnfType::TYPE_INT_ARRAY;
             ident->u_.array_size_ = arr_size;
-            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
-                                    symbol_table_->addSymbol(ident));
+            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident, is_const) : 
+                                    symbol_table_->addSymbol(ident, is_const));
             ArrayMemoryPtr array_mem = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
             array_mem->setDimension(dimension);
             for (int i = 0; i < dimension; i++) {
@@ -323,8 +363,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             // init_val: nullptr
             // const_exp: nullptr
             ident->ebnf_type_ = SyEbnfType::TYPE_INT;
-            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident) : 
-                                symbol_table_->addSymbol(ident));
+            auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident, is_const) : 
+                                symbol_table_->addSymbol(ident, is_const));
             auto mem_raw = mem->getMem();
             auto init_val = def->c_;
             if (is_global) {
@@ -447,7 +487,12 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
     }
     if (l_val->b_ == nullptr) {
         // this is a non-array ident
-        return std::make_pair(mem->getMem(), SyEbnfType::TYPE_INT);
+        if (mem->isConst()) {
+            return std::make_pair(mem->getMem(), SyEbnfType::TYPE_CONST_INT);
+        }
+        else {
+            return std::make_pair(mem->getMem(), SyEbnfType::TYPE_INT);
+        }
     }
     else {
         ArrayMemoryPtr array = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
@@ -476,7 +521,12 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
             }
             exp = exp->d_;
         }
-        return std::make_pair(mem_raw, SyEbnfType::TYPE_INT);
+        if (mem->isConst()) {
+            return std::make_pair(mem_raw, SyEbnfType::TYPE_CONST_INT);
+        }
+        else {
+            return std::make_pair(mem_raw, SyEbnfType::TYPE_INT);
+        }
     }
     return std::make_pair(nullptr, SyEbnfType::END_OF_ENUM);
 }
@@ -550,6 +600,9 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
         auto exp_val = expDispatcher(exp);
         if (l_val_ret.second == SyEbnfType::TYPE_INT) {
             *((int*) l_val_ret.first) = exp_val.i32;
+        }
+        else if (l_val_ret.second == SyEbnfType::TYPE_CONST_INT) {
+            interpretError("can't assign to a const variable", exp->line_);
         }
     }
     else if (stmt->a_->ebnf_type_ == SyEbnfType::Exp) {

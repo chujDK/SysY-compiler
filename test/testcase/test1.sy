@@ -2,6 +2,7 @@ int i, j;
 
 int main()
 {
+//    const a = 10;
     if (i <= 0x0) {
         printInt(20);
         printLn();
@@ -21,4 +22,3 @@ int main()
     }
     return 0;
 }
-

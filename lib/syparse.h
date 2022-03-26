@@ -115,8 +115,10 @@ enum class SyEbnfType {
 
     // typing
     TYPE_INT, // 'int'
+    TYPE_CONST_INT, // 'const int'
     TYPE_VOID, // 'void'
     TYPE_INT_ARRAY, // 'int[]'
+    TYPE_CONST_INT_ARRAY, // 'const int[]'
     END_OF_ENUM
 };
 

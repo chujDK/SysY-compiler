@@ -17,15 +17,15 @@ IdentMemoryPtr SymbolTable::searchCurrentScope(TokenPtr ident) {
     return nullptr;
 }
 
-IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
+IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident, bool is_const) {
     std::shared_ptr<IdentMemoryAPI> mem(nullptr);
     switch (ident->ebnf_type_)
     {
     case SyEbnfType::TYPE_INT:
-        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int)));
+        mem.reset((IdentMemoryAPI*) new IdentMemory(sizeof(int), is_const));
         return mem;
     case SyEbnfType::TYPE_INT_ARRAY:
-        mem.reset((ArrayMemoryAPI*) new ArrayMemory(sizeof(int) * ident->u_.array_size_));
+        mem.reset((ArrayMemoryAPI*) new ArrayMemory(sizeof(int) * ident->u_.array_size_, is_const));
         return mem;
     default:
         // shouldn't reach here
@@ -35,17 +35,17 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(TokenPtr ident) {
     }
 }
 
-inline IdentMemoryPtr SymbolTable::addSymbol(TokenPtr ident) {
+inline IdentMemoryPtr SymbolTable::addSymbol(TokenPtr ident, bool is_const) {
     // if this ident isn't exist in the current scope, delete won't hurt
     deleteSymbol(ident);
-    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
+    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident, is_const);
     symbol_table_[current_scope_][ident->literal_] = mem;
     return mem;
 }
 
-inline IdentMemoryPtr SymbolTable::addGlobalSymbol(TokenPtr ident) {
+inline IdentMemoryPtr SymbolTable::addGlobalSymbol(TokenPtr ident, bool is_const) {
     // if this ident isn't exist in the current scope, delete won't hurt
-    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident);
+    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident, is_const);
     symbol_table_[0][ident->literal_] = mem;
     return mem;
 }

@@ -37,7 +37,10 @@ void printArr() {
 }
 
 int main() {
-    a = 3;
+    const int a = 3;
+    a = 4;
+    printHex(a);
+    printLn();
     printArr();
     dimension_test[0][0][0][0][0] = 0xDEAD;
     dimension_test[0][0][0][0][1] = 0xBEEF;
