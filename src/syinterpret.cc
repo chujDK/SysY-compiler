@@ -6,6 +6,7 @@
 
 // TODO:
 // nested init_val is not well supported
+// [ ] FuncFParams should added to the symbol table
 // [+] CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
 // [+] Decl, // Decl -> ConstDecl | VarDecl
 // [+] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
@@ -463,6 +464,10 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
     auto ret = blockHandler(func_ast->d_);
+    if (ret.first == StmtState::BREAK) {
+        interpretWarning(std::string("\033[1;31mbreak signal\033[0m unhandled until function \"\033[1m") +
+         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop or switch "), func_ast->line_);
+    }
     return ret.second;
 }
 

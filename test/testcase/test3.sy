@@ -36,12 +36,20 @@ void printArr() {
     }
 }
 
+void print2Int(int a, int b) {
+    printInt(a);
+    putchar(32);
+    printInt(b);
+    putchar(32);
+}
+
 int main() {
+//    print2Int(0x2333, 0x3332);
     const int a = 3;
 //    a = 4;
     printHex(a);
     printLn();
-//    printArr();
+    printArr();
     dimension_test[0][0][0][0][0] = 0xDEAD;
     dimension_test[0][0][0][0][1] = 0xBEEF;
     dimension_test[0][0][0][0][2] = 0x1337;
@@ -92,6 +100,7 @@ int main() {
     }
     putchar(33);
     putchar(10);
+    break;
     return -1;
 }
 
