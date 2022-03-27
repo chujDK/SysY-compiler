@@ -413,6 +413,15 @@ AstNodePtr SYFunction::getFuncAst() {
     return func_;
 }
 
+SYFunction::SYFunction(AstNodePtr func): func_exec_mem_(nullptr), jited_(false), called_times_(0) {
+    func_ = func;
+    addToLLVMSymbolTable();
+}
+
+SYFunction::SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*)): func_(nullptr), 
+func_exec_mem_(reinterpret_cast<char*>(func)), jited_(true), no_fail_(no_fail), 
+called_times_(0), exec_call_back_(exec_call_back) {} ;
+
 Value SYFunction::exec(AstNodePtr args, InterpreterAPI* interpreter) {
     if (jited_) {
         // call the jited function

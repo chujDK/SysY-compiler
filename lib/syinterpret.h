@@ -12,21 +12,23 @@ union Value {
 } ;
 class SYFunction {
 private:
-    AstNodePtr func_;
+    AstNodePtr func_; // func_->ast_type_ == SyAstType::FuncDef
     char* func_exec_mem_;
     Value (*exec_call_back_)(char*, AstNodePtr, InterpreterAPI*); // this function should handle the args
     bool jited_;
     bool no_fail_;
     unsigned int called_times_;
+    void llvmIrGen();
+    void addToLLVMSymbolTable();
 
 public:
     Value exec(AstNodePtr args, InterpreterAPI* interpreter);
     bool isJited() { return jited_; }
     AstNodePtr getFuncAst();
-    SYFunction(AstNodePtr func): func_(func), func_exec_mem_(nullptr), jited_(false), called_times_(0) {} ;
-    SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*)): func_(nullptr), 
-    func_exec_mem_(reinterpret_cast<char*>(func)), jited_(true), no_fail_(no_fail), 
-    called_times_(0), exec_call_back_(exec_call_back) {} ;
+    SYFunction(AstNodePtr func);
+    SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*));
+    // currently only support function level jit
+    void compile();
 };
 using SYFunctionPtr = std::shared_ptr<SYFunction>;
 
