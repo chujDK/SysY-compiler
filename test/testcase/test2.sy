@@ -55,9 +55,9 @@ int arr[0x200] = {};
 int arr1[0x200] = {1, 2, 3, 4};
 int arr2[0x10][0x20][0x30] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
 
-int main(int argc, int argv)
+int main()
 {
-    printf(i1);
+    printInt(i1);
     while (1) {
         i = i + 1;
         i = i + 1 * 3;

@@ -340,7 +340,13 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             auto init_val = def->c_;
             auto const_exp = def->b_;
             if (init_val != nullptr) {
-                if (init_val->a_->ebnf_type_ != init_val->ebnf_type_) {
+                if (init_val->a_ == nullptr) {
+                    // TODO: check here!
+                    // the init_val is "{}"
+                    // just set it all to 0
+                    memset(mem_raw, 0, arr_size * sizeof(int));
+                }
+                else if (init_val->a_->ebnf_type_ != init_val->ebnf_type_) {
                     // init_val is not a list
                     // throw an warning
                     interpretWarning("init_val for array is not a list, skipping the init", init_val->line_);
