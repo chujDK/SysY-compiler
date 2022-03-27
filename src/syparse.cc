@@ -651,7 +651,6 @@ AstNodePtr Parser::Stmt() {
                 return nullptr;
             }
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
-                // TODO error handle
                 return nullptr;
             }
             ++(*token_iter_);

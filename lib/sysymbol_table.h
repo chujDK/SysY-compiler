@@ -39,8 +39,8 @@ public:
     static IdentMemoryPtr AllocMemoryForIdent(TokenPtr ident, bool is_const);
     IdentMemory(size_t size, bool is_const) {
         this->size_ = size;
-        // TODO: this can cause a serious memory waste
-        // when too much small memory (< 0x18 with glibc) is allocated
+        // this can cause a serious memory waste when too much 
+        // small memory (< 0x18 with glibc) is allocated
         // consider to make a pool
         mem_ = new char[size];
         is_const_ = is_const;

@@ -5,20 +5,20 @@
 #include "syinterpret.h"
 
 // TODO:
-// nested init_val is not well supported
+// we can't yet handle the array passing
 // [ ] FuncFParams should added to the symbol table
+// [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
+// [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
 // [+] CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
 // [+] Decl, // Decl -> ConstDecl | VarDecl
 // [+] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
 // [+] BType, // BType -> 'int'
-// [ ] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+// [+] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
 // [+] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
 // [+] VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
-// [ ] InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+// [+] InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
 // [+] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
 // [+] FuncType, // FuncType -> 'void' | 'int'
-// [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
-// [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
 // [+] Block, // Block -> '{' { BlockItem } '}' 
 // [+] BlockItem, // BlockItem -> Decl | Stmt
 // [+] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
@@ -33,7 +33,7 @@
 // [+] Number, // Number -> IntConst 
 // [+] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
 // [+] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
-// [ ] FuncRParams, // FuncRParams -> Exp { ',' Exp } 
+// [+] FuncRParams, // FuncRParams -> Exp { ',' Exp } 
 // [+] MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
 // [+] AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
 // [+] RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
@@ -243,11 +243,14 @@ char* mem_raw, int dimension, int size_delta) {
     }
 }
 
-// TODO: THIS IS FAR FROM DONE
 AstNodePtr Interpreter::initValValidater(AstNodePtr init_val, AstNodePtr const_exp, \
 int dimension) {
     // make the init_list valid
     if (dimension == 0) {
+        if (init_val->a_->ebnf_type_ == SyEbnfType::InitVal) {
+            interpretError("excess elements in scalar initializer", init_val->a_->line_);
+            return nullptr;
+        }
         return init_val;
     }
     int init_val_dimension = 0;
