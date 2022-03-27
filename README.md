@@ -2,7 +2,7 @@
 ### TODO
 - [x] lexer
 - [x] parser
-- [ ] interpreter
+- [x] interpreter
 - [ ] jit compiler
 
 ### Usage
