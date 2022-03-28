@@ -45,6 +45,20 @@ static llvm::Value* unaryExpIRGen(AstNodePtr exp) {
     }
 }
 
+static llvm::Value* lValRightIRGen(AstNodePtr l_val) {
+    // currently, we don't consider the case that l_val is an array
+    // TOOD: add support for array
+    auto l_val_name = l_val->a_->literal_;
+    auto l_val_ir = NamedValues[l_val_name];
+    if (l_val_ir == nullptr) {
+        compilerError("undefined variable", l_val->line_);
+        return nullptr;
+    }
+    else {
+        return l_val_ir;
+    }
+}
+
 static llvm::Value* expIRDispatcher(AstNodePtr exp) {
     llvm::Value* ret = nullptr;
     switch (exp->ebnf_type_) {
@@ -65,7 +79,7 @@ static llvm::Value* expIRDispatcher(AstNodePtr exp) {
         case SyEbnfType::PrimaryExp:
             return primaryExpIRGen(exp);
         case SyEbnfType::LVal:
-            return ret;
+            return lValRightIRGen(exp);
         case SyEbnfType::Number:
             return numberIRGen(exp->a_);
         default:
@@ -91,42 +105,53 @@ static llvm::Value* subExpIRGen(AstNodePtr exp) {
     switch (exp->b_->ast_type_)
     {
     case SyAstType::ALU_ADD:
-        ret_ir = Builder.CreateFAdd(ir_a, ir_c, "addtmp");
+        ret_ir = Builder.CreateAdd(ir_a, ir_c, "addtmp");
         break;
     case SyAstType::ALU_SUB: 
-        ret_ir = Builder.CreateFSub(ir_a, ir_c, "subtmp");
+        ret_ir = Builder.CreateSub(ir_a, ir_c, "subtmp");
         break;
     case SyAstType::ALU_DIV:
-        ret_ir = Builder.CreateFDiv(ir_a, ir_c, "divtmp");
+        ret_ir = Builder.CreateSDiv(ir_a, ir_c, "divtmp");
         break;
     case SyAstType::ALU_MUL:
-        ret_ir = Builder.CreateFMul(ir_a, ir_c, "multmp");
+        ret_ir = Builder.CreateMul(ir_a, ir_c, "multmp");
         break;
     case SyAstType::ALU_MOD:
-        ret_ir = Builder.CreateFRem(ir_a, ir_c, "modtmp");
+        ret_ir = Builder.CreateSRem(ir_a, ir_c, "modtmp");
         break;
+        // The ‘icmp’ instruction takes three operands. The first operand is the condition code indicating the kind of comparison to perform. It is not a value, just a keyword. The possible condition codes are:
+        // eq: equal
+        // ne: not equal
+        // ugt: unsigned greater than
+        // uge: unsigned greater or equal
+        // ult: unsigned less than
+        // ule: unsigned less or equal
+        // sgt: signed greater than
+        // sge: signed greater or equal
+        // slt: signed less than
+        // sle: signed less or equal
     case SyAstType::EQ:
-        cmp_ir = Builder.CreateFCmpOEQ(ir_a, ir_c, "eqtmp");
+        cmp_ir = Builder.CreateICmpEQ(ir_a, ir_c, "eqtmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::NEQ:
-        cmp_ir = Builder.CreateFCmpONE(ir_a, ir_c, "netmp");
+        cmp_ir = Builder.CreateICmpNE(ir_a, ir_c, "netmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::LNE:
-        cmp_ir = Builder.CreateFCmpOLT(ir_a, ir_c, "ltetmp");
+        cmp_ir = Builder.CreateICmpSLT(ir_a, ir_c, "ltetmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::LE:
-        cmp_ir = Builder.CreateFCmpOLE(ir_a, ir_c, "letmp");
+        cmp_ir = Builder.CreateICmpSLE(ir_a, ir_c, "letmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::GNE:
-        cmp_ir = Builder.CreateFCmpOGT(ir_a, ir_c, "gtntmp");
+        cmp_ir = Builder.CreateICmpSGT(ir_a, ir_c, "gtntmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::GE:
-        cmp_ir = Builder.CreateFCmpOGE(ir_a, ir_c, "getmp");
+        cmp_ir = Builder.CreateICmpSGE(ir_a, ir_c, "getmp");
         ret_ir = Builder.CreateIntCast(cmp_ir, llvm::Type::getInt32Ty(TheContext), true, "boolToInttmp");
         break;
     case SyAstType::LOGIC_AND:
