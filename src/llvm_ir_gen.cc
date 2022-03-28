@@ -10,12 +10,51 @@
 #include <llvm/IR/Value.h>
 #include "llvm_ir_gen.h"
 
+// TODO:
+// we can't yet handle the array passing
+// [ ] FuncFParams should added to the symbol table
+// [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
+// [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
+// [ ] Decl, // Decl -> ConstDecl | VarDecl
+// [ ] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+// [+] BType, // BType -> 'int'
+// [ ] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+// [ ] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
+// [ ] VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
+// [ ] InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+// [+] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
+// [+] FuncType, // FuncType -> 'void' | 'int'
+// [+] Block, // Block -> '{' { BlockItem } '}' 
+// [ ] BlockItem, // BlockItem -> Decl | Stmt
+// [+] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
+// [ ]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+// [ ]                                //| 'while' '(' Cond ')' Stmt
+// [ ]                                //| 'break' ';' | 'continue' ';'
+// [ ]                                //| 'return' [Exp] ';'
+// [+] Exp, // Exp -> AddExp
+// [ ] Cond, // Cond -> LOrExp
+// [ ] LVal, // LVal -> Ident {'[' Exp ']'} 
+// [ ] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
+// [+] Number, // Number -> IntConst 
+// [ ] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+// [+] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
+// [ ] FuncRParams, // FuncRParams -> Exp { ',' Exp } 
+// [+] MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
+// [+] AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
+// [+] RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+// [+] EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
+// [+] LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
+// [+] LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
+// [ ] ConstExp, // ConstExp -> AddExp
+
 // in the ir gen, i use no smart ptr, because i know nothing about the llvm
 
 static llvm::LLVMContext TheContext;
 static llvm::IRBuilder<> Builder(TheContext);
 static std::unique_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::Value *> NamedValues;
+static llvm::Value* stmtIRGen(AstNodePtr stmt);
+static llvm::Value* blockIRGen(AstNodePtr block);
 
 // helper function predefine
 static llvm::Value* subExpIRGen(AstNodePtr exp);
@@ -27,7 +66,7 @@ llvm::Value* compilerError(std::string msg, int line) {
 }
 
 static llvm::Value* numberIRGen(AstNodePtr number) {
-    int value = std::stoi(number->literal_);
+    int value = std::stoi(number->a_->literal_);
     return llvm::ConstantInt::get(TheContext, llvm::APInt(32, value, true));
 }
 
@@ -59,13 +98,25 @@ static llvm::Value* lValRightIRGen(AstNodePtr l_val) {
     }
 }
 
+static llvm::Value* constExpIRGen(AstNodePtr const_exp) {
+    // to const exp, we know that const_exp->u_.const_val_ is valid, so just use that
+    // just in case that the jit is called before interpret, we do a check const_exp->u_.const_val_
+    if (const_exp->u_.const_val_ == 0xFFFFFFFF) {
+        // we generate the addExp ir
+        // and it will be folded in the later passes
+        return subExpIRGen(const_exp->a_);
+    }
+    return llvm::ConstantInt::get(TheContext, llvm::APInt(32, const_exp->u_.const_val_, true));
+}
+
 static llvm::Value* expIRDispatcher(AstNodePtr exp) {
     llvm::Value* ret = nullptr;
     switch (exp->ebnf_type_) {
         // TODO: finish this, all `return ret` is undone
         case SyEbnfType::ConstExp:
-            return ret;
+            return constExpIRGen(exp);
         case SyEbnfType::Exp:
+            // Exp -> AddExp
             return expIRDispatcher(exp->a_);
         case SyEbnfType::AddExp:
         case SyEbnfType::MulExp:
@@ -81,7 +132,7 @@ static llvm::Value* expIRDispatcher(AstNodePtr exp) {
         case SyEbnfType::LVal:
             return lValRightIRGen(exp);
         case SyEbnfType::Number:
-            return numberIRGen(exp->a_);
+            return numberIRGen(exp);
         default:
             // should not reach here, trigger a bug
             assert(0);
@@ -102,8 +153,7 @@ static llvm::Value* subExpIRGen(AstNodePtr exp) {
     auto ir_c = expIRDispatcher(exp_c);
     llvm::Value* ret_ir;
     llvm::Value* cmp_ir;
-    switch (exp->b_->ast_type_)
-    {
+    switch (exp->b_->ast_type_) {
     case SyAstType::ALU_ADD:
         ret_ir = Builder.CreateAdd(ir_a, ir_c, "addtmp");
         break;
@@ -169,6 +219,66 @@ static llvm::Value* subExpIRGen(AstNodePtr exp) {
     return ret_ir;
 }
 
+static llvm::Value* condIRGen(AstNodePtr cond) {
+    return expIRDispatcher(cond->a_);
+}
+
+static llvm::Value* ifStmtIRGen(AstNodePtr stmt) {
+    // we assert that stmt->a_->ast_type_ == SyAstType::STM_IF
+    #ifdef DEBUG
+    assert(stmt->a_->ast_type_ == SyAstType::STM_IF);
+    #endif
+    // TODO
+
+    // thought it is a logical expression, it returns i32
+    auto cond_ir = condIRGen(stmt->b_); 
+    // here we convert the i32 to i1
+    cond_ir = Builder.CreateICmpEQ(cond_ir, 
+      llvm::ConstantInt::get(llvm::Type::getInt32Ty(TheContext), 1), "ifcond");
+
+    llvm::Function* this_function = Builder.GetInsertBlock()->getParent();
+
+    // create a basic block for the "then" branch
+    llvm::BasicBlock* then_basic_block = llvm::BasicBlock::Create(TheContext, "then", this_function);
+    // create a basic block for the "else" branch
+    // note: don't add it to the function yet
+    llvm::BasicBlock* else_basic_block = llvm::BasicBlock::Create(TheContext, "else");
+
+    // create a basic block for the "merge" branch
+    // note: don't add it to the function yet
+    llvm::BasicBlock* merge_basic_block = llvm::BasicBlock::Create(TheContext, "if-then-merge");
+
+    // wow, amazing, llvm is so easy to use!
+    Builder.CreateCondBr(cond_ir, then_basic_block, else_basic_block);
+    
+    // emit the "then" block
+    Builder.SetInsertPoint(then_basic_block);
+    stmtIRGen(stmt->c_);
+    // jump to the merge block
+    Builder.CreateBr(merge_basic_block);
+
+    // set the then_basic_block as the current insert point is mainly for the PHI of this 
+    // if-else return val in the document, as our if-else return nothing, we don't need to
+    // thus the following two lines of code won't be included
+    // Codegen of 'Then' can change the current block, update then_basic_block for the PHI.
+    // then_basic_block = Builder.GetInsertBlock();
+
+    // emit the "else" block
+    this_function->getBasicBlockList().push_back(else_basic_block);
+    Builder.SetInsertPoint(else_basic_block);
+    // the else block is optional
+    if (stmt->d_ != nullptr) {
+        stmtIRGen(stmt->d_);
+    }
+    Builder.CreateBr(merge_basic_block);
+
+    // emit the "merge" block
+    this_function->getBasicBlockList().push_back(merge_basic_block);
+    Builder.SetInsertPoint(merge_basic_block);
+    
+    return nullptr;
+}
+
 static llvm::Value* stmtIRGen(AstNodePtr stmt) {
     #ifdef DEBUG
     assert(stmt != nullptr && stmt->ebnf_type_ == SyEbnfType::Stmt);
@@ -180,12 +290,11 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
         // null statement
         return ret;
     }
-    switch (stmt->a_->ast_type_)
-    {
+    switch (stmt->a_->ast_type_) {
         // TODO
     case SyAstType::STM_IF:
         // if (cond) stmt
-        return ret;
+        return ifStmtIRGen(stmt);
     case SyAstType::STM_WHILE:
         return ret;
     case SyAstType::STM_BREAK:
@@ -213,7 +322,7 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
         #ifdef DEBUG
         assert(stmt->a_->ebnf_type_ == SyEbnfType::Block);
         #endif
-        // TODO
+        callee_ret = blockIRGen(stmt->a_);
     }
     return callee_ret;
 }
@@ -224,8 +333,7 @@ static llvm::Value* blockItemIRGen(AstNodePtr block_item) {
     #endif
 
     llvm::Value* last_val = nullptr;
-    switch (block_item->a_->ebnf_type_)
-    {
+    switch (block_item->a_->ebnf_type_) {
     case SyEbnfType::Decl:
         // TODO
         break;
@@ -312,8 +420,7 @@ void SYFunction::addToLLVMSymbolTable() {
     std::vector<llvm::Type*> argv;
     for (; func_f_param != nullptr; func_f_param = func_f_param->d_) {
         argc++;
-        switch (func_f_param->a_->a_->ast_type_)
-        {
+        switch (func_f_param->a_->a_->ast_type_) {
         case SyAstType::TYPE_INT:
             argv.push_back(llvm::Type::getInt32Ty(TheContext));
             break;
@@ -326,8 +433,7 @@ void SYFunction::addToLLVMSymbolTable() {
     
     // set the function's return type
     llvm::FunctionType* func_type;
-    switch (func_type_enum)
-    {
+    switch (func_type_enum) {
     case SyAstType::TYPE_INT:
         func_type = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), argv, false);
         break;

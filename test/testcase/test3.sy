@@ -103,7 +103,7 @@ int main() {
         printHex(i);
         putchar(32);
         i = i + 1;
-        if (i == 1) {
+        if (i == 2) {
 //            return 2;
             break;
         } else {
