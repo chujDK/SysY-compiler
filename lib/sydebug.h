@@ -19,7 +19,7 @@ public:
     void ungetChar(); // unget the current char
     std::string getLine(); // get the current line
 
-    CharStream(const char* buf, int buf_size): buf(buf), buf_size(buf_size), buf_pos(0) {}
+    CharStream(const char* _buf, int _buf_size): buf(_buf), buf_size(_buf_size), buf_pos(0) {}
     ~CharStream() {}
 };
 

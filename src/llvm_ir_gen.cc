@@ -26,7 +26,6 @@ static llvm::Value* numberIRGen(AstNodePtr node) {
 }
 
 static llvm::Value* expIRDispatcher(AstNodePtr exp) {
-
 }
 
 static llvm::Value* subExpIRGen(AstNodePtr exp) {

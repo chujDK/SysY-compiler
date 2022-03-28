@@ -54,12 +54,12 @@ int main(int argc, char* argv[])
     FileStream* fileStream = new FileStream(argv[1]);
     #ifdef LEXER
     // this is the code for lexer
-    Lexer lexer(fileStream);
-    LexerIterator iter(lexer.getNextToken(), &lexer);
+    Lexer *lexer = new Lexer(fileStream);
+    LexerIterator iter(lexer->getNextToken(), lexer);
     while (iter->ast_type_ != SyAstType::EOF_TYPE) {
         printSyToken(*iter);
         ++iter;
-    } 
+    }
     #endif
     #ifdef PARSER
     // this is the code for parser

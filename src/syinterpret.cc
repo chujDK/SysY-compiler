@@ -325,7 +325,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
             ident->u_.array_size_ = arr_size;
             auto mem = (is_global ? symbol_table_->addGlobalSymbol(ident, is_const) : 
                                     symbol_table_->addSymbol(ident, is_const));
-            ArrayMemoryPtr array_mem = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
+            ArrayMemoryPtr array_mem = std::static_pointer_cast<ArrayMemoryAPI>(mem);
             array_mem->setDimension(dimension);
             for (int i = 0; i < dimension; i++) {
                 array_mem->setSizeForDimension(i, dim_vec[i]);
@@ -415,7 +415,7 @@ AstNodePtr SYFunction::getFuncAst() {
 
 SYFunction::SYFunction(AstNodePtr func): func_exec_mem_(nullptr), jited_(false), called_times_(0) {
     func_ = func;
-    addToLLVMSymbolTable();
+//    addToLLVMSymbolTable();
 }
 
 SYFunction::SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*)): func_(nullptr), 
@@ -575,7 +575,7 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
         }
     }
     else {
-        ArrayMemoryPtr array = std::dynamic_pointer_cast<ArrayMemoryAPI>(mem);
+        ArrayMemoryPtr array = std::static_pointer_cast<ArrayMemoryAPI>(mem);
         auto array_size = array->getArraySize();
         auto exp = l_val->b_;
         auto array_dimension = array->getDimension();
@@ -588,7 +588,6 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
             if (index < 0 || index >= size_this_demension) {
                 // throw an error
                 interpretError("array index out of bound", exp->line_);
-                throw "array index out of bound";
             }
             else {
                 // get the next array's mem start address
@@ -597,7 +596,6 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
             if (exp == nullptr) {
                 // throw an error
                 interpretError("pointer can't be a left value", exp->line_);
-                throw "pointer can't be a left value";
             }
             exp = exp->d_;
         }

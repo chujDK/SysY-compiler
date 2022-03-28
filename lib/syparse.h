@@ -189,7 +189,8 @@ private:
 public:
     LexerIterator(TokenPtr token, Lexer* lexer): lexer_(lexer) {
         if (token == nullptr) {
-            throw "token is nullptr";
+            fprintf(stderr, "LexerIterator: token is nullptr\n");
+            exit(-1);
         } else {
             current_token_ = token;
         }

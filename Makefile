@@ -8,20 +8,21 @@ SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
 LIB=$(foreach x, $(LIB_DIR), ${x}/*.h)
 BIN_DIR=./bin
-CXXFLAGS=-ggdb# -fsanitize=address
+CXXFLAGS=-ggdb #-fsanitize=address
 DEFINE=-DDEBUG 
+LLVMFLAGS=`llvm-config --cxxflags --ldflags --libs --libfiles --system-libs`
 
 syparser: ${SRC}
 	@echo "making syparser..."
-	g++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	g++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
 
 sylexer: ${SRC}
 	@echo "making sylexer..."
-	g++ -I $(LIB_DIR) -DLEXER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DLEXER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
 
 syinterpreter: ${SRC}
 	@echo "making syinterpreter..."
-	g++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
 
 .PHONY:test-parser
 test-parser: syparser
