@@ -27,3 +27,7 @@ sudo apt install llvm
 ### Note
 
 both the output of lexer and parser used the "unix-liked terminal color setting", so it may not output nicely in windows
+
+### 不足
+
+- 设计之初没有想清楚，其实每种 node 都应该继承一个接口类，然后在 parse 后的操作中直接通过相应的重载方法来生成对应的 ir 等。现在的实现造成了 ir 生成器、解释器和语法紧耦合了。

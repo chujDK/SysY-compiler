@@ -8,8 +8,8 @@ SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./lib
 LIB=$(foreach x, $(LIB_DIR), ${x}/*.h)
 BIN_DIR=./bin
-CXXFLAGS=-ggdb# -fsanitize=address
-DEFINE=-DDEBUG 
+CXXFLAGS=-gdwarf-2 -ggdb -frtti# -fsanitize=address
+DEFINE=-DDEBUG
 LLVMFLAGS=`llvm-config --cxxflags --ldflags --libs --libfiles --system-libs`
 
 syparser: ${SRC}
@@ -23,6 +23,10 @@ sylexer: ${SRC}
 syinterpreter: ${SRC}
 	@echo "making syinterpreter..."
 	clang++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
+
+irtest: ${SRC}
+	@echo "making irtest..."
+	clang++ -I $(LIB_DIR) -DCOMPILER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
 
 .PHONY:test-parser
 test-parser: syparser

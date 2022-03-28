@@ -80,6 +80,18 @@ int main(int argc, char* argv[])
     syRuntimeInitForAnInterpreter(interpreter);
     interpreter->exec();
     #endif
+
+    #ifdef COMPILER
+    // let's do a sample test for ir gen
+    auto fileStreamIR = new FileStream("test/testcase/test_ir1.sy");
+    ParserAPI* parser = (ParserAPI*)new Parser(fileStreamIR);
+    InterpreterAPI* interpreter = new Interpreter(parser);
+    // no runtime init here
+
+    codeGenInit();
+    interpreter->exec();
+    #endif
+
     return 0;
 }
 #endif

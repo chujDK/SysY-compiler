@@ -9,6 +9,7 @@
 // [ ] FuncFParams should added to the symbol table
 // [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
 // [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
+// [ ] interpreter should handle the function redefinition error handling
 // [+] CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
 // [+] Decl, // Decl -> ConstDecl | VarDecl
 // [+] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
@@ -447,6 +448,11 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
         if (comp_unit->a_->b_->literal_ == "main") {
             // main function
             // call it
+            #ifdef COMPILER
+            auto function = func_table_->getFunc("main");
+            function->compile();
+            exit(0);
+            #endif
             symbol_table_->enterScope();
             auto val = execFunction(comp_unit->a_, nullptr);
             symbol_table_->exitScope();

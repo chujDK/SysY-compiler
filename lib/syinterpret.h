@@ -1,6 +1,7 @@
 #ifndef _SYINTERPRET_H_
 #define _SYINTERPRET_H_
 #include <string>
+#include <llvm/IR/Function.h>
 #include "syparse.h"
 #include "sysymbol_table.h"
 
@@ -18,7 +19,7 @@ private:
     bool jited_;
     bool no_fail_;
     unsigned int called_times_;
-    void llvmIrGen();
+    llvm::Function* functionDefinitionLLVMIrGen();
     void addToLLVMSymbolTable();
 
 public:
