@@ -415,7 +415,7 @@ AstNodePtr SYFunction::getFuncAst() {
 
 SYFunction::SYFunction(AstNodePtr func): func_exec_mem_(nullptr), jited_(false), called_times_(0) {
     func_ = func;
-//    addToLLVMSymbolTable();
+    addToLLVMSymbolTable();
 }
 
 SYFunction::SYFunction(void* func, bool no_fail, Value (*exec_call_back)(char*, AstNodePtr, InterpreterAPI*)): func_(nullptr), 

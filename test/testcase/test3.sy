@@ -110,7 +110,7 @@ int main() {
     }
     putchar(33);
     putchar(10);
-    break;
+//    break;
     return -1;
 }
 

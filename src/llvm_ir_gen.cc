@@ -129,6 +129,9 @@ void SYFunction::addToLLVMSymbolTable() {
     case SyAstType::TYPE_INT:
         func_type = llvm::FunctionType::get(llvm::Type::getInt32Ty(TheContext), argv, false);
         break;
+    case SyAstType::TYPE_VOID:
+        func_type = llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), argv, false);
+        break;
     default:
         compilerError("invalid function type", func_->a_->line_);
         assert(0);
@@ -142,6 +145,7 @@ void SYFunction::addToLLVMSymbolTable() {
     // set the function's argument
     func_f_param = func_->c_;
     for (auto &arg_iter : func_ir->args()) {
-        arg_iter.setName(func_f_param->a_->b_->literal_);
+        arg_iter.setName(func_f_param->b_->literal_);
+        func_f_param = func_f_param->d_;
     }
 }

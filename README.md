@@ -5,6 +5,15 @@
 - [x] interpreter
 - [ ] jit compiler
 
+### Pre-requirement
+
+clang-12+llvm is needed as the jit compiler will use llvm ir. In ubuntu20.04, just use apt to install them.
+
+```
+sudo apt install clang
+sudo apt install llvm
+```
+
 ### Usage
 
 - type `make sylexer` to make the lexer
