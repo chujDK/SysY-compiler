@@ -526,6 +526,7 @@ AstNodePtr Parser::Stmt() {
                 return nullptr;
             }
             if ((*token_iter_)->ast_type_ == SyAstType::STM_ELSE) {
+                ++(*token_iter_);
                 stmt_else = Stmt();
                 if (stmt_else == nullptr) {
                     // here is really tricky, it's hard to tell whether the error is

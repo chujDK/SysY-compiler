@@ -1,4 +1,10 @@
 int main(int a, int b) {
     a + 1 + b;
+    if (a < 10) {
+        a + 1;
+    }
+    else {
+        b + 1;
+    }
     return a;
 }

@@ -106,6 +106,8 @@ int main() {
         if (i == 1) {
 //            return 2;
             break;
+        } else {
+            putchar(33);
         }
     }
     putchar(33);
