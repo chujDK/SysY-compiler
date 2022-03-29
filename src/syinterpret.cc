@@ -480,6 +480,9 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
             if (ret.first == StmtState::RETURN || ret.first == StmtState::BREAK) {
                 return ret;
             }
+            if (ret.first == StmtState::CONTINUE) {
+                return ret;
+            }
         }
     }
     return std::make_pair(StmtState::END_OF_ENUM, Value());
@@ -544,7 +547,11 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     auto ret = blockHandler(func_ast->d_);
     if (ret.first == StmtState::BREAK) {
         interpretWarning(std::string("\033[1;31mbreak signal\033[0m unhandled until function \"\033[1m") +
-         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop or switch "), func_ast->line_);
+         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop"), func_ast->line_);
+    }
+    if (ret.first == StmtState::CONTINUE) {
+        interpretWarning(std::string("\033[1;31mcontiue signal\033[0m unhandled until function \"\033[1m") +
+         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: continue statement not within loop"), func_ast->line_);
     }
     symbol_table_->exitScope();
     return ret.second;
@@ -654,6 +661,10 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
             }
             if (callee_ret.first == StmtState::RETURN) {
                 return callee_ret;
+            }
+            if (callee_ret.first == StmtState::CONTINUE) {
+                // no problem, we go on!
+                // do nothing
             }
             cond = expDispatcher(stmt->b_->a_).i32;
         }

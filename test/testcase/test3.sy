@@ -111,6 +111,18 @@ int main() {
             putchar(33);
         }
     }
+
+    printLn();
+    i = 0x20;
+    while (i > 0) {
+        i = i - 1;
+        printHex(i);
+        if (i < 0x10) {
+            continue;
+        }
+        putchar(32);
+    }
+
     putchar(33);
     putchar(10);
 //    break;

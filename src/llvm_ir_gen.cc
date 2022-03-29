@@ -15,8 +15,8 @@
 // [ ] FuncFParams should added to the symbol table
 // [ ] FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
 // [ ] FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
-// [ ] Decl, // Decl -> ConstDecl | VarDecl
-// [ ] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+// [+] Decl, // Decl -> ConstDecl | VarDecl
+// [+] ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
 // [+] BType, // BType -> 'int'
 // [ ] ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
 // [ ] VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
@@ -27,14 +27,14 @@
 // [+] Block, // Block -> '{' { BlockItem } '}' 
 // [ ] BlockItem, // BlockItem -> Decl | Stmt
 // [+] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
-// [ ]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
-// [ ]                                //| 'while' '(' Cond ')' Stmt
+// [+]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
+// [+]                                //| 'while' '(' Cond ')' Stmt
 // [ ]                                //| 'break' ';' | 'continue' ';'
 // [ ]                                //| 'return' [Exp] ';'
 // [+] Exp, // Exp -> AddExp
-// [ ] Cond, // Cond -> LOrExp
+// [+] Cond, // Cond -> LOrExp
 // [ ] LVal, // LVal -> Ident {'[' Exp ']'} 
-// [ ] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
+// [+] PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
 // [+] Number, // Number -> IntConst 
 // [ ] UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
 // [+] UnaryOp, // UnaryOp -> '+' | '-' | '!' 
@@ -45,7 +45,7 @@
 // [+] EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
 // [+] LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
 // [+] LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
-// [ ] ConstExp, // ConstExp -> AddExp
+// [+] ConstExp, // ConstExp -> AddExp
 
 // in the ir gen, i use no smart ptr, because i know nothing about the llvm
 
