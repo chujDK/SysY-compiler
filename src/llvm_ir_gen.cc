@@ -78,8 +78,33 @@ static llvm::Value* unaryExpIRGen(AstNodePtr exp) {
     if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
         return primaryExpIRGen(exp->a_);
     }
-    else {
+    else if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
+        llvm::Value* ret = expIRDispatcher(exp->b_);
+        switch (exp->a_->a_->ast_type_)
+        {
+        case SyAstType::ALU_ADD:
+            return ret;
+        case SyAstType::ALU_SUB:
+            return Builder.CreateNSWSub(
+              llvm::ConstantInt::get(TheContext, llvm::APInt(32, 0, true)), ret, "subtmp");
+        case SyAstType::LOGIC_NOT:
+            // %tmp = icmp ne i32 %ret, 0
+            // %ans = xor i1 %tmp, true
+            ret = Builder.CreateICmpNE(
+              ret, llvm::ConstantInt::get(TheContext, llvm::APInt(32, 0, true)), "tmp");
+            ret = Builder.CreateXor(ret, llvm::ConstantInt::get(TheContext, llvm::APInt(1, 1, true)), "nottmp");
+            return Builder.CreateZExt(ret, llvm::Type::getInt32Ty(TheContext), "exttmp");
+        default:
+            break;
+        }
+        return nullptr;
+    }
+    else if (exp->a_->ast_type_ == SyAstType::IDENT) {
         // TODO: finish this
+        return nullptr;
+    }
+    else {
+        assert(0);
         return nullptr;
     }
 }
