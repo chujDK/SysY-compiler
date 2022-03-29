@@ -556,7 +556,9 @@ llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
 
 void SYFunction::compile() {
     auto func_ir = functionDefinitionLLVMIrGen();
+    #ifdef DEBUG
     TheModule->print(llvm::errs(), nullptr);
+    #endif
 }
 
 void SYFunction::addToLLVMSymbolTable() {

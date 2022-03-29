@@ -3,6 +3,7 @@
 - [x] lexer
 - [x] parser
 - [x] interpreter
+- [ ] refactor
 - [ ] jit compiler
 
 ### Pre-requirement
