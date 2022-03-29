@@ -114,12 +114,13 @@ int main() {
     putchar(33);
     putchar(10);
 //    break;
+    int aaa = a + 1 + 2 + 3 - 4 + 5;
+    printHex(aaa);
     return ((a + b));
 }
 
-/*
-int arr[0x2] = {0xDEAD, 0xBEEF};
 
+int arr[0x2] = {0xDEAD, 0xBEEF};
 
 int a;
 int a;
@@ -134,4 +135,5 @@ int arr[0x10] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD
 
 int b1 = 3;
 int a2 = 4;
-*/
+
+int aaa = a + 1 + 2 + 3 + 4 + 5;

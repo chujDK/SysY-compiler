@@ -5,7 +5,8 @@
 #include "syparse.h"
 
 static void adjustExpLAst(AstNodePtr node);
-static void adjustExpAst(AstNodePtr node);
+static AstNodePtr adjustExpAst(AstNodePtr node);
+static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
 
 static inline bool isDigit(char c) {
     return c >= '0' && c <= '9';
@@ -1113,19 +1114,32 @@ static void adjustExpLAst(AstNodePtr node) {
 //
 // after adjust, all AddExpL is a AddExp
 // @input: root of the ast
-static void adjustExpAst(AstNodePtr node) {
+static AstNodePtr adjustExpAst(AstNodePtr root) {
     // before addjust, node->b_ is an AddExpL
     // after addjust, node->b_ is an '+' or '-', 
     // and node->c_ is an AddExp
-    if (node->b_ != nullptr) {
-        auto add_exp_l = node->b_;
-        node->c_ = add_exp_l;
-        node->b_ = add_exp_l->a_;
+    if (root->b_ != nullptr) {
+        auto add_exp_l = root->b_;
+        root->c_ = add_exp_l;
+        root->b_ = add_exp_l->a_;
         add_exp_l->a_ = add_exp_l->b_;
         add_exp_l->b_ = nullptr;
-        add_exp_l->ebnf_type_ = node->ebnf_type_;
+        add_exp_l->ebnf_type_ = root->ebnf_type_;
         adjustExpLAst(add_exp_l);
     }
+    return adjustExpAstRightBindToLeftBind(root);
+}
+
+static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node) {
+    auto right_node = node->c_;
+    if (right_node->ebnf_type_ != node->ebnf_type_) {
+        return node;
+    }
+    node->c_ = right_node->a_;
+    right_node->parent_.reset();
+    node->parent_ = right_node;
+    right_node->a_ = node;
+    return adjustExpAstRightBindToLeftBind(right_node);
 }
 
 AstNodePtr Parser::RelExpL() {
@@ -1176,7 +1190,7 @@ AstNodePtr Parser::RelExp() {
     if (rel_exp_l->ebnf_type_ != SyEbnfType::E) {
         rel_exp->b_ = rel_exp_l;
         rel_exp_l->parent_ = rel_exp;
-        adjustExpAst(rel_exp);
+        rel_exp = adjustExpAst(rel_exp);
     }
     return rel_exp;
 }
@@ -1227,7 +1241,7 @@ AstNodePtr Parser::EqExp() {
     if (eq_exp_l->ebnf_type_ != SyEbnfType::E) {
         eq_exp->b_ = eq_exp_l;
         eq_exp_l->parent_ = eq_exp;
-        adjustExpAst(eq_exp);
+        eq_exp = adjustExpAst(eq_exp);
     }
     return eq_exp;
 }
@@ -1278,7 +1292,7 @@ AstNodePtr Parser::LAndExp() {
     if (l_and_exp_l->ebnf_type_ != SyEbnfType::E) {
         l_and_exp->b_ = l_and_exp_l;
         l_and_exp_l->parent_ = l_and_exp;
-        adjustExpAst(l_and_exp);
+        l_and_exp = adjustExpAst(l_and_exp);
     }
     return l_and_exp;
 }
@@ -1329,7 +1343,7 @@ AstNodePtr Parser::LOrExp() {
     if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
         l_or_exp->b_ = l_or_exp_l;
         l_or_exp_l->parent_ = l_or_exp;
-        adjustExpAst(l_or_exp);
+        l_or_exp = adjustExpAst(l_or_exp);
     }
     return l_or_exp;
 }
@@ -1660,7 +1674,7 @@ AstNodePtr Parser::MulExp() {
     if (mul_exp_l->ebnf_type_ != SyEbnfType::E) {
         mul_exp->b_ = mul_exp_l;
         mul_exp_l->parent_ = mul_exp;
-        adjustExpAst(mul_exp);
+        mul_exp = adjustExpAst(mul_exp);
     }
     return mul_exp;
 }
@@ -1709,7 +1723,7 @@ AstNodePtr Parser::AddExp() {
         add_exp->b_ = add_exp_l;
         add_exp_l->parent_ = add_exp;
         // we need to change the AddExpL to AddExp
-        adjustExpAst(add_exp);
+        add_exp = adjustExpAst(add_exp);
     }
     return add_exp;
 }
