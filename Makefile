@@ -12,6 +12,9 @@ CXXFLAGS=-gdwarf-2 -ggdb -frtti# -fsanitize=address
 DEFINE=-DDEBUG
 LLVMFLAGS=`llvm-config --cxxflags --ldflags --libs --libfiles --system-libs`
 
+all: syparser sylexer syinterpreter irtest
+	@echo "making all..."
+
 syparser: ${SRC}
 	@echo "making syparser..."
 	clang++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
@@ -65,6 +68,3 @@ UNIT_test: ${SRC} ${TESTFILE_DIR}/UNIT_test.cc
 .PHONY:clean
 clean: bin/*
 	$(shell rm $^)
-
-all: syparser sylexer
-	@echo "making all done"

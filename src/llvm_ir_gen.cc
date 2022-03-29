@@ -53,12 +53,12 @@ static llvm::LLVMContext TheContext;
 static llvm::IRBuilder<> Builder(TheContext);
 static std::unique_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::Value *> NamedValues;
-static llvm::Value* stmtIRGen(AstNodePtr stmt);
-static llvm::Value* blockIRGen(AstNodePtr block);
 
 // helper function predefine
 static llvm::Value* subExpIRGen(AstNodePtr exp);
 static llvm::Value* expIRDispatcher(AstNodePtr exp);
+static llvm::Value* stmtIRGen(AstNodePtr stmt);
+static llvm::Value* blockIRGen(AstNodePtr block);
 
 llvm::Value* compilerError(std::string msg, int line) {
     fprintf(stderr, "\033[1m\033[31mError in compiling\033[0m: line \033[1m%d\033[0m: %s\n", line, msg.c_str());
@@ -279,6 +279,44 @@ static llvm::Value* ifStmtIRGen(AstNodePtr stmt) {
     return nullptr;
 }
 
+static llvm::Value* whileStmtIRGen(AstNodePtr stmt) {
+    // we assert that stmt->a_->ast_type_ == SyAstType::STM_WHILE
+    #ifdef DEBUG
+    assert(stmt->a_->ast_type_ == SyAstType::STM_WHILE);
+    #endif
+    //| 'while' '(' Cond ')' Stmt
+
+    llvm::Function* this_function = Builder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock* cond_basic_block = 
+      llvm::BasicBlock::Create(TheContext, "cond", this_function);
+    llvm::BasicBlock* loop_basic_block = 
+      llvm::BasicBlock::Create(TheContext, "loop");
+    llvm::BasicBlock* merge_basic_block = 
+        llvm::BasicBlock::Create(TheContext, "while-merge");
+
+    // first we set the loop condition
+    Builder.CreateBr(cond_basic_block);
+    Builder.SetInsertPoint(cond_basic_block);
+    llvm::Value* cond_ir = condIRGen(stmt->b_);
+    cond_ir = Builder.CreateICmpEQ(cond_ir, 
+      llvm::ConstantInt::get(llvm::Type::getInt32Ty(TheContext), 1), "whilecond");
+
+    // then we set the cond jmp
+    Builder.CreateCondBr(cond_ir, loop_basic_block, merge_basic_block);
+
+    // emit the loop block
+    this_function->getBasicBlockList().push_back(loop_basic_block);
+    Builder.SetInsertPoint(loop_basic_block);
+    stmtIRGen(stmt->c_);
+    Builder.CreateBr(cond_basic_block);
+
+    this_function->getBasicBlockList().push_back(merge_basic_block);
+    Builder.SetInsertPoint(merge_basic_block);
+
+    return nullptr;
+}
+
 static llvm::Value* stmtIRGen(AstNodePtr stmt) {
     #ifdef DEBUG
     assert(stmt != nullptr && stmt->ebnf_type_ == SyEbnfType::Stmt);
@@ -296,7 +334,7 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
         // if (cond) stmt
         return ifStmtIRGen(stmt);
     case SyAstType::STM_WHILE:
-        return ret;
+        return whileStmtIRGen(stmt);
     case SyAstType::STM_BREAK:
         return ret;
     case SyAstType::STM_CONTINUE:
@@ -383,8 +421,6 @@ llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
     // record the function arguments in the NamedValues map
     NamedValues.clear();
     for (auto &arg : this_func->args()) {
-        // i don't know why the vscode report error when i use arg.getName()
-        // to pass the string to NamedValues.
         NamedValues[arg.getName()] = &arg;
     }
 

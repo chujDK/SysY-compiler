@@ -1083,6 +1083,9 @@ static void adjustExpLAst(AstNodePtr node) {
     }
 }
 
+// !!!!!! TODO: !!!!!!
+// after adjust, a - 2 + 1 will be parsed as a - (2 + 1), which
+// is definitely wrong. FIX IT.
 // take AddExp ast as an example
 // origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp 
 // ast:        AddExp

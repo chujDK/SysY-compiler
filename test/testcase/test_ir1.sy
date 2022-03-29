@@ -12,5 +12,10 @@ int main(int a, int b) {
     else {
         b / 2 + a;
     }
-    return a;
+
+    while(a > 10) {
+        (a - 2) + 10;
+    }
+
+    return (a + b) + ((a + b) * 2) * ((a + b) * 2);
 }
