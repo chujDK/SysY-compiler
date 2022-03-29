@@ -13,14 +13,16 @@ int main(int a, int b) {
         b / 2 + a;
     }
 
-    while(a > 10) {
-        a - 2 + 10 * 3 * 4 / 5;
-        !a;
-        -a;
+    int i = 0x20;
+    while(i > 10) {
+        i = i - 1;
     }
 
     int c = 10;
     int d = 0x20;
+
+    c = 0x10;
+    d = 20;
 
     return (a + b) + ((a + b) * 2) * ((a + b) * 2);
 }

@@ -52,7 +52,7 @@
 static llvm::LLVMContext TheContext;
 static llvm::IRBuilder<> Builder(TheContext);
 static std::unique_ptr<llvm::Module> TheModule;
-static std::map<std::string, llvm::Value *> NamedValues;
+static std::map<std::string, llvm::AllocaInst *> NamedValues;
 
 // helper function predefine
 static llvm::Value* subExpIRGen(AstNodePtr exp);
@@ -119,7 +119,28 @@ static llvm::Value* lValRightIRGen(AstNodePtr l_val) {
         return nullptr;
     }
     else {
-        return l_val_ir;
+        return Builder.CreateLoad(llvm::Type::getInt32Ty(TheContext), l_val_ir, "loadtmp");
+    }
+}
+
+static llvm::Value* lValLeftIRGen(AstNodePtr l_val) {
+    // currently, we don't consider the case that l_val is an array
+    // TOOD: add support for array
+    auto l_val_name = l_val->a_->literal_;
+    auto l_val_ir = NamedValues[l_val_name];
+    if (l_val_ir == nullptr) {
+        // after interpreter, this should never happen
+        compilerError("undefined variable", l_val->line_);
+        return nullptr;
+    }
+    else {
+        if (l_val->b_ != nullptr) {
+            // TODO: finish this
+            assert(0);
+        }
+        else {
+            return l_val_ir;
+        }
     }
 }
 
@@ -375,7 +396,10 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
     // LVal '=' Exp ';' | [Exp] ';' | Block
     if (stmt->a_->ebnf_type_ == SyEbnfType::LVal) {
         // LVal '=' Exp ';'
-        // TODO
+        // TODO: test
+        auto l_val_ir = lValLeftIRGen(stmt->a_);
+        auto exp_ir = expIRDispatcher(stmt->b_);
+        Builder.CreateStore(exp_ir, l_val_ir);
     }
     else if (stmt->a_->ebnf_type_ == SyEbnfType::Exp) {
         // Exp ';'
@@ -412,7 +436,7 @@ static llvm::Value* declIRGen(AstNodePtr decl, bool is_global) {
             // identify the type of the variable, we still use the btype
             // for the sake of simplicity if we compile this function before
             // interpret in some cases.
-            llvm::Value* var_ir = nullptr;
+            llvm::AllocaInst* var_ir = nullptr;
             switch (btype->a_->ast_type_)
             {
             case SyAstType::TYPE_INT:
@@ -469,6 +493,13 @@ static llvm::Value* blockIRGen(AstNodePtr block) {
     return ret;
 }
 
+static llvm::AllocaInst* createFunctionArgReAlloca(llvm::Function* this_function, const llvm::Argument& arg) {
+    llvm::IRBuilder<> tmp_builder(&this_function->getEntryBlock(),
+      this_function->getEntryBlock().begin());
+    llvm::AllocaInst* alloca_inst = tmp_builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
+    return alloca_inst;
+}
+
 llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
     // TODO: currently function only support one basic block
     llvm::Function* this_func = TheModule->getFunction(func_->b_->literal_);
@@ -486,13 +517,17 @@ llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
     #endif
 
     // start the function ir gen
+    // always on top!
     llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(TheContext, "entry", this_func);
     Builder.SetInsertPoint(entry_block);
+
+    // do the reallocation for the arguments
+
 
     // record the function arguments in the NamedValues map
     NamedValues.clear();
     for (auto &arg : this_func->args()) {
-        NamedValues[arg.getName()] = &arg;
+        NamedValues[arg.getName()] = createFunctionArgReAlloca(this_func, arg);
     }
 
     // generate the function body
