@@ -19,5 +19,8 @@ int main(int a, int b) {
         -a;
     }
 
+    int c = 10;
+    int d = 0x20;
+
     return (a + b) + ((a + b) * 2) * ((a + b) * 2);
 }

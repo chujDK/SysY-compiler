@@ -390,6 +390,52 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
     return callee_ret;
 }
 
+// is_global shouldn't be used, here we add it for future use
+static llvm::Value* declIRGen(AstNodePtr decl, bool is_global) {
+    #ifdef DEBUG
+    assert(decl != nullptr && decl->ebnf_type_ == SyEbnfType::Decl);
+    #endif
+    // Decl -> ConstDecl | VarDecl
+    // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
+    // VarDecl   ->         BType VarDef   { ',' VarDef } ';'
+
+    auto btype = decl->a_->a_;
+    for (auto def = decl->a_->b_; def != nullptr; def = def->d_) {
+        auto ident = def->a_;
+        if (def->b_ != nullptr) {
+            // array
+            // TODO: finish this
+        }
+        else {
+            // alloc the memory for the variable from stack
+            // thought after interpret we can use the ident->ebnf_type_ to
+            // identify the type of the variable, we still use the btype
+            // for the sake of simplicity if we compile this function before
+            // interpret in some cases.
+            llvm::Value* var_ir = nullptr;
+            switch (btype->a_->ast_type_)
+            {
+            case SyAstType::TYPE_INT:
+                var_ir = Builder.CreateAlloca(
+                  llvm::Type::getInt32Ty(TheContext), nullptr, ident->literal_);
+                break;
+            default:
+                assert(0);
+                break;
+            }
+
+            // push the variable into the symbol table
+            NamedValues[ident->literal_] = var_ir;
+            auto init_val = def->c_;
+            if (init_val != nullptr) {
+                llvm::Value* init_val_ir = expIRDispatcher(init_val->a_);
+                Builder.CreateStore(init_val_ir, var_ir);
+            }
+        }
+    }
+    return nullptr;
+}
+
 static llvm::Value* blockItemIRGen(AstNodePtr block_item) {
     #ifdef DEBUG
     assert(block_item != nullptr && block_item->ebnf_type_ == SyEbnfType::BlockItem);
@@ -398,7 +444,7 @@ static llvm::Value* blockItemIRGen(AstNodePtr block_item) {
     llvm::Value* last_val = nullptr;
     switch (block_item->a_->ebnf_type_) {
     case SyEbnfType::Decl:
-        // TODO
+        last_val = declIRGen(block_item->a_, 0);
         break;
     case SyEbnfType::Stmt:
         last_val = stmtIRGen(block_item->a_);
