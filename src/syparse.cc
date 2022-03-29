@@ -1528,7 +1528,7 @@ AstNodePtr Parser::PrimaryExp() {
         ++(*token_iter_);
         primary_exp->a_ = exp;
         exp->parent_ = primary_exp;
-        return exp;
+        return primary_exp;
     }
 }
 
