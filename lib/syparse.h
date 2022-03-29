@@ -3,6 +3,19 @@
 #include <memory>
 #include "utils.h"
 
+
+struct AstNode;
+using TokenPtr = std::shared_ptr<AstNode>; 
+using AstNodePtr = std::shared_ptr<AstNode>;
+enum class SyAstType;
+enum class SyEbnfType;
+
+class AstNodePool {
+public:
+    static TokenPtr get(SyAstType type, int line, std::string && literal);
+    static AstNodePtr get(SyEbnfType type, int line);
+};
+
 class InputStream {
 public:
     // this class is made to read the input "file"
@@ -122,9 +135,6 @@ enum class SyEbnfType {
     END_OF_ENUM
 };
 
-struct AstNode;
-using TokenPtr = std::shared_ptr<AstNode>; 
-using AstNodePtr = std::shared_ptr<AstNode>;
 
 struct AstNode {
     enum SyAstType ast_type_;

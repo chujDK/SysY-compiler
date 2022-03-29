@@ -8,6 +8,14 @@ static void adjustExpLAst(AstNodePtr node);
 static AstNodePtr adjustExpAst(AstNodePtr node);
 static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
 
+TokenPtr AstNodePool::get(SyAstType type, int line, std::string && literal) {
+    return std::make_shared<AstNode>(type, line, std::move(literal));
+}
+
+AstNodePtr AstNodePool::get(SyEbnfType type, int line) {
+    return std::make_shared<AstNode>(type, line);
+}
+
 static inline bool isDigit(char c) {
     return c >= '0' && c <= '9';
 }
@@ -234,14 +242,14 @@ TokenPtr Lexer::getIdent() {
                 isEndForIdentAndNumber(input_stream_->peakChar())) {
                 // this is a STMT or TYPE or so
                 ident += current_char;
-                return std::make_shared<AstNode>(current_state, line_, std::move(ident));
+                return AstNodePool::get(current_state, line_, std::move(ident));
             }
             current_state = ident_jump[current_char][(int)current_state];
             ident += current_char;
         } 
         else if (isEndForIdentAndNumber(current_char)) {
             input_stream_->ungetChar();
-            return std::make_shared<AstNode>(SyAstType::IDENT, line_, std::move(ident));
+            return AstNodePool::get(SyAstType::IDENT, line_, std::move(ident));
         }
         else {
             lexError(std::string("invalid character '") + current_char + std::string("'in ident"));
@@ -257,28 +265,28 @@ TokenPtr Lexer::getNextTokenInternal() {
         {
             case '(':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::LEFT_PARENTHESE, line_, std::string("("));
+                return AstNodePool::get(SyAstType::LEFT_PARENTHESE, line_, std::string("("));
             case ')':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::RIGHT_PARENTHESE, line_, std::string(")"));
+                return AstNodePool::get(SyAstType::RIGHT_PARENTHESE, line_, std::string(")"));
             case '[':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::LEFT_BRACKET, line_, std::string("["));
+                return AstNodePool::get(SyAstType::LEFT_BRACKET, line_, std::string("["));
             case ']':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::RIGHT_BRACKET, line_, std::string("]"));
+                return AstNodePool::get(SyAstType::RIGHT_BRACKET, line_, std::string("]"));
             case '{':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::LEFT_BRACE, line_, std::string("{"));
+                return AstNodePool::get(SyAstType::LEFT_BRACE, line_, std::string("{"));
             case '}':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::RIGHT_BRACE, line_, std::string("}"));
+                return AstNodePool::get(SyAstType::RIGHT_BRACE, line_, std::string("}"));
             case '+':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::ALU_ADD, line_, std::string("+"));
+                return AstNodePool::get(SyAstType::ALU_ADD, line_, std::string("+"));
             case '-':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::ALU_SUB, line_, std::string("-"));
+                return AstNodePool::get(SyAstType::ALU_SUB, line_, std::string("-"));
             case '/':
                 if (input_stream_->peakNextChar() == '/') {
                     input_stream_->getLine();
@@ -304,51 +312,51 @@ TokenPtr Lexer::getNextTokenInternal() {
                 }
                 else {
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::ALU_DIV, line_, std::string("/"));
+                    return AstNodePool::get(SyAstType::ALU_DIV, line_, std::string("/"));
                 }
             case '*':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::ALU_MUL, line_, std::string("*"));
+                return AstNodePool::get(SyAstType::ALU_MUL, line_, std::string("*"));
             case '%':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::ALU_MOD, line_, std::string("%"));
+                return AstNodePool::get(SyAstType::ALU_MOD, line_, std::string("%"));
             case '=':
                 if ('=' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::EQ, line_, std::string("=="));
+                    return AstNodePool::get(SyAstType::EQ, line_, std::string("=="));
                 }
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::ASSIGN, line_, std::string("="));
+                return AstNodePool::get(SyAstType::ASSIGN, line_, std::string("="));
             case '!':
                 if ('=' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::NEQ, line_, std::string("!="));
+                    return AstNodePool::get(SyAstType::NEQ, line_, std::string("!="));
                 }
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::LOGIC_NOT, line_, std::string("!"));
+                return AstNodePool::get(SyAstType::LOGIC_NOT, line_, std::string("!"));
             case '<':
                 if ('=' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::LE, line_, std::string("<="));
+                    return AstNodePool::get(SyAstType::LE, line_, std::string("<="));
                 }
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::LNE, line_, std::string("<"));
+                return AstNodePool::get(SyAstType::LNE, line_, std::string("<"));
             case '>':
                 if ('=' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::GE, line_, std::string(">="));
+                    return AstNodePool::get(SyAstType::GE, line_, std::string(">="));
                 }
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::GNE, line_, std::string(">"));
+                return AstNodePool::get(SyAstType::GNE, line_, std::string(">"));
             case '&':
                 if ('&' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::LOGIC_AND, line_, std::string("&&"));
+                    return AstNodePool::get(SyAstType::LOGIC_AND, line_, std::string("&&"));
                 }
                 else {
                     lexError(std::string("invalid token '&'"));
@@ -359,7 +367,7 @@ TokenPtr Lexer::getNextTokenInternal() {
                 if ('|' == input_stream_->peakNextChar()) {
                     input_stream_->getChar();
                     input_stream_->getChar();
-                    return std::make_shared<AstNode>(SyAstType::LOGIC_OR, line_, std::string("||"));
+                    return AstNodePool::get(SyAstType::LOGIC_OR, line_, std::string("||"));
                 }
                 else {
                     lexError(std::string("invalid token '|'"));
@@ -368,19 +376,19 @@ TokenPtr Lexer::getNextTokenInternal() {
                 }
             case ';':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::SEMICOLON, line_, std::string(";"));
+                return AstNodePool::get(SyAstType::SEMICOLON, line_, std::string(";"));
             case '"':
                 input_stream_->getChar();
                 str = getString();
                 // as string is not supported, here we continue instead of returning the string token
                 continue;
-                // return std::make_shared<AstNode>(SyAstType::STRING, line_, std::move(str));
+                // return AstNodePool::from(SyAstType::STRING, line_, std::move(str));
             case ',':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::COMMA, line_, std::string(","));
+                return AstNodePool::get(SyAstType::COMMA, line_, std::string(","));
             case '.':
                 input_stream_->getChar();
-                return std::make_shared<AstNode>(SyAstType::DOT, line_, std::string("."));
+                return AstNodePool::get(SyAstType::DOT, line_, std::string("."));
             case '\n':
                 input_stream_->getChar();
                 line_++;
@@ -400,7 +408,7 @@ TokenPtr Lexer::getNextTokenInternal() {
                 break;
         }
         if (isDigit(current_char)) {
-            return std::make_shared<AstNode>(SyAstType::INT_IMM, line_, std::move(getNumber()));
+            return AstNodePool::get(SyAstType::INT_IMM, line_, std::move(getNumber()));
         }
         else if (isIdentStart(current_char)) {
             return getIdent();
@@ -410,7 +418,7 @@ TokenPtr Lexer::getNextTokenInternal() {
             input_stream_->getChar();
         }
     };
-    return std::make_shared<AstNode>(SyAstType::EOF_TYPE, line_, std::string("EOF"));
+    return AstNodePool::get(SyAstType::EOF_TYPE, line_, std::string("EOF"));
 }
 
 TokenPtr Lexer::getNextToken() {
@@ -465,7 +473,7 @@ AstNodePtr Parser::Stmt() {
     //                 | 'while' '(' Cond ')' Stmt
     //                 | 'break' ';' | 'continue' ';'
     //                 | 'return' [Exp] ';'
-    auto stmt = std::make_shared<AstNode>(SyEbnfType::Stmt, (*token_iter_)->line_);
+    auto stmt = AstNodePool::get(SyEbnfType::Stmt, (*token_iter_)->line_);
     AstNodePtr cond = nullptr;
     AstNodePtr stmt_nest = nullptr;
     AstNodePtr stmt_else = nullptr;
@@ -505,7 +513,7 @@ AstNodePtr Parser::Stmt() {
                     }
                     ++(*token_iter_);
                 }
-                cond = std::make_shared<AstNode>(SyEbnfType::E, 0);
+                cond = AstNodePool::get(SyEbnfType::E, 0);
             }
             if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
                 // here is status like
@@ -567,7 +575,7 @@ AstNodePtr Parser::Stmt() {
                     }
                     ++(*token_iter_);
                 }
-                cond = std::make_shared<AstNode>(SyEbnfType::E, 0);
+                cond = AstNodePool::get(SyEbnfType::E, 0);
             }
             if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
                 parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
@@ -725,7 +733,7 @@ AstNodePtr Parser::VarDef() {
                 }
                 ++(*token_iter_);
             }
-            const_exp = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            const_exp = AstNodePool::get(SyEbnfType::E, 0);
         }
         if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
             // just ignore the missing ']' and report a error
@@ -763,10 +771,10 @@ AstNodePtr Parser::VarDef() {
                 }
                 ++(*token_iter_);
             }
-            init_val = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            init_val = AstNodePool::get(SyEbnfType::E, 0);
         }
     }
-    auto var_def = std::make_shared<AstNode>(SyEbnfType::VarDef, ident->line_);
+    auto var_def = AstNodePool::get(SyEbnfType::VarDef, ident->line_);
     var_def->a_ = ident;
     ident->parent_ = var_def;
     if (const_exp_start != nullptr) {
@@ -808,7 +816,7 @@ AstNodePtr Parser::VarDecl() {
                 }
                 ++(*token_iter_);
             }
-            var_def = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            var_def = AstNodePool::get(SyEbnfType::E, 0);
         }
         var_def_last->d_ = var_def;
         var_def->parent_ = var_def_last;
@@ -822,7 +830,7 @@ AstNodePtr Parser::VarDecl() {
         return nullptr;
     }
     ++(*token_iter_);
-    auto var_decl = std::make_shared<AstNode>(SyEbnfType::VarDecl, b_type->line_);
+    auto var_decl = AstNodePool::get(SyEbnfType::VarDecl, b_type->line_);
     var_decl->a_ = b_type;
     b_type->parent_ = var_decl;
     var_decl->b_ = var_def_start;
@@ -832,7 +840,7 @@ AstNodePtr Parser::VarDecl() {
 
 AstNodePtr Parser::InitVal() {
     // origin: InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
-    auto init_val = std::make_shared<AstNode>(SyEbnfType::InitVal, (*token_iter_)->line_);
+    auto init_val = AstNodePool::get(SyEbnfType::InitVal, (*token_iter_)->line_);
     // first we try to match '{'
     if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
         // then we try to match Exp
@@ -853,7 +861,7 @@ AstNodePtr Parser::InitVal() {
     AstNodePtr init_val_start(nullptr);
     AstNodePtr init_val_last(nullptr);
     if (init_val_nest != nullptr) {
-        init_val_start = std::make_shared<AstNode>(SyEbnfType::InitVal, init_val_nest->line_);
+        init_val_start = AstNodePool::get(SyEbnfType::InitVal, init_val_nest->line_);
         init_val_start->a_ = init_val_nest;
         init_val_nest->parent_ = init_val_start;
         init_val_last = init_val_start;
@@ -890,7 +898,7 @@ AstNodePtr Parser::InitVal() {
             auto init_val_nest = InitVal();
             AstNodePtr init_val_next(nullptr);
             if (init_val_nest != nullptr) {
-                init_val_next = std::make_shared<AstNode>(SyEbnfType::InitVal, init_val_nest->line_);
+                init_val_next = AstNodePool::get(SyEbnfType::InitVal, init_val_nest->line_);
                 init_val_next->a_ = init_val_nest;
                 init_val_nest->parent_ = init_val_next;
             }
@@ -906,7 +914,7 @@ AstNodePtr Parser::InitVal() {
                     }
                     ++(*token_iter_);
                 }
-                init_val_next = std::make_shared<AstNode>(SyEbnfType::E, 0);
+                init_val_next = AstNodePool::get(SyEbnfType::E, 0);
             }
             // link
             init_val_last->d_ = init_val_next;
@@ -932,7 +940,7 @@ AstNodePtr Parser::Block() {
     if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
         return nullptr;
     }
-    auto block = std::make_shared<AstNode>(SyEbnfType::Block, (*token_iter_)->line_);
+    auto block = AstNodePool::get(SyEbnfType::Block, (*token_iter_)->line_);
     ++(*token_iter_);
     if ((*token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
         // this is a empty block
@@ -982,7 +990,7 @@ AstNodePtr Parser::Block() {
 AstNodePtr Parser::BlockItem() {
     // origin: BlockItem -> Decl | Stmt
     LexerIterator iter_back = *token_iter_;
-    auto block_item = std::make_shared<AstNode>(SyEbnfType::BlockItem, (*token_iter_)->line_);
+    auto block_item = AstNodePool::get(SyEbnfType::BlockItem, (*token_iter_)->line_);
     // try Decl
     auto decl = Decl();
     if (decl != nullptr) {
@@ -1010,7 +1018,7 @@ AstNodePtr Parser::Cond() {
         // giveup
         return nullptr;
     }
-    auto cond = std::make_shared<AstNode>(SyEbnfType::Cond, l_or_exp->line_);
+    auto cond = AstNodePool::get(SyEbnfType::Cond, l_or_exp->line_);
     cond->a_ = l_or_exp;
     l_or_exp->parent_ = cond;
     return  cond;
@@ -1022,7 +1030,7 @@ AstNodePtr Parser::Number() {
         // giveup
         return nullptr;
     }
-    auto number = std::make_shared<AstNode>(SyEbnfType::Number, (*token_iter_)->line_);
+    auto number = AstNodePool::get(SyEbnfType::Number, (*token_iter_)->line_);
     number->a_ = *(*token_iter_);
     (*token_iter_)->parent_ = number;
     ++(*token_iter_);
@@ -1145,7 +1153,7 @@ static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node) {
 AstNodePtr Parser::RelExpL() {
     LexerIterator iter_back = *token_iter_;
     // RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
-    auto rel_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto rel_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     if ((*token_iter_)->ast_type_ != SyAstType::LNE &&
         (*token_iter_)->ast_type_ != SyAstType::GNE &&
         (*token_iter_)->ast_type_ != SyAstType::LE &&
@@ -1153,7 +1161,7 @@ AstNodePtr Parser::RelExpL() {
         // no need to reset the token_iter_ 
         // this is not a failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     rel_exp_l->a_ = *(*token_iter_); // link the '<' or '>' or '<=' or '>='
     (*token_iter_)->parent_ = rel_exp_l;
@@ -1165,7 +1173,7 @@ AstNodePtr Parser::RelExpL() {
         *token_iter_ = iter_back;
         // unlink the '<' or '>' or '<=' or '>='
         rel_exp_l->a_ = nullptr;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     rel_exp_l->b_ = add_exp;
     add_exp->parent_ = rel_exp_l;
@@ -1178,7 +1186,7 @@ AstNodePtr Parser::RelExp() {
     // origin: RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
     // rewrite: RelExp -> AddExp RelExpL
     //          RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
-    auto rel_exp = std::make_shared<AstNode>(SyEbnfType::RelExp, (*token_iter_)->line_);
+    auto rel_exp = AstNodePool::get(SyEbnfType::RelExp, (*token_iter_)->line_);
     auto add_exp = AddExp();
     if (add_exp == nullptr) {
         return nullptr;
@@ -1198,13 +1206,13 @@ AstNodePtr Parser::RelExp() {
 AstNodePtr Parser::EqExpL() {
     LexerIterator iter_back = *token_iter_;
     // EqExpL -> ('==' | '!=') RelExp EqExpL | e
-    auto eq_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto eq_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     if ((*token_iter_)->ast_type_ != SyAstType::EQ &&
         (*token_iter_)->ast_type_ != SyAstType::NEQ) {
         // no need to reset the token_iter_ 
         // this is not a failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     eq_exp_l->a_ = *(*token_iter_); // link the '==' or '!='
     (*token_iter_)->parent_ = eq_exp_l;
@@ -1216,7 +1224,7 @@ AstNodePtr Parser::EqExpL() {
         *token_iter_ = iter_back;
         // unlink the '==' or '!='
         eq_exp_l->a_ = nullptr;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     eq_exp_l->b_ = rel_exp;
     rel_exp->parent_ = eq_exp_l;
@@ -1229,7 +1237,7 @@ AstNodePtr Parser::EqExp() {
     // origin: EqExp -> RelExp | EqExp ('==' | '!=') RelExp
     // rewrite: EqExp -> RelExp EqExpL
     //          EqExpL -> ('==' | '!=') RelExp EqExpL | e
-    auto eq_exp = std::make_shared<AstNode>(SyEbnfType::EqExp, (*token_iter_)->line_);
+    auto eq_exp = AstNodePool::get(SyEbnfType::EqExp, (*token_iter_)->line_);
     auto rel_exp = RelExp();
     if (rel_exp == nullptr) {
         return nullptr;
@@ -1250,12 +1258,12 @@ AstNodePtr Parser::EqExp() {
 AstNodePtr Parser::LAndExpL() {
     LexerIterator iter_back = *token_iter_;
     // LAndExpL -> '&&' EqExp LAndExpL | e
-    auto l_and_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto l_and_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     if ((*token_iter_)->ast_type_ != SyAstType::LOGIC_AND) {
         // no need to reset the token_iter_ 
         // this is not a failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     l_and_exp_l->a_ = *(*token_iter_); // link the '&&'
     (*token_iter_)->parent_ = l_and_exp_l;
@@ -1267,7 +1275,7 @@ AstNodePtr Parser::LAndExpL() {
         *token_iter_ = iter_back;
         // unlink the '&&'
         l_and_exp_l->a_ = nullptr;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     l_and_exp_l->b_ = eq_exp;
     eq_exp->parent_ = l_and_exp_l;
@@ -1280,7 +1288,7 @@ AstNodePtr Parser::LAndExp() {
     // origin: LAndExp -> EqExp | LAndExp '&&' EqExp
     // rewrite: LAndExp -> EqExp LAndExpL
     //          LAndExpL -> '&&' EqExp LAndExpL | e
-    auto l_and_exp = std::make_shared<AstNode>(SyEbnfType::LAndExp, (*token_iter_)->line_);
+    auto l_and_exp = AstNodePool::get(SyEbnfType::LAndExp, (*token_iter_)->line_);
     auto eq_exp = EqExp();
     if (eq_exp == nullptr) {
         return nullptr;
@@ -1301,12 +1309,12 @@ AstNodePtr Parser::LAndExp() {
 AstNodePtr Parser::LOrExpL() {
     LexerIterator iter_back = *token_iter_;
     // LOrExpL -> '||' LAndExp LOrExpL | e
-    auto l_or_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto l_or_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     if ((*token_iter_)->ast_type_ != SyAstType::LOGIC_OR) {
         // no need to reset the token_iter_ 
         // this is not a failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     l_or_exp_l->a_ = *(*token_iter_); // link the '||'
     (*token_iter_)->parent_ = l_or_exp_l;
@@ -1318,7 +1326,7 @@ AstNodePtr Parser::LOrExpL() {
         *token_iter_ = iter_back;
         // unlink the '||'
         l_or_exp_l->a_ = nullptr;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     l_or_exp_l->b_ = l_and_exp;
     l_and_exp->parent_ = l_or_exp_l;
@@ -1331,7 +1339,7 @@ AstNodePtr Parser::LOrExp() {
     // origin: LOrExp -> LAndExp | LOrExp '||' LAndExp
     // rewrite: LOrExp -> LAndExp LOrExpL
     //          LOrExpL -> '||' LAndExp LOrExpL | e
-    auto l_or_exp = std::make_shared<AstNode>(SyEbnfType::LOrExp, (*token_iter_)->line_);
+    auto l_or_exp = AstNodePool::get(SyEbnfType::LOrExp, (*token_iter_)->line_);
     auto l_and_exp = LAndExp();
     if (l_and_exp == nullptr) {
         return nullptr;
@@ -1382,7 +1390,7 @@ AstNodePtr Parser::LVal() {
             exp_last = exp;
         }
     }
-    auto l_val = std::make_shared<AstNode>(SyEbnfType::LVal, ident->line_);
+    auto l_val = AstNodePool::get(SyEbnfType::LVal, ident->line_);
     l_val->a_ = ident;
     ident->parent_ = l_val;
     if (exp_start != nullptr) {
@@ -1394,7 +1402,7 @@ AstNodePtr Parser::LVal() {
 
 AstNodePtr Parser::ConstInitVal() {
     // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-    auto const_init_val = std::make_shared<AstNode>(SyEbnfType::ConstInitVal, (*token_iter_)->line_);
+    auto const_init_val = AstNodePool::get(SyEbnfType::ConstInitVal, (*token_iter_)->line_);
     if ((*token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
         // ConstInitVal -> ConstExp
         auto const_exp = ConstExp();
@@ -1453,7 +1461,7 @@ AstNodePtr Parser::ConstInitVal() {
                         }
                         ++(*token_iter_);
                     }
-                    const_init_val_next = std::make_shared<AstNode>(SyEbnfType::E, 0);
+                    const_init_val_next = AstNodePool::get(SyEbnfType::E, 0);
                 }
                 // link
                 const_init_val_last->d_ = const_init_val_next;
@@ -1478,7 +1486,7 @@ AstNodePtr Parser::ConstInitVal() {
 
 AstNodePtr Parser::FuncRParams() {
     // FuncRParams -> Exp { ',' Exp }
-    auto func_r_params = std::make_shared<AstNode>(SyEbnfType::FuncRParams, (*token_iter_)->line_);
+    auto func_r_params = AstNodePool::get(SyEbnfType::FuncRParams, (*token_iter_)->line_);
     auto exp_start = Exp();
     auto exp_last = exp_start;
     if (exp_start == nullptr) {
@@ -1499,7 +1507,7 @@ AstNodePtr Parser::FuncRParams() {
                 }
                 ++(*token_iter_);
             }
-            exp = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            exp = AstNodePool::get(SyEbnfType::E, 0);
         }
         exp_last->d_ = exp;
         exp->parent_ = exp_last;
@@ -1512,7 +1520,7 @@ AstNodePtr Parser::FuncRParams() {
 
 AstNodePtr Parser::PrimaryExp() {
     // PrimaryExp -> '(' Exp ')' | LVal | Number
-    auto primary_exp = std::make_shared<AstNode>(SyEbnfType::PrimaryExp, (*token_iter_)->line_);
+    auto primary_exp = AstNodePool::get(SyEbnfType::PrimaryExp, (*token_iter_)->line_);
     LexerIterator iter_back = *token_iter_;
     if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
         // try PrimaryExp -> LVal
@@ -1554,7 +1562,7 @@ AstNodePtr Parser::UnaryExp() {
     // first, try UnaryOp UnaryExp
     // second, try Ident '(' [FuncRParams] ')' here we can't handle the error :(
     // third, try PrimaryExp
-    auto unary_exp = std::make_shared<AstNode>(SyEbnfType::UnaryExp, (*token_iter_)->line_);
+    auto unary_exp = AstNodePool::get(SyEbnfType::UnaryExp, (*token_iter_)->line_);
     LexerIterator iter_back = *token_iter_;
 
     // try UnaryOp UnaryExp
@@ -1620,7 +1628,7 @@ AstNodePtr Parser::UnaryOp() {
         token->ast_type_ != SyAstType::LOGIC_NOT) {
         return nullptr;
     }
-    auto unary_op = std::make_shared<AstNode>(SyEbnfType::UnaryOp, (*token_iter_)->line_);
+    auto unary_op = AstNodePool::get(SyEbnfType::UnaryOp, (*token_iter_)->line_);
     unary_op->a_ = token;
     token->parent_ = unary_op;
     ++(*token_iter_);
@@ -1636,9 +1644,9 @@ AstNodePtr Parser::MulExpL() {
         (*token_iter_)->ast_type_ != SyAstType::ALU_MOD) {
         // this is not an failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
-    auto mul_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto mul_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     mul_exp_l->a_ = *(*token_iter_);
     (*token_iter_)->parent_ = mul_exp_l;
     ++(*token_iter_);
@@ -1649,7 +1657,7 @@ AstNodePtr Parser::MulExpL() {
         *token_iter_ = iter_back;
         // unlink the ('*' | '/' | '%')
         mul_exp_l->a_ = nullptr;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     mul_exp_l->b_ = unary_exp;
     unary_exp->parent_ = mul_exp_l;
@@ -1662,7 +1670,7 @@ AstNodePtr Parser::MulExp() {
     // origin: MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
     // rewrite: MulExp -> UnaryExp MulExpL
     //          MulExpL -> ('*' | '/' | '%') UnaryExp MulExpL | e
-    auto mul_exp = std::make_shared<AstNode>(SyEbnfType::MulExp, (*token_iter_)->line_);
+    auto mul_exp = AstNodePool::get(SyEbnfType::MulExp, (*token_iter_)->line_);
     auto unary_exp = UnaryExp();
     if (unary_exp == nullptr) {
         return nullptr;
@@ -1686,9 +1694,9 @@ AstNodePtr Parser::AddExpL() {
     if ((*token_iter_)->ast_type_ != SyAstType::ALU_ADD && (*token_iter_)->ast_type_ != SyAstType::ALU_SUB) {
         // this is not an failure
         // just return e
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
-    auto add_exp_l = std::make_shared<AstNode>(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
+    auto add_exp_l = AstNodePool::get(SyEbnfType::END_OF_ENUM, (*token_iter_)->line_);
     add_exp_l->a_ = *(*token_iter_);
     (*token_iter_)->parent_ = add_exp_l;
     ++(*token_iter_);
@@ -1697,7 +1705,7 @@ AstNodePtr Parser::AddExpL() {
         // this is not an failure
         // just return e
         *token_iter_ = iter_back;
-        return std::make_shared<AstNode>(SyEbnfType::E, 0);
+        return AstNodePool::get(SyEbnfType::E, 0);
     }
     add_exp_l->b_ = mul_exp;
     mul_exp->parent_ = add_exp_l;
@@ -1710,7 +1718,7 @@ AstNodePtr Parser::AddExp() {
     // origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp 
     // rewrite: AddExp -> MulExp AddExpL
     //          AddExpL -> ('+' | '−') MulExp AddExpL | e
-    auto add_exp = std::make_shared<AstNode>(SyEbnfType::AddExp, (*token_iter_)->line_);
+    auto add_exp = AstNodePool::get(SyEbnfType::AddExp, (*token_iter_)->line_);
     auto mul_exp = MulExp();
     if (mul_exp == nullptr) {
         return nullptr;
@@ -1734,7 +1742,7 @@ AstNodePtr Parser::Exp() {
     if (add_exp == nullptr) {
         return nullptr;
     }
-    auto exp = std::make_shared<AstNode>(SyEbnfType::Exp, add_exp->line_);
+    auto exp = AstNodePool::get(SyEbnfType::Exp, add_exp->line_);
     exp->a_ = add_exp;
     add_exp->parent_ = exp;
     return exp;
@@ -1746,7 +1754,7 @@ AstNodePtr Parser::ConstExp() {
     if (add_exp == nullptr) {
         return nullptr;
     }
-    auto const_exp = std::make_shared<AstNode>(SyEbnfType::ConstExp, add_exp->line_);
+    auto const_exp = AstNodePool::get(SyEbnfType::ConstExp, add_exp->line_);
     const_exp->a_ = add_exp;
     add_exp->parent_ = const_exp;
     return const_exp;
@@ -1755,7 +1763,7 @@ AstNodePtr Parser::ConstExp() {
 AstNodePtr Parser::ConstDef() {
     // origin: ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
     // Ident
-    auto const_def = std::make_shared<AstNode>(SyEbnfType::ConstDef, (*token_iter_)->line_);
+    auto const_def = AstNodePool::get(SyEbnfType::ConstDef, (*token_iter_)->line_);
     auto ident = Ident();
     if (ident == nullptr) {
         return nullptr;
@@ -1780,7 +1788,7 @@ AstNodePtr Parser::ConstDef() {
                 }
                 ++(*token_iter_);
             }
-            const_exp = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            const_exp = AstNodePool::get(SyEbnfType::E, 0);
         }
         if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
             // just ignore the missing ']' and report a error
@@ -1806,7 +1814,7 @@ AstNodePtr Parser::ConstDef() {
         parseError(std::string("conflicting type qualifiers for \'\033[1m" + ident->literal_ + "\033[0m\'"), (*token_iter_)->line_);
         const_def->a_ = ident;
         ident->parent_ = const_def;
-        auto const_init_val = std::make_shared<AstNode>(SyEbnfType::E, 0);
+        auto const_init_val = AstNodePool::get(SyEbnfType::E, 0);
         const_def->c_ = const_init_val;
         const_init_val->parent_ = const_def;
         return const_def;
@@ -1828,7 +1836,7 @@ AstNodePtr Parser::ConstDef() {
             }
             ++(*token_iter_);
         }
-        const_init_val = std::make_shared<AstNode>(SyEbnfType::E, 0);
+        const_init_val = AstNodePool::get(SyEbnfType::E, 0);
     }
     const_def->a_ = ident;
     ident->parent_ = const_def;
@@ -1875,7 +1883,7 @@ AstNodePtr Parser::ConstDecl() {
                 }
                 ++(*token_iter_);
             }
-            var_def = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            var_def = AstNodePool::get(SyEbnfType::E, 0);
         }
         const_def_last->d_ = var_def;
         var_def->parent_ = const_def_last;
@@ -1888,7 +1896,7 @@ AstNodePtr Parser::ConstDecl() {
         --(*token_iter_);
     }
     ++(*token_iter_);
-    auto var_decl = std::make_shared<AstNode>(SyEbnfType::ConstDecl, b_type->line_);
+    auto var_decl = AstNodePool::get(SyEbnfType::ConstDecl, b_type->line_);
     var_decl->a_ = b_type;
     b_type->parent_ = var_decl;
     var_decl->b_ = const_def_start;
@@ -1899,7 +1907,7 @@ AstNodePtr Parser::ConstDecl() {
 AstNodePtr Parser::Decl() {
     // origin: Decl -> ConstDecl | VarDecl
     LexerIterator iter_back = *token_iter_;
-    auto decl = std::make_shared<AstNode>(SyEbnfType::Decl, (*token_iter_)->line_);
+    auto decl = AstNodePool::get(SyEbnfType::Decl, (*token_iter_)->line_);
     // ConstDecl
     auto const_decl = ConstDecl();
     if (const_decl != nullptr) {
@@ -1922,7 +1930,7 @@ AstNodePtr Parser::FuncType() {
     // origin: FuncType -> 'void' | 'int'
     AstNodePtr token = **token_iter_;
     if (token->ast_type_ == SyAstType::TYPE_VOID || token->ast_type_ == SyAstType::TYPE_INT) {
-        auto func_type = std::make_shared<AstNode>(SyEbnfType::FuncType, token->line_);
+        auto func_type = AstNodePool::get(SyEbnfType::FuncType, token->line_);
         func_type->a_ = token;
         token->parent_ = func_type;
         ++(*token_iter_);
@@ -1938,7 +1946,7 @@ AstNodePtr Parser::BType() {
     if ((*token_iter_)->ast_type_ != SyAstType::TYPE_INT) {
         return nullptr;
     }
-    auto b_type = std::make_shared<AstNode>(SyEbnfType::BType, (*token_iter_)->line_);
+    auto b_type = AstNodePool::get(SyEbnfType::BType, (*token_iter_)->line_);
     b_type->a_ = **token_iter_;
     (*token_iter_)->parent_ = b_type;
     ++(*token_iter_);
@@ -1947,7 +1955,7 @@ AstNodePtr Parser::BType() {
 
 AstNodePtr Parser::FuncFParam() {
     // origin: FuncFParam -> Type Ident
-    auto func_f_param = std::make_shared<AstNode>(SyEbnfType::FuncFParam, (*token_iter_)->line_);
+    auto func_f_param = AstNodePool::get(SyEbnfType::FuncFParam, (*token_iter_)->line_);
     auto b_type = BType();
     // Type
     if (b_type == nullptr) {
@@ -1991,7 +1999,7 @@ AstNodePtr Parser::FuncFParams() {
                 }
                 ++(*token_iter_);
             }
-            func_f_param = std::make_shared<AstNode>(SyEbnfType::E, 0);
+            func_f_param = AstNodePool::get(SyEbnfType::E, 0);
         }
         // link when suceess
         func_f_param_last->d_ = func_f_param;
@@ -2003,7 +2011,7 @@ AstNodePtr Parser::FuncFParams() {
 
 AstNodePtr Parser::FuncDef() {
     // origin: FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block
-    auto func_def = std::make_shared<AstNode>(SyEbnfType::FuncDef, (*token_iter_)->line_);
+    auto func_def = AstNodePool::get(SyEbnfType::FuncDef, (*token_iter_)->line_);
     // FuncType
     auto func_type = FuncType();
     if (func_type == nullptr) {
@@ -2062,7 +2070,7 @@ AstNodePtr Parser::CompUnit() {
     // origin: CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
     // changed: CompUnit -> Decl | FuncDef
     LexerIterator iter_back = *token_iter_;
-    auto comp_unit = std::make_shared<AstNode>(SyEbnfType::CompUnit, (*token_iter_)->line_);
+    auto comp_unit = AstNodePool::get(SyEbnfType::CompUnit, (*token_iter_)->line_);
     auto decl = Decl();
     if (decl != nullptr) {
         comp_unit->a_ = decl;
