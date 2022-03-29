@@ -1,28 +1,16 @@
-int main(int a, int b) {
-    a + 1 + b;
-    a * 2 + b;
-    b / 2 + a;
-    if (a < 10) {
-        a * 2 + b;
-        if (b > 10) {
-            a * 2 + b;
-            // return b; // note this is not supported now, i will fix it when i know how to :(
+void main () {
+    int a = 0;
+    while (a < 10) {
+        a = a + 1;
+        if (a < 3) {
+            continue;
+        }
+        else {
+            a = a + 1;
+        }
+        if (a > 5) {
+            break;
         }
     }
-    else {
-        b / 2 + a;
-    }
-
-    int i = 0x20;
-    while(i > 10) {
-        i = i - 1;
-    }
-
-    int c = 10;
-    int d = 0x20;
-
-    c = 0x10;
-    d = 20;
-
-    return (a + b) + ((a + b) * 2) * ((a + b) * 2);
+    return;
 }

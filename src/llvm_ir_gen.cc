@@ -25,12 +25,12 @@
 // [+] FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
 // [+] FuncType, // FuncType -> 'void' | 'int'
 // [+] Block, // Block -> '{' { BlockItem } '}' 
-// [ ] BlockItem, // BlockItem -> Decl | Stmt
+// [+] BlockItem, // BlockItem -> Decl | Stmt
 // [+] Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
 // [+]                                //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
 // [+]                                //| 'while' '(' Cond ')' Stmt
-// [ ]                                //| 'break' ';' | 'continue' ';'
-// [ ]                                //| 'return' [Exp] ';'
+// [+]                                //| 'break' ';' | 'continue' ';'
+// [+]                                //| 'return' [Exp] ';'
 // [+] Exp, // Exp -> AddExp
 // [+] Cond, // Cond -> LOrExp
 // [ ] LVal, // LVal -> Ident {'[' Exp ']'} 
@@ -48,11 +48,17 @@
 // [+] ConstExp, // ConstExp -> AddExp
 
 // in the ir gen, i use no smart ptr, because i know nothing about the llvm
+// currently the code is really bad, full of global variables, i will refactor
+// them later when i get to know better about the llvm
 
 static llvm::LLVMContext TheContext;
 static llvm::IRBuilder<> Builder(TheContext);
 static std::unique_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::AllocaInst *> NamedValues;
+// this two pointer point to the current looping basci block
+// for the break and continue
+static llvm::BasicBlock* MergeBlock;
+static llvm::BasicBlock* CondBlock;
 
 // helper function predefine
 static llvm::Value* subExpIRGen(AstNodePtr exp);
@@ -339,7 +345,10 @@ static llvm::Value* whileStmtIRGen(AstNodePtr stmt) {
     llvm::BasicBlock* loop_basic_block = 
       llvm::BasicBlock::Create(TheContext, "loop");
     llvm::BasicBlock* merge_basic_block = 
-        llvm::BasicBlock::Create(TheContext, "while-merge");
+      llvm::BasicBlock::Create(TheContext, "while-merge");
+
+    CondBlock = cond_basic_block;
+    MergeBlock = merge_basic_block;
 
     // first we set the loop condition
     Builder.CreateBr(cond_basic_block);
@@ -360,6 +369,9 @@ static llvm::Value* whileStmtIRGen(AstNodePtr stmt) {
     this_function->getBasicBlockList().push_back(merge_basic_block);
     Builder.SetInsertPoint(merge_basic_block);
 
+    CondBlock = nullptr;
+    MergeBlock = nullptr;
+
     return nullptr;
 }
 
@@ -375,19 +387,25 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
         return ret;
     }
     switch (stmt->a_->ast_type_) {
-        // TODO
     case SyAstType::STM_IF:
         // if (cond) stmt
         return ifStmtIRGen(stmt);
     case SyAstType::STM_WHILE:
         return whileStmtIRGen(stmt);
     case SyAstType::STM_BREAK:
+        Builder.CreateBr(MergeBlock);
         return ret;
     case SyAstType::STM_CONTINUE:
+        Builder.CreateBr(CondBlock);
         return ret;
     case SyAstType::STM_RETURN:
+        // TODO: maybe a return type checking? though this shoudn't be a problem here
         if (stmt->b_ != nullptr) {
             callee_ret = expIRDispatcher(stmt->b_);
+            Builder.CreateRet(callee_ret);
+        }
+        else {
+            Builder.CreateRet(nullptr);
         }
         return callee_ret;
     default:
@@ -396,7 +414,6 @@ static llvm::Value* stmtIRGen(AstNodePtr stmt) {
     // LVal '=' Exp ';' | [Exp] ';' | Block
     if (stmt->a_->ebnf_type_ == SyEbnfType::LVal) {
         // LVal '=' Exp ';'
-        // TODO: test
         auto l_val_ir = lValLeftIRGen(stmt->a_);
         auto exp_ir = expIRDispatcher(stmt->b_);
         Builder.CreateStore(exp_ir, l_val_ir);
@@ -531,16 +548,9 @@ llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
     }
 
     // generate the function body
-    auto ret_val = blockIRGen(func_->d_);
-    if (ret_val != nullptr) {
-        // TODO: should we do a check if this function return void?
-        Builder.CreateRet(ret_val); 
-    }
-    else {
-        // ir gen failed
-        // TODO: error handling
-        this_func->eraseFromParent();
-    }
+    // TODO: maybe we should do a error handling?
+    blockIRGen(func_->d_);
+
     return this_func;
 }
 
