@@ -133,7 +133,113 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string && literal) {
 }
 
 AstNodePtr AstNodePool::get(SyEbnfType type, int line) {
-    return std::make_shared<AstNode>(type, line);
+    AstNodePtr node = nullptr;
+    switch (type)
+    {
+    case SyEbnfType::CompUnit:
+        node = std::make_shared<CompUnitAstNode>(SyEbnfType::CompUnit, line);
+        break;
+    case SyEbnfType::Decl:
+        node = std::make_shared<DeclAstNode>(SyEbnfType::Decl, line);
+        break;
+    case SyEbnfType::ConstDecl:
+        node = std::make_shared<ConstDeclAstNode>(SyEbnfType::ConstDecl, line);
+        break;
+    case SyEbnfType::BType:
+        node = std::make_shared<BTypeAstNode>(SyEbnfType::BType, line);
+        break;
+    case SyEbnfType::ConstDef:
+        node = std::make_shared<ConstDefAstNode>(SyEbnfType::ConstDef, line);
+        break;
+    case SyEbnfType::ConstInitVal:
+        node = std::make_shared<ConstInitValAstNode>(SyEbnfType::ConstInitVal, line);
+        break;
+    case SyEbnfType::VarDecl:
+        node = std::make_shared<VarDeclAstNode>(SyEbnfType::VarDecl, line);
+        break;
+    case SyEbnfType::VarDef:
+        node = std::make_shared<VarDefAstNode>(SyEbnfType::VarDef, line);
+        break;
+    case SyEbnfType::InitVal:
+        node = std::make_shared<InitValAstNode>(SyEbnfType::InitVal, line);
+        break;
+    case SyEbnfType::FuncDef:
+        node = std::make_shared<FuncDefAstNode>(SyEbnfType::FuncDef, line);
+        break;
+    case SyEbnfType::FuncType:
+        node = std::make_shared<FuncTypeAstNode>(SyEbnfType::FuncType, line);
+        break;
+    case SyEbnfType::FuncFParams:
+        node = std::make_shared<FuncFParamsAstNode>(SyEbnfType::FuncFParams, line);
+        break;
+    case SyEbnfType::FuncFParam:
+        node = std::make_shared<FuncFParamAstNode>(SyEbnfType::FuncFParam, line);
+        break;
+    case SyEbnfType::Block:
+        node = std::make_shared<BlockAstNode>(SyEbnfType::Block, line);
+        break;
+    case SyEbnfType::BlockItem:
+        node = std::make_shared<BlockItemAstNode>(SyEbnfType::BlockItem, line);
+        break;
+    case SyEbnfType::Stmt:
+        node = std::make_shared<StmtAstNode>(SyEbnfType::Stmt, line);
+        break;
+    case SyEbnfType::Exp:
+        node = std::make_shared<ExpAstNode>(SyEbnfType::Exp, line);
+        break;
+    case SyEbnfType::Cond:
+        node = std::make_shared<CondAstNode>(SyEbnfType::Cond, line);
+        break;
+    case SyEbnfType::LVal:
+        node = std::make_shared<LValAstNode>(SyEbnfType::LVal, line);
+        break;
+    case SyEbnfType::PrimaryExp:
+        node = std::make_shared<PrimaryExpAstNode>(SyEbnfType::PrimaryExp, line);
+        break;
+    case SyEbnfType::Number:
+        node = std::make_shared<NumberAstNode>(SyEbnfType::Number, line);
+        break;
+    case SyEbnfType::UnaryExp:
+        node = std::make_shared<UnaryExpAstNode>(SyEbnfType::UnaryExp, line);
+        break;
+    case SyEbnfType::UnaryOp:
+        node = std::make_shared<UnaryOpAstNode>(SyEbnfType::UnaryOp, line);
+        break;
+    case SyEbnfType::FuncRParams:
+        node = std::make_shared<FuncRParamsAstNode>(SyEbnfType::FuncRParams, line);
+        break;
+    case SyEbnfType::MulExp:
+        node = std::make_shared<MulExpAstNode>(SyEbnfType::MulExp, line);
+        break;
+    case SyEbnfType::AddExp:
+        node = std::make_shared<AddExpAstNode>(SyEbnfType::AddExp, line);
+        break;
+    case SyEbnfType::RelExp:
+        node = std::make_shared<RelExpAstNode>(SyEbnfType::RelExp, line);
+        break;
+    case SyEbnfType::EqExp:
+        node = std::make_shared<EqExpAstNode>(SyEbnfType::EqExp, line);
+        break;
+    case SyEbnfType::LAndExp:
+        node = std::make_shared<LAndExpAstNode>(SyEbnfType::LAndExp, line);
+        break;
+    case SyEbnfType::LOrExp:
+        node = std::make_shared<LOrExpAstNode>(SyEbnfType::LOrExp, line);
+        break;
+    case SyEbnfType::ConstExp:
+        node = std::make_shared<ConstExpAstNode>(SyEbnfType::ConstExp, line);
+        break;
+    case SyEbnfType::E:
+        node = std::make_shared<EAstNode>(SyEbnfType::E, line);
+        break;
+    case SyEbnfType::END_OF_ENUM:
+        node = std::make_shared<EAstNode>(SyEbnfType::END_OF_ENUM, line);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    return node;
 }
 
 static inline bool isDigit(char c) {

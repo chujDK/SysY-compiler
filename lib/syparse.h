@@ -233,25 +233,39 @@ public:
 };
 
 class CompUnitAstNode : public AstNode {
+public:
+    CompUnitAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
     AstNodePtr getDecl() { return a_; }
     AstNodePtr getFuncDef() { return a_; }
 };
 
 class DeclAstNode : public AstNode {
+public:
+	DeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
     AstNodePtr getConstDecl() { return a_; }
     AstNodePtr getDecl() { return a_; }
 };
 
 class ConstDeclAstNode : public AstNode {
+public:
+	ConstDeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
     AstNodePtr getBType() { return a_; }
     AstNodePtr getConstDefListFirst() { return b_; }
 };
 
 class BTypeAstNode : public AstNode {
+public:
+	BTypeAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
     AstNodePtr getType() { return a_; }
 };
 
 class ConstDefAstNode : public AstNode {
+public:
+	ConstDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
     AstNodePtr getListNext() { return d_; }
     AstNodePtr getIdent() { return a_; }
     AstNodePtr getConstExpList() { return b_; }
@@ -260,84 +274,165 @@ class ConstDefAstNode : public AstNode {
 };
 
 class ConstInitValAstNode : public AstNode {
+public:
+	ConstInitValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class VarDeclAstNode : public AstNode {
+public:
+	VarDeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class VarDefAstNode : public AstNode {
+public:
+	VarDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class InitValAstNode : public AstNode {
+public:
+	InitValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class FuncDefAstNode : public AstNode {
+public:
+	FuncDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class FuncTypeAstNode : public AstNode {
+public:
+	FuncTypeAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class FuncFParamsAstNode : public AstNode {
+public:
+	FuncFParamsAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class FuncFParamAstNode : public AstNode {
+public:
+	FuncFParamAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class BlockAstNode : public AstNode {
+public:
+	BlockAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class BlockItemAstNode : public AstNode {
+public:
+	BlockItemAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class StmtAstNode : public AstNode {
+public:
+	StmtAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class ExpAstNode : public AstNode {
+public:
+	ExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class CondAstNode : public AstNode {
+public:
+	CondAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class LValAstNode : public AstNode {
+public:
+	LValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class PrimaryExpAstNode : public AstNode {
+public:
+	PrimaryExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class NumberAstNode : public AstNode {
+public:
+	NumberAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class UnaryExpAstNode : public AstNode {
+public:
+	UnaryExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class UnaryOpAstNode : public AstNode {
+public:
+	UnaryOpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class FuncRParamsAstNode : public AstNode {
+public:
+	FuncRParamsAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class MulExpAstNode : public AstNode {
+public:
+	MulExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class AddExpAstNode : public AstNode {
+public:
+	AddExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class RelExpAstNode : public AstNode {
+public:
+	RelExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class EqExpAstNode : public AstNode {
+public:
+	EqExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class LAndExpAstNode : public AstNode {
+public:
+	LAndExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class LOrExpAstNode : public AstNode {
+public:
+	LOrExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class ConstExpAstNode : public AstNode {
+public:
+	ConstExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
-class ConstExpAstNode : public AstNode {
+class EAstNode : public AstNode {
+public:
+	EAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
 };
 
 class Lexer {
