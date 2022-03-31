@@ -4,13 +4,9 @@
 #include <llvm/IR/Function.h>
 #include "syparse.h"
 #include "sysymbol_table.h"
+#include "sytype.h"
 
 class InterpreterAPI;
-
-union Value {
-    int32_t i32;
-//    uint32_t u32;
-} ;
 class SYFunction {
 private:
     AstNodePtr func_; // func_->ast_type_ == SyAstType::FuncDef

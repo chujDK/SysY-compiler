@@ -4,6 +4,7 @@
 #include <cassert>
 #include <string>
 #include "utils.h"
+#include "sytype.h"
 
 
 struct AstNode;
@@ -28,114 +29,6 @@ public:
     virtual void ungetChar() = 0; // unget the current char
     virtual std::string getLine() = 0; // get the current line
     virtual ~InputStream() {}
-};
-
-enum class SyAstType {
-    LEFT_PARENTHESE, // '('
-    RIGHT_PARENTHESE, // ')'
-    LEFT_BRACKET, // '['
-    RIGHT_BRACKET, // ']'
-    LEFT_BRACE, // '{'
-    RIGHT_BRACE, // '}'
-
-    // ALU op
-    ALU_ADD, // '+'
-    ALU_SUB, // '-'
-    ALU_DIV, // '/'
-    ALU_MUL, // '*'
-    ALU_MOD, // '%'
-
-    ASSIGN, // '='
-
-    // relation op
-    EQ, // '=='
-    NEQ, // '!='
-    LNE, // '<'
-    LE, // '<='
-    GNE, // '>'
-    GE, // '>='
-
-    // logic op
-    LOGIC_NOT, // '!'
-    LOGIC_AND, // '&&'
-    LOGIC_OR, // '||'
-
-    SEMICOLON, // ';'
-    QUOTE, // '"'
-    COMMA, // ','
-    DOT, // '.'
-
-    // type
-    TYPE_INT, // 'int'
-    TYPE_VOID, // 'void'
-
-    // statement
-    STM_IF, // 'if'
-    STM_ELSE, // 'else'
-    STM_WHILE, // 'while'
-    STM_BREAK, // 'break'
-    STM_CONTINUE, // 'continue'
-    STM_RETURN, // 'return'
-    STM_CONST, // 'const'
-
-    // number
-    INT_IMM,
-
-    STRING,
-    IDENT, // [_a-zA-Z][_-a-zA-Z0-9]*
-    EOF_TYPE,
-    END_OF_ENUM
-};
-
-// SyEbnfType 同样存储类型信息 ( 虽然只有 int, int[] 和 void :( )
-// 如果需要修改语法，需要注意：
-// 1. 如果修改了语法，需要修改SyEbnfTypeDebugInfo
-// 2. 需要注意修改语法后，对链表类型的影响，链表类型假设 d_ 不会被使用
-enum class SyEbnfType {
-    CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
-    Decl, // Decl -> ConstDecl | VarDecl
-    ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-    BType, // BType -> 'int'
-    ConstDef, // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
-    ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-    VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
-    VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
-    InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
-    FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
-    FuncType, // FuncType -> 'void' | 'int'
-    FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
-    FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
-    Block, // Block -> '{' { BlockItem } '}' 
-    BlockItem, // BlockItem -> Decl | Stmt
-    Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
-                                   //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
-                                   //| 'while' '(' Cond ')' Stmt
-                                   //| 'break' ';' | 'continue' ';'
-                                   //| 'return' [Exp] ';'
-    Exp, // Exp -> AddExp
-    Cond, // Cond -> LOrExp
-    LVal, // LVal -> Ident {'[' Exp ']'} 
-    PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
-    Number, // Number -> IntConst 
-    UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
-    UnaryOp, // UnaryOp -> '+' | '-' | '!' 
-    FuncRParams, // FuncRParams -> Exp { ',' Exp } 
-    MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
-    AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
-    RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
-    EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
-    LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
-    LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
-    ConstExp, // ConstExp -> AddExp
-    E, // epsilon
-
-    // typing
-    TYPE_INT, // 'int'
-    TYPE_CONST_INT, // 'const int'
-    TYPE_VOID, // 'void'
-    TYPE_INT_ARRAY, // 'int[]'
-    TYPE_CONST_INT_ARRAY, // 'const int[]'
-    END_OF_ENUM
 };
 
 #ifdef DEBUG
@@ -176,45 +69,8 @@ struct AstNode {
         a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u_.const_val_ = 0xFFFFFFFF; }
 
-    // following the virtual functions for the children getters
-    virtual std::string const& getLiteral() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getBType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstDefListFirst() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstInitVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getVarDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getVarDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getInitVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getFuncDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getFuncType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getFuncFParams() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getFuncFParam() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getBlock() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getBlockItem() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getStmt() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getCond() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getLVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getPrimaryExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getNumber() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getUnaryExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getUnaryOp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getFuncRParams() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getMulExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getAddExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getRelExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getEqExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getLAndExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getLOrExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getConstExpList() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getListNext() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getIdent() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-    virtual AstNodePtr getType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
-
     virtual ~AstNode() {}
+    virtual std::string const& getLiteral() { DEBUG_ASSERT_NOT_REACH return ""; }
 };
 
 class TokenAstNode : public AstNode {
@@ -235,42 +91,31 @@ public:
 class CompUnitAstNode : public AstNode {
 public:
     CompUnitAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
-    AstNodePtr getDecl() { return a_; }
-    AstNodePtr getFuncDef() { return a_; }
+
 };
 
 class DeclAstNode : public AstNode {
 public:
 	DeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
 
-    AstNodePtr getConstDecl() { return a_; }
-    AstNodePtr getDecl() { return a_; }
 };
 
 class ConstDeclAstNode : public AstNode {
 public:
 	ConstDeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
 
-    AstNodePtr getBType() { return a_; }
-    AstNodePtr getConstDefListFirst() { return b_; }
 };
 
 class BTypeAstNode : public AstNode {
 public:
 	BTypeAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
 
-    AstNodePtr getType() { return a_; }
 };
 
 class ConstDefAstNode : public AstNode {
 public:
 	ConstDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
 
-    AstNodePtr getListNext() { return d_; }
-    AstNodePtr getIdent() { return a_; }
-    AstNodePtr getConstExpList() { return b_; }
-    AstNodePtr getConstInitVal() { return c_; }
-    AstNodePtr getInitVal() { return getConstInitVal(); }
 };
 
 class ConstInitValAstNode : public AstNode {
