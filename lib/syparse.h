@@ -162,8 +162,8 @@ struct AstNode {
 //    std::string literal_; // delete this field in the future
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
-    // parent_ and b_ link up a double linked list
-    // be careful when using it the d_, make sure the parent it's not in a list
+    // parent_ and d_ link up a double linked list
+    // be careful when using the d_, make sure it's not in a list
     std::weak_ptr<AstNode> parent_; // delete this field in the future
     AstNodePtr a_, b_, c_, d_; // delete this field in the future
     AstNode(enum SyAstType ast_type, int line):
