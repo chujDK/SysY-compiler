@@ -9,7 +9,127 @@ static AstNodePtr adjustExpAst(AstNodePtr node);
 static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
 
 TokenPtr AstNodePool::get(SyAstType type, int line, std::string && literal) {
-    return std::make_shared<AstNode>(type, line, std::move(literal));
+    TokenPtr token = nullptr;
+    switch (type)
+    {
+    case SyAstType::LEFT_PARENTHESE:
+        token = std::make_shared<TokenAstNode>(SyAstType::LEFT_PARENTHESE, line, std::move(literal));
+        break;
+    case SyAstType::RIGHT_PARENTHESE:
+        token = std::make_shared<TokenAstNode>(SyAstType::RIGHT_PARENTHESE, line, std::move(literal));
+        break;
+    case SyAstType::LEFT_BRACKET:
+        token = std::make_shared<TokenAstNode>(SyAstType::LEFT_BRACKET, line, std::move(literal));
+        break;
+    case SyAstType::RIGHT_BRACKET:
+        token = std::make_shared<TokenAstNode>(SyAstType::RIGHT_BRACKET, line, std::move(literal));
+        break;
+    case SyAstType::LEFT_BRACE:
+        token = std::make_shared<TokenAstNode>(SyAstType::LEFT_BRACE, line, std::move(literal));
+        break;
+    case SyAstType::RIGHT_BRACE:
+        token = std::make_shared<TokenAstNode>(SyAstType::RIGHT_BRACE, line, std::move(literal));
+        break;
+    case SyAstType::ALU_ADD:
+        token = std::make_shared<TokenAstNode>(SyAstType::ALU_ADD, line, std::move(literal));
+        break;
+    case SyAstType::ALU_SUB:
+        token = std::make_shared<TokenAstNode>(SyAstType::ALU_SUB, line, std::move(literal));
+        break;
+    case SyAstType::ALU_DIV:
+        token = std::make_shared<TokenAstNode>(SyAstType::ALU_DIV, line, std::move(literal));
+        break;
+    case SyAstType::ALU_MUL:
+        token = std::make_shared<TokenAstNode>(SyAstType::ALU_MUL, line, std::move(literal));
+        break;
+    case SyAstType::ALU_MOD:
+        token = std::make_shared<TokenAstNode>(SyAstType::ALU_MOD, line, std::move(literal));
+        break;
+    case SyAstType::ASSIGN:
+        token = std::make_shared<TokenAstNode>(SyAstType::ASSIGN, line, std::move(literal));
+        break;
+    case SyAstType::EQ:
+        token = std::make_shared<TokenAstNode>(SyAstType::EQ, line, std::move(literal));
+        break;
+    case SyAstType::NEQ:
+        token = std::make_shared<TokenAstNode>(SyAstType::NEQ, line, std::move(literal));
+        break;
+    case SyAstType::LNE:
+        token = std::make_shared<TokenAstNode>(SyAstType::LNE, line, std::move(literal));
+        break;
+    case SyAstType::LE:
+        token = std::make_shared<TokenAstNode>(SyAstType::LE, line, std::move(literal));
+        break;
+    case SyAstType::GNE:
+        token = std::make_shared<TokenAstNode>(SyAstType::GNE, line, std::move(literal));
+        break;
+    case SyAstType::GE:
+        token = std::make_shared<TokenAstNode>(SyAstType::GE, line, std::move(literal));
+        break;
+    case SyAstType::LOGIC_NOT:
+        token = std::make_shared<TokenAstNode>(SyAstType::LOGIC_NOT, line, std::move(literal));
+        break;
+    case SyAstType::LOGIC_AND:
+        token = std::make_shared<TokenAstNode>(SyAstType::LOGIC_AND, line, std::move(literal));
+        break;
+    case SyAstType::LOGIC_OR:
+        token = std::make_shared<TokenAstNode>(SyAstType::LOGIC_OR, line, std::move(literal));
+        break;
+    case SyAstType::SEMICOLON:
+        token = std::make_shared<TokenAstNode>(SyAstType::SEMICOLON, line, std::move(literal));
+        break;
+    case SyAstType::QUOTE:
+        token = std::make_shared<TokenAstNode>(SyAstType::QUOTE, line, std::move(literal));
+        break;
+    case SyAstType::COMMA:
+        token = std::make_shared<TokenAstNode>(SyAstType::COMMA, line, std::move(literal));
+        break;
+    case SyAstType::DOT:
+        token = std::make_shared<TokenAstNode>(SyAstType::DOT, line, std::move(literal));
+        break;
+    case SyAstType::TYPE_INT:
+        token = std::make_shared<TokenAstNode>(SyAstType::TYPE_INT, line, std::move(literal));
+        break;
+    case SyAstType::TYPE_VOID:
+        token = std::make_shared<TokenAstNode>(SyAstType::TYPE_VOID, line, std::move(literal));
+        break;
+    case SyAstType::STM_IF:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_IF, line, std::move(literal));
+        break;
+    case SyAstType::STM_ELSE:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_ELSE, line, std::move(literal));
+        break;
+    case SyAstType::STM_WHILE:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_WHILE, line, std::move(literal));
+        break;
+    case SyAstType::STM_BREAK:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_BREAK, line, std::move(literal));
+        break;
+    case SyAstType::STM_CONTINUE:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_CONTINUE, line, std::move(literal));
+        break;
+    case SyAstType::STM_RETURN:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_RETURN, line, std::move(literal));
+        break;
+    case SyAstType::STM_CONST:
+        token = std::make_shared<TokenAstNode>(SyAstType::STM_CONST, line, std::move(literal));
+        break;
+    case SyAstType::INT_IMM:
+        token = std::make_shared<TokenAstNode>(SyAstType::INT_IMM, line, std::move(literal));
+        break;
+    case SyAstType::STRING:
+        token = std::make_shared<TokenAstNode>(SyAstType::STRING, line, std::move(literal));
+        break;
+    case SyAstType::IDENT:
+        token = std::make_shared<TokenAstNode>(SyAstType::IDENT, line, std::move(literal));
+        break;
+    case SyAstType::EOF_TYPE:
+        token = std::make_shared<TokenAstNode>(SyAstType::EOF_TYPE, line, std::move(literal));
+        break;
+    default:
+        assert(0);
+    }
+    return token;
 }
 
 AstNodePtr AstNodePool::get(SyEbnfType type, int line) {
@@ -495,7 +615,7 @@ AstNodePtr Parser::Stmt() {
                 // ```
                 // so we just ignore the missing '(' and report a error
                 parseError(std::string("expected \'\033[1m(\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                 --(*token_iter_);
             }
             ++(*token_iter_);
@@ -524,7 +644,7 @@ AstNodePtr Parser::Stmt() {
                 // ```
                 // so we just ignore the missing ')' and report a error
                 parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                 --(*token_iter_);
             }
             ++(*token_iter_);
@@ -560,7 +680,7 @@ AstNodePtr Parser::Stmt() {
             ++(*token_iter_);
             if ((*token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
                 parseError(std::string("expected \'\033[1m(\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                 --(*token_iter_);
             }
             ++(*token_iter_);
@@ -579,7 +699,7 @@ AstNodePtr Parser::Stmt() {
             }
             if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
                 parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                 --(*token_iter_);
             }
             ++(*token_iter_);
@@ -602,7 +722,7 @@ AstNodePtr Parser::Stmt() {
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
                 // ignore the missing ';' and report a error
                 parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                  --(*token_iter_);
             }
             ++(*token_iter_);
@@ -615,7 +735,7 @@ AstNodePtr Parser::Stmt() {
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
                 // ignore the missing ';' and report a error
                 parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
                  --(*token_iter_);
             }
             ++(*token_iter_);
@@ -641,7 +761,7 @@ AstNodePtr Parser::Stmt() {
             if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
                 // ignore the missing ';' and report a error
                 parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
-                 + (*token_iter_)->literal_ + std::string("\033[0m\'"), (*token_iter_)->line_);
+                 + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), (*token_iter_)->line_);
                  --(*token_iter_);
             }
             ++(*token_iter_);
@@ -688,7 +808,7 @@ AstNodePtr Parser::Stmt() {
         if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
             // ignore the missing ';' and report a error
             parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
-             + (*token_iter_)->literal_ + std::string("\033[0m\'"), stmt->line_);
+             + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), stmt->line_);
              --(*token_iter_);
         }
         ++(*token_iter_);
@@ -738,7 +858,7 @@ AstNodePtr Parser::VarDef() {
         if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
             // just ignore the missing ']' and report a error
             parseError(std::string("expected \'\033[1m]\033[0m\' before \'\033[1m")
-             + (*token_iter_)->literal_ + std::string("\033[0m\'"), ident->line_);
+             + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), ident->line_);
              --(*token_iter_);
         }
         ++(*token_iter_);
@@ -1793,7 +1913,7 @@ AstNodePtr Parser::ConstDef() {
         if ((*token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
             // just ignore the missing ']' and report a error
             parseError(std::string("expected \'\033[1m]\033[0m\' before \'\033[1m")
-             + (*token_iter_)->literal_ + std::string("\033[0m\'"), ident->line_);
+             + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), ident->line_);
              --(*token_iter_);
         }
         ++(*token_iter_);
@@ -1811,7 +1931,7 @@ AstNodePtr Parser::ConstDef() {
     // '='
     if ((*token_iter_)->ast_type_ != SyAstType::ASSIGN) {
         // define const whitout init value
-        parseError(std::string("conflicting type qualifiers for \'\033[1m" + ident->literal_ + "\033[0m\'"), (*token_iter_)->line_);
+        parseError(std::string("conflicting type qualifiers for \'\033[1m" + ident->getLiteral() + "\033[0m\'"), (*token_iter_)->line_);
         const_def->a_ = ident;
         ident->parent_ = const_def;
         auto const_init_val = AstNodePool::get(SyEbnfType::E, 0);
@@ -1892,7 +2012,7 @@ AstNodePtr Parser::ConstDecl() {
     if ((*token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
         // here we ignore the missing ';' and report an error
         parseError(std::string("expected \'\033[1m;\033[0m\' before \'\033[1m")
-            + (*token_iter_)->literal_ + std::string("\033[0m\'"), (*token_iter_)->line_);
+            + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), (*token_iter_)->line_);
         --(*token_iter_);
     }
     ++(*token_iter_);
@@ -2040,7 +2160,7 @@ AstNodePtr Parser::FuncDef() {
         // here we ignore the missing ')'
         // and report an error
         parseError(std::string("expected \'\033[1m)\033[0m\' before \'\033[1m")
-            + (*token_iter_)->literal_ + std::string("\033[0m\'"), (*token_iter_)->line_);
+            + (*token_iter_)->getLiteral() + std::string("\033[0m\'"), (*token_iter_)->line_);
         --(*token_iter_);
     }
     ++(*token_iter_);

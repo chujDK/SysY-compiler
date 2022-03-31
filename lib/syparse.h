@@ -1,11 +1,14 @@
 #ifndef _SYPARSE_H_
 #define _SYPARSE_H_
 #include <memory>
+#include <cassert>
+#include <string>
 #include "utils.h"
 
 
 struct AstNode;
-using TokenPtr = std::shared_ptr<AstNode>; 
+class TokenAstNode;
+using TokenPtr = std::shared_ptr<TokenAstNode>; 
 using AstNodePtr = std::shared_ptr<AstNode>;
 enum class SyAstType;
 enum class SyEbnfType;
@@ -135,38 +138,206 @@ enum class SyEbnfType {
     END_OF_ENUM
 };
 
+#ifdef DEBUG
+#define DEBUG_ASSERT_NOT_REACH \
+    assert(false && "should not reach here");
+#else
+#define DEBUG_ASSERT_NOT_REACH
+#endif
+
 
 struct AstNode {
-    enum SyAstType ast_type_;
-    enum SyEbnfType ebnf_type_;
+    enum SyAstType ast_type_; // delete this field in the future
+    enum SyEbnfType ebnf_type_; // delete this field in the future
     unsigned int line_;
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
     // this also means that this complier can only support array size up to 2^32-1
     // only to the EBnfType::ConstDef, array_size_ can be used
     // it's tempting to move the line_ into this union, but giveup
+    // delete this field in the future
     union {
         unsigned int array_size_;
         unsigned int const_val_;
     } u_;
-    std::string literal_;
-    TokenPtr next_token_;
-    TokenPtr prev_token_;
+//    std::string literal_; // delete this field in the future
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and b_ link up a double linked list
     // be careful when using it the d_, make sure the parent it's not in a list
-    std::weak_ptr<AstNode> parent_;
-    AstNodePtr a_, b_, c_, d_;
-    AstNode(enum SyAstType ast_type, int line, std::string&& literal):
-        ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
-        next_token_(nullptr), a_(nullptr), b_(nullptr), 
+    std::weak_ptr<AstNode> parent_; // delete this field in the future
+    AstNodePtr a_, b_, c_, d_; // delete this field in the future
+    AstNode(enum SyAstType ast_type, int line):
+        ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line),
+        a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u_.const_val_ = 0xFFFFFFFF; }
 
     AstNode(enum SyEbnfType ebnf_type, int line):
-        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(std::string()), 
-        next_token_(nullptr), a_(nullptr), b_(nullptr), 
+        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line),
+        a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u_.const_val_ = 0xFFFFFFFF; }
 
+    // following the virtual functions for the children getters
+    virtual std::string const& getLiteral() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getBType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstDefListFirst() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstInitVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getVarDecl() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getVarDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getInitVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getFuncDef() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getFuncType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getFuncFParams() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getFuncFParam() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getBlock() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getBlockItem() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getStmt() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getCond() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getLVal() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getPrimaryExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getNumber() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getUnaryExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getUnaryOp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getFuncRParams() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getMulExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getAddExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getRelExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getEqExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getLAndExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getLOrExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstExp() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getConstExpList() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getListNext() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getIdent() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+    virtual AstNodePtr getType() { DEBUG_ASSERT_NOT_REACH return nullptr; }
+
+    virtual ~AstNode() {}
+};
+
+class TokenAstNode : public AstNode {
+private:
+    std::string literal_;
+    // TODO: make this private
+public:
+    TokenPtr next_token_;
+    TokenPtr prev_token_;
+
+public:
+    TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal):
+        AstNode(ast_type, line), literal_(literal), next_token_(nullptr), prev_token_(nullptr) {}
+
+    std::string const& getLiteral() { return literal_; }
+};
+
+class CompUnitAstNode : public AstNode {
+    AstNodePtr getDecl() { return a_; }
+    AstNodePtr getFuncDef() { return a_; }
+};
+
+class DeclAstNode : public AstNode {
+    AstNodePtr getConstDecl() { return a_; }
+    AstNodePtr getDecl() { return a_; }
+};
+
+class ConstDeclAstNode : public AstNode {
+    AstNodePtr getBType() { return a_; }
+    AstNodePtr getConstDefListFirst() { return b_; }
+};
+
+class BTypeAstNode : public AstNode {
+    AstNodePtr getType() { return a_; }
+};
+
+class ConstDefAstNode : public AstNode {
+    AstNodePtr getListNext() { return d_; }
+    AstNodePtr getIdent() { return a_; }
+    AstNodePtr getConstExpList() { return b_; }
+    AstNodePtr getConstInitVal() { return c_; }
+    AstNodePtr getInitVal() { return getConstInitVal(); }
+};
+
+class ConstInitValAstNode : public AstNode {
+};
+
+class VarDeclAstNode : public AstNode {
+};
+
+class VarDefAstNode : public AstNode {
+};
+
+class InitValAstNode : public AstNode {
+};
+
+class FuncDefAstNode : public AstNode {
+};
+
+class FuncTypeAstNode : public AstNode {
+};
+
+class FuncFParamsAstNode : public AstNode {
+};
+
+class FuncFParamAstNode : public AstNode {
+};
+
+class BlockAstNode : public AstNode {
+};
+
+class BlockItemAstNode : public AstNode {
+};
+
+class StmtAstNode : public AstNode {
+};
+
+class ExpAstNode : public AstNode {
+};
+
+class CondAstNode : public AstNode {
+};
+
+class LValAstNode : public AstNode {
+};
+
+class PrimaryExpAstNode : public AstNode {
+};
+
+class NumberAstNode : public AstNode {
+};
+
+class UnaryExpAstNode : public AstNode {
+};
+
+class UnaryOpAstNode : public AstNode {
+};
+
+class FuncRParamsAstNode : public AstNode {
+};
+
+class MulExpAstNode : public AstNode {
+};
+
+class AddExpAstNode : public AstNode {
+};
+
+class RelExpAstNode : public AstNode {
+};
+
+class EqExpAstNode : public AstNode {
+};
+
+class LAndExpAstNode : public AstNode {
+};
+
+class LOrExpAstNode : public AstNode {
+};
+
+class ConstExpAstNode : public AstNode {
+};
+
+class ConstExpAstNode : public AstNode {
 };
 
 class Lexer {

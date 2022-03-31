@@ -83,7 +83,7 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
 
 Value Interpreter::numberHandler(AstNodePtr exp) {
     Value ret;
-    ret.i32 = std::stoi(exp->a_->literal_);
+    ret.i32 = std::stoi(exp->a_->getLiteral());
     return ret;
 }
 
@@ -99,13 +99,13 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
         return primaryExpHandler(exp);
     }
     if (exp->a_->ast_type_ == SyAstType::IDENT) {
-        auto function = func_table_->getFunc(exp->a_->literal_);
+        auto function = func_table_->getFunc(exp->a_->getLiteral());
         auto args = exp->b_;
         if (function) {
             return function->exec(args, this);
         }
         else {
-            interpretError(std::string("function") + std::string(" \"\033[1;31m") + exp->a_->literal_ + std::string("\033[0m\" not found"), exp->a_->line_);
+            interpretError(std::string("function") + std::string(" \"\033[1;31m") + exp->a_->getLiteral() + std::string("\033[0m\" not found"), exp->a_->line_);
         }
     }
     if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
@@ -396,7 +396,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 
 SYFunctionPtr FunctionTable::addFunc(AstNodePtr func_ast) {
     auto sy_function = std::make_shared<SYFunction>(func_ast);
-    func_table_[func_ast->b_->literal_] = sy_function;
+    func_table_[func_ast->b_->getLiteral()] = sy_function;
     return sy_function;
 }
 
@@ -445,7 +445,7 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
     }
     else if (comp_unit->a_->ebnf_type_ == SyEbnfType::FuncDef) {
         func_table_->addFunc(comp_unit->a_);
-        if (comp_unit->a_->b_->literal_ == "main") {
+        if (comp_unit->a_->b_->getLiteral() == "main") {
             // main function
             // call it
             #ifdef COMPILER
@@ -516,7 +516,7 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     for (auto func_f_param = func_ast->c_; func_f_param != nullptr; func_f_param = func_f_param->d_) {
         if (arg_exp == nullptr) {
             // throw an error
-            interpretError("too few arguments when calling function \"\033[1m" + func_ast->b_->literal_ + std::string("\033[0m\""), args->line_);
+            interpretError("too few arguments when calling function \"\033[1m" + func_ast->b_->getLiteral() + std::string("\033[0m\""), args->line_);
             return Value();
         }
         auto type = func_f_param->a_->a_;
@@ -547,11 +547,11 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
     auto ret = blockHandler(func_ast->d_);
     if (ret.first == StmtState::BREAK) {
         interpretWarning(std::string("\033[1;31mbreak signal\033[0m unhandled until function \"\033[1m") +
-         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop"), func_ast->line_);
+         func_ast->b_->getLiteral() + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: break statement not within loop"), func_ast->line_);
     }
     if (ret.first == StmtState::CONTINUE) {
         interpretWarning(std::string("\033[1;31mcontiue signal\033[0m unhandled until function \"\033[1m") +
-         func_ast->b_->literal_ + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: continue statement not within loop"), func_ast->line_);
+         func_ast->b_->getLiteral() + std::string("\033[0m\" is end. It is ignored.\n\033[1mhint\033[0m: continue statement not within loop"), func_ast->line_);
     }
     symbol_table_->exitScope();
     return ret.second;
@@ -576,7 +576,7 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
     // LVal -> Ident {'[' Exp ']'} 
     auto mem = symbol_table_->searchTable(l_val->a_);
     if (mem == nullptr) {
-        interpretError(std::string("undefined variable \"\033[1;31m") + l_val->a_->literal_ + std::string("\033[0m\""), l_val->a_->line_);
+        interpretError(std::string("undefined variable \"\033[1;31m") + l_val->a_->getLiteral() + std::string("\033[0m\""), l_val->a_->line_);
     }
     if (l_val->b_ == nullptr) {
         // this is a non-array ident

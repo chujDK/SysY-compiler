@@ -72,7 +72,7 @@ llvm::Value* compilerError(std::string msg, int line) {
 }
 
 static llvm::Value* numberIRGen(AstNodePtr number) {
-    int value = std::stoi(number->a_->literal_);
+    int value = std::stoi(number->a_->getLiteral());
     return llvm::ConstantInt::get(TheContext, llvm::APInt(32, value, true));
 }
 
@@ -118,7 +118,7 @@ static llvm::Value* unaryExpIRGen(AstNodePtr exp) {
 static llvm::Value* lValRightIRGen(AstNodePtr l_val) {
     // currently, we don't consider the case that l_val is an array
     // TOOD: add support for array
-    auto l_val_name = l_val->a_->literal_;
+    auto l_val_name = l_val->a_->getLiteral();
     auto l_val_ir = NamedValues[l_val_name];
     if (l_val_ir == nullptr) {
         compilerError("undefined variable", l_val->line_);
@@ -132,7 +132,7 @@ static llvm::Value* lValRightIRGen(AstNodePtr l_val) {
 static llvm::Value* lValLeftIRGen(AstNodePtr l_val) {
     // currently, we don't consider the case that l_val is an array
     // TOOD: add support for array
-    auto l_val_name = l_val->a_->literal_;
+    auto l_val_name = l_val->a_->getLiteral();
     auto l_val_ir = NamedValues[l_val_name];
     if (l_val_ir == nullptr) {
         // after interpreter, this should never happen
@@ -458,7 +458,7 @@ static llvm::Value* declIRGen(AstNodePtr decl, bool is_global) {
             {
             case SyAstType::TYPE_INT:
                 var_ir = Builder.CreateAlloca(
-                  llvm::Type::getInt32Ty(TheContext), nullptr, ident->literal_);
+                  llvm::Type::getInt32Ty(TheContext), nullptr, ident->getLiteral());
                 break;
             default:
                 assert(0);
@@ -466,7 +466,7 @@ static llvm::Value* declIRGen(AstNodePtr decl, bool is_global) {
             }
 
             // push the variable into the symbol table
-            NamedValues[ident->literal_] = var_ir;
+            NamedValues[ident->getLiteral()] = var_ir;
             auto init_val = def->c_;
             if (init_val != nullptr) {
                 llvm::Value* init_val_ir = expIRDispatcher(init_val->a_);
@@ -519,7 +519,7 @@ static llvm::AllocaInst* createFunctionArgReAlloca(llvm::Function* this_function
 
 llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
     // TODO: currently function only support one basic block
-    llvm::Function* this_func = TheModule->getFunction(func_->b_->literal_);
+    llvm::Function* this_func = TheModule->getFunction(func_->b_->getLiteral());
 
     #ifdef DEBUG
     if (!this_func) {
@@ -602,12 +602,12 @@ void SYFunction::addToLLVMSymbolTable() {
 
     // TODO: i don't know if this is the right way to do it
     llvm::Function* func_ir = llvm::Function::Create(func_type, 
-      llvm::Function::ExternalLinkage, func_ident->literal_, TheModule.get());
+      llvm::Function::ExternalLinkage, func_ident->getLiteral(), TheModule.get());
 
     // set the function's argument
     func_f_param = func_->c_;
     for (auto &arg_iter : func_ir->args()) {
-        arg_iter.setName(func_f_param->b_->literal_);
+        arg_iter.setName(func_f_param->b_->getLiteral());
         func_f_param = func_f_param->d_;
     }
 }
