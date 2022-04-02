@@ -6,7 +6,6 @@
 #include "syparse.h"
 
 struct AstNode;
-using TokenPtr = std::shared_ptr<AstNode>; 
 using AstNodePtr = std::shared_ptr<AstNode>;
 
 class IdentMemoryAPI {
@@ -36,7 +35,7 @@ private:
     bool is_const_;
 public:
     // this is a factory method
-    static IdentMemoryPtr AllocMemoryForIdent(TokenPtr ident, bool is_const);
+    static IdentMemoryPtr AllocMemoryForIdent(AstNodePtr ident, bool is_const);
     IdentMemory(size_t size, bool is_const) {
         this->size_ = size;
         // this can cause a serious memory waste when too much 
@@ -93,11 +92,11 @@ public:
 
 class SymbolTableAPI {
 public:
-    virtual IdentMemoryPtr searchTable(TokenPtr ident) = 0;
-    virtual IdentMemoryPtr searchCurrentScope(TokenPtr ident) = 0;
-    virtual IdentMemoryPtr addGlobalSymbol(TokenPtr ident, bool is_const) = 0;
-    virtual IdentMemoryPtr addSymbol(TokenPtr ident, bool is_const) = 0;
-    virtual void deleteSymbol(TokenPtr ident) = 0;
+    virtual IdentMemoryPtr searchTable(AstNodePtr ident) = 0;
+    virtual IdentMemoryPtr searchCurrentScope(AstNodePtr ident) = 0;
+    virtual IdentMemoryPtr addGlobalSymbol(AstNodePtr ident, bool is_const) = 0;
+    virtual IdentMemoryPtr addSymbol(AstNodePtr ident, bool is_const) = 0;
+    virtual void deleteSymbol(AstNodePtr ident) = 0;
     virtual void enterScope() = 0;
     virtual void exitScope() = 0;
     virtual ~SymbolTableAPI() {}
@@ -112,11 +111,11 @@ private:
     // symbol_table_[0] is the global table
     int current_scope_;
 public:
-    IdentMemoryPtr searchTable(TokenPtr ident);
-    IdentMemoryPtr searchCurrentScope(TokenPtr ident);
-    inline IdentMemoryPtr addSymbol(TokenPtr ident, bool is_const);
-    inline IdentMemoryPtr addGlobalSymbol(TokenPtr ident, bool is_const);
-    inline void deleteSymbol(TokenPtr ident);
+    IdentMemoryPtr searchTable(AstNodePtr ident);
+    IdentMemoryPtr searchCurrentScope(AstNodePtr ident);
+    inline IdentMemoryPtr addSymbol(AstNodePtr ident, bool is_const);
+    inline IdentMemoryPtr addGlobalSymbol(AstNodePtr ident, bool is_const);
+    inline void deleteSymbol(AstNodePtr ident);
     inline void enterScope();
     inline void exitScope();
     SymbolTable() {

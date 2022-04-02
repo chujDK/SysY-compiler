@@ -1,7 +1,25 @@
 #ifndef _SYPARSE_H_
 #define _SYPARSE_H_
 #include <memory>
+#include <cassert>
+#include <string>
+#include <list>
 #include "utils.h"
+#include "sytype.h"
+
+
+struct AstNode;
+class TokenAstNode;
+using TokenPtr = std::shared_ptr<TokenAstNode>; 
+using AstNodePtr = std::shared_ptr<AstNode>;
+enum class SyAstType;
+enum class SyEbnfType;
+
+class AstNodePool {
+public:
+    static TokenPtr get(SyAstType type, int line, std::string && literal);
+    static AstNodePtr get(SyEbnfType type, int line);
+};
 
 class InputStream {
 public:
@@ -14,158 +32,261 @@ public:
     virtual ~InputStream() {}
 };
 
-enum class SyAstType {
-    LEFT_PARENTHESE, // '('
-    RIGHT_PARENTHESE, // ')'
-    LEFT_BRACKET, // '['
-    RIGHT_BRACKET, // ']'
-    LEFT_BRACE, // '{'
-    RIGHT_BRACE, // '}'
+#ifdef DEBUG
+#define DEBUG_ASSERT_NOT_REACH \
+    assert(false && "should not reach here");
+#else
+#define DEBUG_ASSERT_NOT_REACH
+#endif
 
-    // ALU op
-    ALU_ADD, // '+'
-    ALU_SUB, // '-'
-    ALU_DIV, // '/'
-    ALU_MUL, // '*'
-    ALU_MOD, // '%'
-
-    ASSIGN, // '='
-
-    // relation op
-    EQ, // '=='
-    NEQ, // '!='
-    LNE, // '<'
-    LE, // '<='
-    GNE, // '>'
-    GE, // '>='
-
-    // logic op
-    LOGIC_NOT, // '!'
-    LOGIC_AND, // '&&'
-    LOGIC_OR, // '||'
-
-    SEMICOLON, // ';'
-    QUOTE, // '"'
-    COMMA, // ','
-    DOT, // '.'
-
-    // type
-    TYPE_INT, // 'int'
-    TYPE_VOID, // 'void'
-
-    // statement
-    STM_IF, // 'if'
-    STM_ELSE, // 'else'
-    STM_WHILE, // 'while'
-    STM_BREAK, // 'break'
-    STM_CONTINUE, // 'continue'
-    STM_RETURN, // 'return'
-    STM_CONST, // 'const'
-
-    // number
-    INT_IMM,
-
-    STRING,
-    IDENT, // [_a-zA-Z][_-a-zA-Z0-9]*
-    EOF_TYPE,
-    END_OF_ENUM
-};
-
-// SyEbnfType 同样存储类型信息 ( 虽然只有 int, int[] 和 void :( )
-// 如果需要修改语法，需要注意：
-// 1. 如果修改了语法，需要修改SyEbnfTypeDebugInfo
-// 2. 需要注意修改语法后，对链表类型的影响，链表类型假设 d_ 不会被使用
-enum class SyEbnfType {
-    CompUnit, // CompUnit -> [ CompUnit ] ( Decl | FuncDef ) 
-    Decl, // Decl -> ConstDecl | VarDecl
-    ConstDecl, // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-    BType, // BType -> 'int'
-    ConstDef, // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal 
-    ConstInitVal, // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
-    VarDecl, // VarDecl -> BType VarDef { ',' VarDef } ';'
-    VarDef, // VarDef -> Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal 
-    InitVal, // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
-    FuncDef, // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block 
-    FuncType, // FuncType -> 'void' | 'int'
-    FuncFParams, // FuncFParams -> FuncFParam { ',' FuncFParam } 
-    FuncFParam, // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }] 
-    Block, // Block -> '{' { BlockItem } '}' 
-    BlockItem, // BlockItem -> Decl | Stmt
-    Stmt, // Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
-                                   //| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
-                                   //| 'while' '(' Cond ')' Stmt
-                                   //| 'break' ';' | 'continue' ';'
-                                   //| 'return' [Exp] ';'
-    Exp, // Exp -> AddExp
-    Cond, // Cond -> LOrExp
-    LVal, // LVal -> Ident {'[' Exp ']'} 
-    PrimaryExp, // PrimaryExp -> '(' Exp ')' | LVal | Number
-    Number, // Number -> IntConst 
-    UnaryExp, // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
-    UnaryOp, // UnaryOp -> '+' | '-' | '!' 
-    FuncRParams, // FuncRParams -> Exp { ',' Exp } 
-    MulExp, // MulExp -> UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
-    AddExp, // AddExp -> MulExp | AddExp ('+' | '−') MulExp 
-    RelExp, // RelExp -> AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
-    EqExp, // EqExp -> RelExp | EqExp ('==' | '!=') RelExp
-    LAndExp, // LAndExp -> EqExp | LAndExp '&&' EqExp
-    LOrExp, // LOrExp -> LAndExp | LOrExp '||' LAndExp
-    ConstExp, // ConstExp -> AddExp
-    E, // epsilon
-
-    // typing
-    TYPE_INT, // 'int'
-    TYPE_CONST_INT, // 'const int'
-    TYPE_VOID, // 'void'
-    TYPE_INT_ARRAY, // 'int[]'
-    TYPE_CONST_INT_ARRAY, // 'const int[]'
-    END_OF_ENUM
-};
-
-struct AstNode;
-using TokenPtr = std::shared_ptr<AstNode>; 
-using AstNodePtr = std::shared_ptr<AstNode>;
 
 struct AstNode {
-    enum SyAstType ast_type_;
-    enum SyEbnfType ebnf_type_;
+    enum SyAstType ast_type_; // delete this field in the future
+    enum SyEbnfType ebnf_type_; // delete this field in the future
     unsigned int line_;
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
-    // this also means that this complier can only support array size up to 2^32-1
-    // only to the EBnfType::ConstDef, array_size_ can be used
+    // this also means that this complier can only support array size up to 
+    // 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
     // it's tempting to move the line_ into this union, but giveup
+    // delete this field in the future
     union {
         unsigned int array_size_;
         unsigned int const_val_;
     } u_;
-    std::string literal_;
-    // TODO: use std::list to store the token stream
-    TokenPtr next_token_;
-    std::weak_ptr<AstNode> prev_token_;
+//    std::string literal_; // delete this field in the future
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and d_ link up a double linked list
     // be careful when using the d_, make sure it's not in a list
-    std::weak_ptr<AstNode> parent_;
-    AstNodePtr a_, b_, c_, d_;
-    AstNode(enum SyAstType ast_type, int line, std::string&& literal):
-        ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line), literal_(literal), 
-        next_token_(nullptr), a_(nullptr), b_(nullptr), 
+    std::weak_ptr<AstNode> parent_; // delete this field in the future
+    AstNodePtr a_, b_, c_, d_; // delete this field in the future
+    AstNode(enum SyAstType ast_type, int line):
+        ast_type_(ast_type), ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line),
+        a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u_.const_val_ = 0xFFFFFFFF; }
 
     AstNode(enum SyEbnfType ebnf_type, int line):
-        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line), literal_(std::string()), 
-        next_token_(nullptr), a_(nullptr), b_(nullptr), 
+        ast_type_(SyAstType::END_OF_ENUM), ebnf_type_(ebnf_type), line_(line),
+        a_(nullptr), b_(nullptr), 
         c_(nullptr), d_(nullptr) { u_.const_val_ = 0xFFFFFFFF; }
+
+    virtual ~AstNode() {}
+    virtual std::string const& getLiteral() { DEBUG_ASSERT_NOT_REACH return ""; }
+};
+
+class TokenAstNode : public AstNode {
+private:
+    std::string literal_;
+
+public:
+    TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal):
+        AstNode(ast_type, line), literal_(literal) {}
+
+    std::string const& getLiteral() { return literal_; }
+};
+
+class CompUnitAstNode : public AstNode {
+public:
+    CompUnitAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
 
 };
 
+class DeclAstNode : public AstNode {
+public:
+	DeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class ConstDeclAstNode : public AstNode {
+public:
+	ConstDeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class BTypeAstNode : public AstNode {
+public:
+	BTypeAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class ConstDefAstNode : public AstNode {
+public:
+	ConstDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class ConstInitValAstNode : public AstNode {
+public:
+	ConstInitValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class VarDeclAstNode : public AstNode {
+public:
+	VarDeclAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class VarDefAstNode : public AstNode {
+public:
+	VarDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class InitValAstNode : public AstNode {
+public:
+	InitValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class FuncDefAstNode : public AstNode {
+public:
+	FuncDefAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class FuncTypeAstNode : public AstNode {
+public:
+	FuncTypeAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class FuncFParamsAstNode : public AstNode {
+public:
+	FuncFParamsAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class FuncFParamAstNode : public AstNode {
+public:
+	FuncFParamAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class BlockAstNode : public AstNode {
+public:
+	BlockAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class BlockItemAstNode : public AstNode {
+public:
+	BlockItemAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class StmtAstNode : public AstNode {
+public:
+	StmtAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class ExpAstNode : public AstNode {
+public:
+	ExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class CondAstNode : public AstNode {
+public:
+	CondAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class LValAstNode : public AstNode {
+public:
+	LValAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class PrimaryExpAstNode : public AstNode {
+public:
+	PrimaryExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class NumberAstNode : public AstNode {
+public:
+	NumberAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class UnaryExpAstNode : public AstNode {
+public:
+	UnaryExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class UnaryOpAstNode : public AstNode {
+public:
+	UnaryOpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class FuncRParamsAstNode : public AstNode {
+public:
+	FuncRParamsAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class MulExpAstNode : public AstNode {
+public:
+	MulExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class AddExpAstNode : public AstNode {
+public:
+	AddExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class RelExpAstNode : public AstNode {
+public:
+	RelExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class EqExpAstNode : public AstNode {
+public:
+	EqExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class LAndExpAstNode : public AstNode {
+public:
+	LAndExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class LOrExpAstNode : public AstNode {
+public:
+	LOrExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class ConstExpAstNode : public AstNode {
+public:
+	ConstExpAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+class EAstNode : public AstNode {
+public:
+	EAstNode(enum SyEbnfType ebnf_type, int line): AstNode(ebnf_type, line) {}
+
+};
+
+using TokenPtrIter = typename std::list<TokenPtr>::iterator;
 class Lexer {
 private:
     InputStream* input_stream_;
     int line_;
     bool error_occured_;
-    TokenPtr current_token_;
+    std::list<TokenPtr> token_stream_;
+    // to the std::list, the iterator won't be invalid, we will take advantage 
+    // of that
+    TokenPtrIter current_token_;
 
     void lexError(std::string msg);
     void lexWarning(std::string msg);
@@ -173,35 +294,74 @@ private:
     std::string getNumber();
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
+    TokenPtrIter getNextToken();
+    TokenPtrIter getNextToken(TokenPtrIter token);
+    TokenPtrIter getPrevToken(TokenPtrIter token);
 
 public:
 
-    TokenPtr getNextToken();
-    TokenPtr getNextToken(TokenPtr token);
-    TokenPtr getPrevToken(TokenPtr token);
-    Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream) {}
+    class iterator {
+    private:
+        TokenPtrIter iter_;
+        Lexer* this_lexer_;
+    public:
+        iterator() {}
+        iterator(TokenPtrIter iter, Lexer* this_lexer): 
+            iter_(iter), this_lexer_(this_lexer) {}
+        TokenPtr operator*() { return *iter_; }
+        TokenPtr operator->() { return *iter_; }
+        iterator& operator++() {
+            iter_ = this_lexer_->getNextToken(iter_);
+            return *this;
+        }
+        iterator& operator--() {
+            iter_ = this_lexer_->getPrevToken(iter_);
+            return *this;
+        }
+        bool operator==(const iterator& rhs) {
+            return iter_ == rhs.iter_;
+        }
+        bool operator!=(const iterator& rhs) {
+            return iter_ != rhs.iter_;
+        }
+    };
+    friend class iterator;
+
+    iterator begin() {
+        if (current_token_ == token_stream_.end()) {
+            current_token_ = getNextToken();
+        }
+        iterator iter(current_token_, this);
+        return iter;
+    }
+
+    Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream), token_stream_() {
+        current_token_ = token_stream_.begin();
+    }
     ~Lexer() {delete input_stream_;}
 };
 
+/*
 class LexerIterator {
 private:
-    TokenPtr current_token_;
+    TokenPtrIter current_token_;
     std::shared_ptr<Lexer> lexer_;
 public:
-    LexerIterator(TokenPtr token, Lexer* lexer): lexer_(lexer) {
-        if (token == nullptr) {
+    LexerIterator(TokenPtrIter token, Lexer* lexer): lexer_(lexer) {
+        if (*token == nullptr) {
             fprintf(stderr, "LexerIterator: token is nullptr\n");
             exit(-1);
         } else {
             current_token_ = token;
         }
     }
-    TokenPtr operator*() { return current_token_; }
-    TokenPtr operator->() { return current_token_; }
+    TokenPtr operator*() { return *current_token_; }
+    TokenPtr operator->() { return *current_token_; }
     LexerIterator& operator++() { current_token_ = lexer_->getNextToken(current_token_); return *this; }
     LexerIterator& operator--() { current_token_ = lexer_->getPrevToken(current_token_); return *this; }
     bool operator!=(const LexerIterator& other) { return current_token_ != other.current_token_; }
 };
+*/
 
 class ParserAPI {
 public:
@@ -211,9 +371,12 @@ public:
     virtual ~ParserAPI() {};
 };
 
+using LexerIterator = typename Lexer::iterator;
+
 class Parser : ParserAPI {
 private:
-    LexerIterator* token_iter_;
+    LexerIterator token_iter_;
+    Lexer* lexer_;
     bool error_occured_;
     bool end_parse_;
 
@@ -262,11 +425,13 @@ public:
     AstNodePtr parse();
     bool end() { return end_parse_; }
     bool error() { return error_occured_; }
-    Parser(InputStream* InputStream): error_occured_(false), end_parse_(false) {
-        auto lexer = new Lexer(InputStream);
-        token_iter_ = new LexerIterator(lexer->getNextToken(), lexer);
+    Parser(InputStream* InputStream) {
+        lexer_ = new Lexer(InputStream);
+        token_iter_ = lexer_->begin();
+        error_occured_ = false;
+        end_parse_ = false;
     }
-    ~Parser() {delete token_iter_;}
+    ~Parser() { delete lexer_; }
 };
 
 
