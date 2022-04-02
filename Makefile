@@ -5,7 +5,7 @@ TESTCASES=$(foreach x, $(TESTCASE_DIR), \
 		  $(addprefix ${x}/*,.sy)))
 SRC_DIR=./src
 SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
-LIB_DIR=./lib
+LIB_DIR=./include
 LIB=$(foreach x, $(LIB_DIR), ${x}/*.h)
 BIN_DIR=./bin
 CXXFLAGS=-gdwarf-2 -ggdb -frtti# -fsanitize=address
