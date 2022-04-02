@@ -3,6 +3,7 @@
 #include <memory>
 #include <cassert>
 #include <string>
+#include <list>
 #include "utils.h"
 #include "sytype.h"
 
@@ -44,8 +45,8 @@ struct AstNode {
     enum SyEbnfType ebnf_type_; // delete this field in the future
     unsigned int line_;
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
-    // this also means that this complier can only support array size up to 2^32-1
-    // only to the EBnfType::ConstDef, array_size_ can be used
+    // this also means that this complier can only support array size up to 
+    // 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
     // it's tempting to move the line_ into this union, but giveup
     // delete this field in the future
     union {
@@ -76,14 +77,10 @@ struct AstNode {
 class TokenAstNode : public AstNode {
 private:
     std::string literal_;
-    // TODO: make this private
-public:
-    TokenPtr next_token_;
-    TokenPtr prev_token_;
 
 public:
     TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal):
-        AstNode(ast_type, line), literal_(literal), next_token_(nullptr), prev_token_(nullptr) {}
+        AstNode(ast_type, line), literal_(literal) {}
 
     std::string const& getLiteral() { return literal_; }
 };
@@ -280,12 +277,16 @@ public:
 
 };
 
+using TokenPtrIter = typename std::list<TokenPtr>::iterator;
 class Lexer {
 private:
     InputStream* input_stream_;
     int line_;
     bool error_occured_;
-    TokenPtr current_token_;
+    std::list<TokenPtr> token_stream_;
+    // to the std::list, the iterator won't be invalid, we will take advantage 
+    // of that
+    TokenPtrIter current_token_;
 
     void lexError(std::string msg);
     void lexWarning(std::string msg);
@@ -293,35 +294,74 @@ private:
     std::string getNumber();
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
+    TokenPtrIter getNextToken();
+    TokenPtrIter getNextToken(TokenPtrIter token);
+    TokenPtrIter getPrevToken(TokenPtrIter token);
 
 public:
 
-    TokenPtr getNextToken();
-    TokenPtr getNextToken(TokenPtr token);
-    TokenPtr getPrevToken(TokenPtr token);
-    Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream) {}
+    class iterator {
+    private:
+        TokenPtrIter iter_;
+        Lexer* this_lexer_;
+    public:
+        iterator() {}
+        iterator(TokenPtrIter iter, Lexer* this_lexer): 
+            iter_(iter), this_lexer_(this_lexer) {}
+        TokenPtr operator*() { return *iter_; }
+        TokenPtr operator->() { return *iter_; }
+        iterator& operator++() {
+            iter_ = this_lexer_->getNextToken(iter_);
+            return *this;
+        }
+        iterator& operator--() {
+            iter_ = this_lexer_->getPrevToken(iter_);
+            return *this;
+        }
+        bool operator==(const iterator& rhs) {
+            return iter_ == rhs.iter_;
+        }
+        bool operator!=(const iterator& rhs) {
+            return iter_ != rhs.iter_;
+        }
+    };
+    friend class iterator;
+
+    iterator begin() {
+        if (current_token_ == token_stream_.end()) {
+            current_token_ = getNextToken();
+        }
+        iterator iter(current_token_, this);
+        return iter;
+    }
+
+    Lexer(InputStream* input_stream): line_(1), input_stream_(input_stream), token_stream_() {
+        current_token_ = token_stream_.begin();
+    }
     ~Lexer() {delete input_stream_;}
 };
 
+/*
 class LexerIterator {
 private:
-    TokenPtr current_token_;
+    TokenPtrIter current_token_;
     std::shared_ptr<Lexer> lexer_;
 public:
-    LexerIterator(TokenPtr token, Lexer* lexer): lexer_(lexer) {
-        if (token == nullptr) {
+    LexerIterator(TokenPtrIter token, Lexer* lexer): lexer_(lexer) {
+        if (*token == nullptr) {
             fprintf(stderr, "LexerIterator: token is nullptr\n");
             exit(-1);
         } else {
             current_token_ = token;
         }
     }
-    TokenPtr operator*() { return current_token_; }
-    TokenPtr operator->() { return current_token_; }
+    TokenPtr operator*() { return *current_token_; }
+    TokenPtr operator->() { return *current_token_; }
     LexerIterator& operator++() { current_token_ = lexer_->getNextToken(current_token_); return *this; }
     LexerIterator& operator--() { current_token_ = lexer_->getPrevToken(current_token_); return *this; }
     bool operator!=(const LexerIterator& other) { return current_token_ != other.current_token_; }
 };
+*/
 
 class ParserAPI {
 public:
@@ -331,9 +371,12 @@ public:
     virtual ~ParserAPI() {};
 };
 
+using LexerIterator = typename Lexer::iterator;
+
 class Parser : ParserAPI {
 private:
-    LexerIterator* token_iter_;
+    LexerIterator token_iter_;
+    Lexer* lexer_;
     bool error_occured_;
     bool end_parse_;
 
@@ -382,11 +425,13 @@ public:
     AstNodePtr parse();
     bool end() { return end_parse_; }
     bool error() { return error_occured_; }
-    Parser(InputStream* InputStream): error_occured_(false), end_parse_(false) {
-        auto lexer = new Lexer(InputStream);
-        token_iter_ = new LexerIterator(lexer->getNextToken(), lexer);
+    Parser(InputStream* InputStream) {
+        lexer_ = new Lexer(InputStream);
+        token_iter_ = lexer_->begin();
+        error_occured_ = false;
+        end_parse_ = false;
     }
-    ~Parser() {delete token_iter_;}
+    ~Parser() { delete lexer_; }
 };
 
 

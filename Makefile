@@ -15,21 +15,33 @@ LLVMFLAGS=`llvm-config --cxxflags --ldflags --libs --libfiles --system-libs`
 all: syparser sylexer syinterpreter irtest
 	@echo "making all..."
 
-syparser: ${SRC}
+.PHONY:syparser
+syparser:${BIN_DIR}/syparser
+
+${BIN_DIR}/syparser: ${SRC} | ${LIB}
 	@echo "making syparser..."
-	clang++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DPARSER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $@ $^
 
-sylexer: ${SRC}
+.PHONY:sylexer
+sylexer:${BIN_DIR}/sylexer
+
+${BIN_DIR}/sylexer: ${SRC} | ${LIB}
 	@echo "making sylexer..."
-	clang++ -I $(LIB_DIR) -DLEXER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DLEXER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $@ $^
 
-syinterpreter: ${SRC}
+.PHONY:syinterpreter
+syinterpreter:${BIN_DIR}/syinterpreter
+
+${BIN_DIR}/syinterpreter: ${SRC} | ${LIB}
 	@echo "making syinterpreter..."
-	clang++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DINTERPRETER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $@ $^
 
-irtest: ${SRC}
+.PHONY:irtest
+irtest: ${BIN_DIR}/irtest
+
+${BIN_DIR}/irtest: ${SRC} | ${LIB}
 	@echo "making irtest..."
-	clang++ -I $(LIB_DIR) -DCOMPILER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $(BIN_DIR)/$@ $^
+	clang++ -I $(LIB_DIR) -DCOMPILER $(DEFINE) $(CXXFLAGS) $(LLVMFLAGS) -o $@ $^
 
 .PHONY:test-parser
 test-parser: syparser

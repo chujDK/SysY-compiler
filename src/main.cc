@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     #ifdef LEXER
     // this is the code for lexer
     Lexer *lexer = new Lexer(fileStream);
-    LexerIterator iter(lexer->getNextToken(), lexer);
+    LexerIterator iter = lexer->begin();
     while (iter->ast_type_ != SyAstType::EOF_TYPE) {
         printSyToken(*iter);
         ++iter;
