@@ -1,11 +1,16 @@
 # SysY-compiler
 ### TODO
+
+#### milestone
+
 - [x] lexer
 - [x] parser
 - [x] interpreter
-- [ ] refactor
 - [ ] jit compiler
 
+#### refactor
+
+- 当前的文法和后续的语义分析（实现为了解释器）和 ir-gen 都紧耦合了，考虑到对 ast 的访问完全满足“访问者模式”解决的“稳定的数据结构和易变的操作耦合问题”、“需要对一个对象结构中的对象进行很多不同的并且不相关的操作”的问题，应该使用访问者模式重构
 ### Pre-requirement
 
 clang-12+llvm is needed as the jit compiler will use llvm ir. In ubuntu20.04, just use apt to install them.
@@ -27,8 +32,4 @@ sudo apt install llvm
 
 ### Note
 
-both the output of lexer and parser used the "unix-liked terminal color setting", so it may not output nicely in windows
-
-### 不足
-
-- 设计之初没有想清楚，其实每种 node 都应该继承一个接口类，然后在 parse 后的操作中直接通过相应的重载方法来生成对应的 ir 等。现在的实现造成了 ir 生成器、解释器和语法紧耦合了。
+both the output of lexer and parser used the "unix-liked terminal color setting", so it may not output nicely in windows (windows terminal can display the color correctly)
