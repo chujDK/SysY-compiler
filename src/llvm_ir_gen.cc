@@ -510,7 +510,7 @@ llvm::AllocaInst* JITCompiler::createFunctionArgReAlloca(llvm::Function* this_fu
 }
 
 llvm::Function* SYFunction::functionDefinitionLLVMIrGen() {
-    JITCompiler::getInstance().functionDefinitionLLVMIrGen(func_);
+    return JITCompiler::getInstance().functionDefinitionLLVMIrGen(func_);
 }
 
 llvm::Function* JITCompiler::functionDefinitionLLVMIrGen(AstNodePtr func) {

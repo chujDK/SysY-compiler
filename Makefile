@@ -78,5 +78,5 @@ UNIT_test: ${SRC} ${TESTFILE_DIR}/UNIT_test.cc
 	fi
 
 .PHONY:clean
-clean: bin/*
-	$(shell rm $^)
+clean:
+	$(shell rm bin/*)
