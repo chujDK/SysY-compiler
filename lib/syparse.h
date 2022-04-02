@@ -139,8 +139,9 @@ struct AstNode {
         unsigned int const_val_;
     } u_;
     std::string literal_;
+    // TODO: use std::list to store the token stream
     TokenPtr next_token_;
-    TokenPtr prev_token_;
+    std::weak_ptr<AstNode> prev_token_;
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and d_ link up a double linked list

@@ -438,7 +438,7 @@ TokenPtr Lexer::getNextToken(TokenPtr token) {
 }
 
 TokenPtr Lexer::getPrevToken(TokenPtr token) {
-    return token->prev_token_;
+    return token->prev_token_.lock();
 }
 
 // start the parser code
