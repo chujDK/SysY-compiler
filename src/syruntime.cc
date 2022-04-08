@@ -7,7 +7,7 @@ int RTprintInt(int a) { return printf("%d", a); }
 
 Value printIntExecCallBack(char* function, AstNodePtr args,
                            InterpreterAPI* interpreter) {
-	assert(args->ebnf_type_ == SyEbnfType::FuncRParams);
+	assert(args->getEbnfType() == SyEbnfType::FuncRParams);
 	int a              = interpreter->expDispatcher(args->a_).i32;
 	using printIntType = int (*)(int);
 	Value ret;
@@ -19,7 +19,7 @@ int RTprintHex(int a) { return printf("0x%x", a); }
 
 Value printHexExecCallBack(char* function, AstNodePtr args,
                            InterpreterAPI* interpreter) {
-	assert(args->ebnf_type_ == SyEbnfType::FuncRParams);
+	assert(args->getEbnfType() == SyEbnfType::FuncRParams);
 	int a              = interpreter->expDispatcher(args->a_).i32;
 	using printIntType = int (*)(int);
 	Value ret;

@@ -752,14 +752,10 @@ TokenPtrIter Lexer::getPrevToken(TokenPtrIter token) { return --token; }
 // 每个生成函数在匹配失败时不考虑返回时迭代器的正确性，此时由调用函数来保证迭代器的正确性
 // 2. 每个生成函数在匹配成功时，返回时的迭代器应当指向下一个要匹配的 token
 // 3. 进入生成函数时，迭代器应当指向将要被识别的 token，而不是识别过的 token
-// 4. 暂时不考虑错误处理
-// 5. 行数的维护尽量懒惰，不要每次都更新
-// 6. 匹配成功并返回的情况应该尽量在函数的最后
+// 4. 匹配成功并返回的情况应该尽量在函数的最后
 
 // 可能出现的问题：
-// 1. 匹配时修改了某 token 的 parent_, a_... 字段，但是后来匹配失败了，
-// 可能会产生无效引用（由于使用了智能指针，应该不会是悬垂指针，但是仍可能有问题）
-// 2. 有些地方的产生是可选的，所以匹配失败时仍应继续，但是这里很可能会忘记恢复
+// 1. 有些地方的产生是可选的，所以匹配失败时仍应继续，但是这里很可能会忘记恢复
 // token 迭代器
 
 // 当前的问题：
@@ -1359,12 +1355,12 @@ static void adjustExpLAst(AstNodePtr node) {
 	// but node->b_ is nullptr
 	// after addjust, node->b_ is an '+' or '-',
 	// and node->c_ is an AddExp, and node->c_->b_ is nullptr
-	if (node->c_->ebnf_type_ == SyEbnfType::E) {
+	if (node->c_->getEbnfType() == SyEbnfType::E) {
 		// replace node to node->a_, then node turns to a MulExp
 		SyEbnfType ebnf_type;
 		// in the switch, node is an AddExp (for example)
 		// this switch get the MulExp (for example)
-		switch (node->ebnf_type_) {
+		switch (node->getEbnfType()) {
 			case SyEbnfType::MulExp:
 				ebnf_type = SyEbnfType::UnaryExp;
 				break;
@@ -1390,15 +1386,15 @@ static void adjustExpLAst(AstNodePtr node) {
 				assert(1 != 1);
 				break;
 		}
-		node->getAstParent()->c_             = node->a_;
-		node->getAstParent()->c_->ebnf_type_ = ebnf_type;
+		node->getAstParent()->c_ = node->a_;
+		node->getAstParent()->c_->setEbnfType(ebnf_type);
 		return;
 	} else {
-		auto add_exp_l        = node->c_;
-		node->b_              = add_exp_l->a_;
-		add_exp_l->a_         = add_exp_l->b_;
-		add_exp_l->b_         = nullptr;
-		add_exp_l->ebnf_type_ = node->ebnf_type_;
+		auto add_exp_l = node->c_;
+		node->b_       = add_exp_l->a_;
+		add_exp_l->a_  = add_exp_l->b_;
+		add_exp_l->b_  = nullptr;
+		add_exp_l->setEbnfType(node->getEbnfType());
 		adjustExpLAst(add_exp_l);
 	}
 }
@@ -1437,12 +1433,12 @@ static AstNodePtr adjustExpAst(AstNodePtr root) {
 	// after addjust, node->b_ is an '+' or '-',
 	// and node->c_ is an AddExp
 	if (root->b_ != nullptr) {
-		auto add_exp_l        = root->b_;
-		root->c_              = add_exp_l;
-		root->b_              = add_exp_l->a_;
-		add_exp_l->a_         = add_exp_l->b_;
-		add_exp_l->b_         = nullptr;
-		add_exp_l->ebnf_type_ = root->ebnf_type_;
+		auto add_exp_l = root->b_;
+		root->c_       = add_exp_l;
+		root->b_       = add_exp_l->a_;
+		add_exp_l->a_  = add_exp_l->b_;
+		add_exp_l->b_  = nullptr;
+		add_exp_l->setEbnfType(root->getEbnfType());
 		adjustExpLAst(add_exp_l);
 	}
 	return adjustExpAstRightBindToLeftBind(root);
@@ -1450,7 +1446,7 @@ static AstNodePtr adjustExpAst(AstNodePtr root) {
 
 static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node) {
 	auto right_node = node->c_;
-	if (right_node->ebnf_type_ != node->ebnf_type_) {
+	if (right_node->getEbnfType() != node->getEbnfType()) {
 		return node;
 	}
 	node->c_ = right_node->a_;
@@ -1505,7 +1501,7 @@ AstNodePtr Parser::RelExp() {
 	auto rel_exp_l = RelExpL();
 	rel_exp->a_    = add_exp;
 	add_exp->setAstParent(rel_exp);
-	if (rel_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (rel_exp_l->getEbnfType() != SyEbnfType::E) {
 		rel_exp->b_ = rel_exp_l;
 		rel_exp_l->setAstParent(rel_exp);
 		rel_exp = adjustExpAst(rel_exp);
@@ -1556,7 +1552,7 @@ AstNodePtr Parser::EqExp() {
 	auto eq_exp_l = EqExpL();
 	eq_exp->a_    = rel_exp;
 	rel_exp->setAstParent(eq_exp);
-	if (eq_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (eq_exp_l->getEbnfType() != SyEbnfType::E) {
 		eq_exp->b_ = eq_exp_l;
 		eq_exp_l->setAstParent(eq_exp);
 		eq_exp = adjustExpAst(eq_exp);
@@ -1608,7 +1604,7 @@ AstNodePtr Parser::LAndExp() {
 	auto l_and_exp_l = LAndExpL();
 	l_and_exp->a_    = eq_exp;
 	eq_exp->setAstParent(l_and_exp);
-	if (l_and_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (l_and_exp_l->getEbnfType() != SyEbnfType::E) {
 		l_and_exp->b_ = l_and_exp_l;
 		l_and_exp_l->setAstParent(l_and_exp);
 		l_and_exp = adjustExpAst(l_and_exp);
@@ -1659,7 +1655,7 @@ AstNodePtr Parser::LOrExp() {
 	auto l_or_exp_l = LOrExpL();
 	l_or_exp->a_    = l_and_exp;
 	l_and_exp->setAstParent(l_or_exp);
-	if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (l_or_exp_l->getEbnfType() != SyEbnfType::E) {
 		l_or_exp->b_ = l_or_exp_l;
 		l_or_exp_l->setAstParent(l_or_exp);
 		l_or_exp = adjustExpAst(l_or_exp);
@@ -1986,7 +1982,7 @@ AstNodePtr Parser::MulExp() {
 	unary_exp->setAstParent(mul_exp);
 	auto mul_exp_l = MulExpL();
 	// merge mul_exp_l
-	if (mul_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (mul_exp_l->getEbnfType() != SyEbnfType::E) {
 		mul_exp->b_ = mul_exp_l;
 		mul_exp_l->setAstParent(mul_exp);
 		mul_exp = adjustExpAst(mul_exp);
@@ -2035,7 +2031,7 @@ AstNodePtr Parser::AddExp() {
 	mul_exp->setAstParent(add_exp);
 	auto add_exp_l = AddExpL();
 	// merge add_exp_l
-	if (add_exp_l->ebnf_type_ != SyEbnfType::E) {
+	if (add_exp_l->getEbnfType() != SyEbnfType::E) {
 		add_exp->b_ = add_exp_l;
 		add_exp_l->setAstParent(add_exp);
 		// we need to change the AddExpL to AddExp

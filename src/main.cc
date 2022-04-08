@@ -13,9 +13,9 @@ void astWalkThrough(AstNodePtr node, int level) {
 		std::cout << "  ";
 	}
 	if (node->getLiteral().empty()) {
-		if (node->ebnf_type_ != SyEbnfType::END_OF_ENUM) {
+		if (node->getEbnfType() != SyEbnfType::END_OF_ENUM) {
 			std::cout << "\033[1m\033[33m"
-			          << SyEbnfTypeDebugInfo[(int)node->ebnf_type_]
+			          << SyEbnfTypeDebugInfo[(int)node->getEbnfType()]
 			          << "\033[0m";
 		} else {
 			std::cout << "\033[1m\033[33m"
@@ -23,9 +23,9 @@ void astWalkThrough(AstNodePtr node, int level) {
 			          << "\033[0m";
 		}
 	} else {
-		if (node->ebnf_type_ != SyEbnfType::END_OF_ENUM) {
+		if (node->getEbnfType() != SyEbnfType::END_OF_ENUM) {
 			std::cout << "\033[1m\033[34m"
-			          << SyEbnfTypeDebugInfo[(int)node->ebnf_type_]
+			          << SyEbnfTypeDebugInfo[(int)node->getEbnfType()]
 			          << "\033[0m \"\033[32m" << node->getLiteral()
 			          << "\033[0m\"";
 		} else {

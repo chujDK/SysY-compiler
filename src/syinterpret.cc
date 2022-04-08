@@ -64,7 +64,7 @@ void Interpreter::interpretError(std::string msg, int line) {
 }
 
 Value Interpreter::expDispatcher(AstNodePtr exp) {
-	switch (exp->ebnf_type_) {
+	switch (exp->getEbnfType()) {
 		case SyEbnfType::ConstExp:
 			return constExpHandler(exp);
 		case SyEbnfType::Exp:
@@ -105,7 +105,7 @@ Value Interpreter::primaryExpHandler(AstNodePtr exp) {
 Value Interpreter::unaryExpHandler(AstNodePtr exp) {
 	// UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
 	// currently only retunr the val of PrimaryExp
-	if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
+	if (exp->a_->getEbnfType() == SyEbnfType::PrimaryExp) {
 		return primaryExpHandler(exp);
 	}
 	if (exp->a_->getAstType() == SyAstType::IDENT) {
@@ -120,7 +120,7 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
 			    exp->a_->line_);
 		}
 	}
-	if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
+	if (exp->a_->getEbnfType() == SyEbnfType::UnaryOp) {
 		Value ret = expDispatcher(exp->b_);
 		switch (exp->a_->a_->getAstType()) {
 			case SyAstType::ALU_ADD:
@@ -235,10 +235,10 @@ void Interpreter::initValHandler(AstNodePtr init_val, AstNodePtr const_exp,
 
 	if (dimension == 0) {
 #ifdef DEBUG
-		if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
-		    init_val->a_->ebnf_type_ != SyEbnfType::Exp) {
-			assert(init_val->a_->ebnf_type_ == SyEbnfType::ConstExp ||
-			       init_val->a_->ebnf_type_ == SyEbnfType::Exp);
+		if (init_val->a_->getEbnfType() != SyEbnfType::ConstExp &&
+		    init_val->a_->getEbnfType() != SyEbnfType::Exp) {
+			assert(init_val->a_->getEbnfType() == SyEbnfType::ConstExp ||
+			       init_val->a_->getEbnfType() == SyEbnfType::Exp);
 		}
 #endif
 		*((int*)mem_raw) = constExpHandler(init_val->a_).i32;
@@ -261,7 +261,7 @@ AstNodePtr Interpreter::initValValidater(AstNodePtr init_val,
                                          AstNodePtr const_exp, int dimension) {
 	// make the init_list valid
 	if (dimension == 0) {
-		if (init_val->a_->ebnf_type_ == SyEbnfType::InitVal) {
+		if (init_val->a_->getEbnfType() == SyEbnfType::InitVal) {
 			interpretError("excess elements in scalar initializer",
 			               init_val->a_->line_);
 			return nullptr;
@@ -270,8 +270,8 @@ AstNodePtr Interpreter::initValValidater(AstNodePtr init_val,
 	}
 	int init_val_dimension = 0;
 	auto init_val_walker   = init_val;
-	while (init_val_walker->a_->ebnf_type_ != SyEbnfType::ConstExp &&
-	       init_val_walker->a_->ebnf_type_ != SyEbnfType::Exp) {
+	while (init_val_walker->a_->getEbnfType() != SyEbnfType::ConstExp &&
+	       init_val_walker->a_->getEbnfType() != SyEbnfType::Exp) {
 		init_val_walker = init_val_walker->a_;
 		init_val_dimension++;
 	}
@@ -303,7 +303,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 	// ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
 	// ConstExp -> AddExp
 
-	auto is_const = decl->a_->ebnf_type_ == SyEbnfType::ConstDecl;
+	auto is_const = decl->a_->getEbnfType() == SyEbnfType::ConstDecl;
 	for (auto def = decl->a_->b_; def != nullptr; def = def->d_) {
 		auto ident = def->a_;
 		if (def->b_ != nullptr) {
@@ -339,7 +339,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 			// example: int a[10][0x10] = {{0}, {0}}, b;
 			// arr_size: 10 * 0x10
 			// add this ident to symbol_table_
-			ident->ebnf_type_     = SyEbnfType::TYPE_INT_ARRAY;
+			ident->setEbnfType(SyEbnfType::TYPE_INT_ARRAY);
 			ident->u_.array_size_ = arr_size;
 			auto mem =
 			    (is_global ? symbol_table_->addGlobalSymbol(ident, is_const)
@@ -365,7 +365,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 					// the init_val is "{}"
 					// just set it all to 0
 					memset(mem_raw, 0, arr_size * sizeof(int));
-				} else if (init_val->a_->ebnf_type_ != init_val->ebnf_type_) {
+				} else if (init_val->a_->getEbnfType() !=
+				           init_val->getEbnfType()) {
 					// init_val is not a list
 					// throw an warning
 					interpretWarning(
@@ -393,7 +394,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 			// ident: a
 			// init_val: nullptr
 			// const_exp: nullptr
-			ident->ebnf_type_ = SyEbnfType::TYPE_INT;
+			ident->setEbnfType(SyEbnfType::TYPE_INT);
 			auto mem =
 			    (is_global ? symbol_table_->addGlobalSymbol(ident, is_const)
 			               : symbol_table_->addSymbol(ident, is_const));
@@ -403,8 +404,8 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 				memset(mem_raw, 0, sizeof(int));
 			}
 			if (init_val != nullptr) {
-				if (init_val->a_->ebnf_type_ != SyEbnfType::ConstExp &&
-				    init_val->a_->ebnf_type_ != SyEbnfType::Exp) {
+				if (init_val->a_->getEbnfType() != SyEbnfType::ConstExp &&
+				    init_val->a_->getEbnfType() != SyEbnfType::Exp) {
 					interpretWarning(
 					    "init_val for non-array is a list, skipping the init",
 					    init_val->line_);
@@ -468,9 +469,9 @@ void Interpreter::addFunction(SYFunctionPtr function, std::string name) {
 
 int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
 	// here we do a simple dispatch
-	if (comp_unit->a_->ebnf_type_ == SyEbnfType::Decl) {
+	if (comp_unit->a_->getEbnfType() == SyEbnfType::Decl) {
 		declHandler(comp_unit->a_, 1);
-	} else if (comp_unit->a_->ebnf_type_ == SyEbnfType::FuncDef) {
+	} else if (comp_unit->a_->getEbnfType() == SyEbnfType::FuncDef) {
 		func_table_->addFunc(comp_unit->a_);
 		if (comp_unit->a_->b_->getLiteral() == "main") {
 // main function
@@ -496,11 +497,11 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
 std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 	auto block_item = block->a_;
 	for (; block_item != nullptr; block_item = block_item->d_) {
-		if (block_item->a_->ebnf_type_ == SyEbnfType::Decl) {
+		if (block_item->a_->getEbnfType() == SyEbnfType::Decl) {
 			auto decl = block_item->a_;
 			declHandler(decl, 0);
 		}
-		if (block_item->a_->ebnf_type_ == SyEbnfType::Stmt) {
+		if (block_item->a_->getEbnfType() == SyEbnfType::Stmt) {
 			auto stmt = block_item->a_;
 			auto ret  = stmtHandler(stmt);
 			if (ret.first == StmtState::RETURN ||
@@ -516,12 +517,12 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 }
 
 void Interpreter::variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum) {
-	ident->ebnf_type_ = type_enum;
+	ident->setEbnfType(type_enum);
 }
 void Interpreter::variableIdentTyper(AstNodePtr ident, AstNodePtr type) {
 	switch (type->getAstType()) {
 		case SyAstType::TYPE_INT:
-			ident->ebnf_type_ = SyEbnfType::TYPE_INT;
+			ident->setEbnfType(SyEbnfType::TYPE_INT);
 			break;
 		default:
 			// shouldn't reach here
@@ -559,7 +560,7 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
 			// non array
 			auto mem     = symbol_table_->addSymbol(ident, false);
 			auto mem_raw = mem->getMem();
-			if (ident->ebnf_type_ == SyEbnfType::TYPE_INT) {
+			if (ident->getEbnfType() == SyEbnfType::TYPE_INT) {
 				int init_val = expDispatcher(arg_exp->a_).i32;
 				memcpy(mem_raw, &init_val, sizeof(int));
 			} else {
@@ -722,7 +723,7 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 			break;
 	}
 	// LVal '=' Exp ';' | [Exp] ';' | Block
-	if (stmt->a_->ebnf_type_ == SyEbnfType::LVal) {
+	if (stmt->a_->getEbnfType() == SyEbnfType::LVal) {
 		// LVal '=' Exp ';'
 		auto l_val     = stmt->a_;
 		auto l_val_ret = lValLeftHandler(l_val);
@@ -733,12 +734,12 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 		} else if (l_val_ret.second == SyEbnfType::TYPE_CONST_INT) {
 			interpretError("can't assign to a const variable", exp->line_);
 		}
-	} else if (stmt->a_->ebnf_type_ == SyEbnfType::Exp) {
+	} else if (stmt->a_->getEbnfType() == SyEbnfType::Exp) {
 		// Exp ';'
 		expDispatcher(stmt->a_);
 	} else {
 #ifdef DEBUG
-		assert(stmt->a_->ebnf_type_ == SyEbnfType::Block);
+		assert(stmt->a_->getEbnfType() == SyEbnfType::Block);
 #endif
 		callee_ret = blockHandler(stmt->a_);
 		return callee_ret;

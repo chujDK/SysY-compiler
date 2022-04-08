@@ -7,7 +7,7 @@
 #include "syparse.h"
 
 struct AstNode;
-using AstNodePtr = std::shared_ptr<AstNode>;
+using AstNodePtr = std::shared_ptr<AstNodeBase>;
 
 class IdentMemoryAPI {
    public:

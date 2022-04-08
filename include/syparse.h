@@ -8,10 +8,10 @@
 #include "sytype.h"
 #include "utils.h"
 
-struct AstNode;
+struct AstNodeBase;
 class TokenAstNode;
 using TokenPtr   = std::shared_ptr<TokenAstNode>;
-using AstNodePtr = std::shared_ptr<AstNode>;
+using AstNodePtr = std::shared_ptr<AstNodeBase>;
 enum class SyAstType;
 enum class SyEbnfType;
 
@@ -43,59 +43,82 @@ class AstNodeVisitor {
 	virtual ~AstNodeVisitor() {}
 };
 
-struct AstNode {
-	enum SyEbnfType ebnf_type_;  // delete this field in the future
-	unsigned int line_;
-	// only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
-	// this also means that this complier can only support array size up to
-	// 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
-	// it's tempting to move the line_ into this union, but giveup
-	// delete this field in the future
+struct AstNodeBase {
+	// in the ast, the meaning is self-explained;
+	// if the nodes are in a list, like FuncFParam to FuncFParams,
+	// parent_ and d_ link up a double linked list
+	// be careful when using the d_, make su
+	AstNodePtr a_, b_, c_, d_;  // FIXME: maybe delete this field in the future?
 	union {
 		unsigned int array_size_;
 		unsigned int const_val_;
 	} u_;
-	// in the ast, the meaning is self-explained;
-	// if the nodes are in a list, like FuncFParam to FuncFParams,
-	// parent_ and d_ link up a double linked list
-	// be careful when using the d_, make sure it's not in a list
-	//	std::weak_ptr<AstNode> parent_;  // delete this field in the future
-	AstNodePtr a_, b_, c_, d_;  // delete this field in the future
-	AstNode(int line) : ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line) {
-		u_.const_val_ = 0xFFFFFFFF;
-	}
+	unsigned int line_;
 
-	AstNode(enum SyEbnfType ebnf_type, int line)
-	    : ebnf_type_(ebnf_type), line_(line) {
-		u_.const_val_ = 0xFFFFFFFF;
-	}
+	virtual ~AstNodeBase() {}
+	virtual std::string const& getLiteral() = 0;
 
-	virtual ~AstNode() {}
-	virtual std::string const& getLiteral() {
-		DEBUG_ASSERT_NOT_REACH return "";
-	}
+	virtual enum SyAstType getAstType()            = 0;
+	virtual enum SyEbnfType getEbnfType()          = 0;
+	virtual void setEbnfType(enum SyEbnfType type) = 0;
 
-	virtual SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
+	virtual void Accept(AstNodeVisitor* visitor) = 0;
+	virtual void irGen()                         = 0;
+	virtual void checkSemantic()                 = 0;
+	virtual AstNodePtr getAstParent()            = 0;
+	virtual void setAstParent(AstNodePtr parent) = 0;
 
-	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
-	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
-	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
-	virtual AstNodePtr getAstParent() { return nullptr; }
-	virtual void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
+	AstNodeBase(int line) : line_(line) { u_.const_val_ = UINT32_MAX; }
 };
 
-class TokenAstNode : public AstNode {
+class TokenAstNode : public AstNodeBase {
    private:
 	std::string literal_;
 	enum SyAstType ast_type_;
 
    public:
 	TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal)
-	    : AstNode(line), literal_(literal), ast_type_(ast_type) {}
+	    : AstNodeBase(line), literal_(literal), ast_type_(ast_type) {}
 
 	std::string const& getLiteral() { return literal_; }
 
-	SyAstType getAstType() { return ast_type_; }
+	enum SyAstType getAstType() { return ast_type_; }
+	enum SyEbnfType getEbnfType() { return SyEbnfType::END_OF_ENUM; }
+
+	void setEbnfType(enum SyEbnfType type) { DEBUG_ASSERT_NOT_REACH }
+	void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
+	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
+	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
+	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
+	virtual AstNodePtr getAstParent() { return nullptr; }
+};
+
+class AstNode : public AstNodeBase {
+	// only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
+	// this also means that this complier can only support array size up to
+	// 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
+	// it's tempting to move the line_ into this union, but giveup
+	// delete this field in the future
+   private:
+	SyEbnfType ebnf_type_;
+
+   public:
+	// ire it's not in a list
+	AstNode(enum SyEbnfType ebnf_type, int line)
+	    : AstNodeBase(line), ebnf_type_(ebnf_type) {}
+
+	virtual ~AstNode() {}
+	virtual std::string const& getLiteral() { return ""; }
+
+	enum SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
+	enum SyEbnfType getEbnfType() { return ebnf_type_; }
+	void setEbnfType(enum SyEbnfType type) { ebnf_type_ = type; }
+
+	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
+	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
+	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
+	virtual AstNodePtr getAstParent() { return nullptr; }
+	virtual void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
 };
 
 class CompUnitAstNode : public AstNode {
@@ -226,12 +249,12 @@ class NumberAstNode : public AstNode {
 
 class UnaryExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	UnaryExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
@@ -249,67 +272,67 @@ class FuncRParamsAstNode : public AstNode {
 
 class MulExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	MulExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class AddExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	AddExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class RelExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	RelExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class EqExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	EqExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class LAndExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	LAndExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class LOrExpAstNode : public AstNode {
    private:
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	LOrExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
@@ -322,11 +345,11 @@ class ConstExpAstNode : public AstNode {
 class EAstNode : public AstNode {
    private:
 	// this class has this field for the left recursive
-	std::weak_ptr<AstNode> parent_;
+	std::weak_ptr<AstNodeBase> parent_;
 
    public:
 	EAstNode(enum SyEbnfType ebnf_type, int line) : AstNode(ebnf_type, line) {}
-	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 

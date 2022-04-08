@@ -80,9 +80,9 @@ llvm::Value* JITCompiler::primaryExpIRGen(AstNodePtr exp) {
 }
 
 llvm::Value* JITCompiler::unaryExpIRGen(AstNodePtr exp) {
-	if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
+	if (exp->a_->getEbnfType() == SyEbnfType::PrimaryExp) {
 		return primaryExpIRGen(exp->a_);
-	} else if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
+	} else if (exp->a_->getEbnfType() == SyEbnfType::UnaryOp) {
 		llvm::Value* ret = expIRDispatcher(exp->b_);
 		switch (exp->a_->a_->getAstType()) {
 			case SyAstType::ALU_ADD:
@@ -165,7 +165,7 @@ llvm::Value* JITCompiler::constExpIRGen(AstNodePtr const_exp) {
 
 llvm::Value* JITCompiler::expIRDispatcher(AstNodePtr exp) {
 	llvm::Value* ret = nullptr;
-	switch (exp->ebnf_type_) {
+	switch (exp->getEbnfType()) {
 		// TODO: finish this, all `return ret` is undone
 		case SyEbnfType::ConstExp:
 			return constExpIRGen(exp);
@@ -391,7 +391,7 @@ llvm::Value* JITCompiler::whileStmtIRGen(AstNodePtr stmt) {
 
 llvm::Value* JITCompiler::stmtIRGen(AstNodePtr stmt) {
 #ifdef DEBUG
-	assert(stmt != nullptr && stmt->ebnf_type_ == SyEbnfType::Stmt);
+	assert(stmt != nullptr && stmt->getEbnfType() == SyEbnfType::Stmt);
 #endif
 
 	llvm::Value* ret        = nullptr;
@@ -426,17 +426,17 @@ llvm::Value* JITCompiler::stmtIRGen(AstNodePtr stmt) {
 			break;
 	}
 	// LVal '=' Exp ';' | [Exp] ';' | Block
-	if (stmt->a_->ebnf_type_ == SyEbnfType::LVal) {
+	if (stmt->a_->getEbnfType() == SyEbnfType::LVal) {
 		// LVal '=' Exp ';'
 		auto l_val_ir = lValLeftIRGen(stmt->a_);
 		auto exp_ir   = expIRDispatcher(stmt->b_);
 		builder_.CreateStore(exp_ir, l_val_ir);
-	} else if (stmt->a_->ebnf_type_ == SyEbnfType::Exp) {
+	} else if (stmt->a_->getEbnfType() == SyEbnfType::Exp) {
 		// Exp ';'
 		callee_ret = expIRDispatcher(stmt->a_);
 	} else {
 #ifdef DEBUG
-		assert(stmt->a_->ebnf_type_ == SyEbnfType::Block);
+		assert(stmt->a_->getEbnfType() == SyEbnfType::Block);
 #endif
 		callee_ret = blockIRGen(stmt->a_);
 	}
@@ -446,7 +446,7 @@ llvm::Value* JITCompiler::stmtIRGen(AstNodePtr stmt) {
 // is_global shouldn't be used, here we add it for future use
 llvm::Value* JITCompiler::declIRGen(AstNodePtr decl, bool is_global) {
 #ifdef DEBUG
-	assert(decl != nullptr && decl->ebnf_type_ == SyEbnfType::Decl);
+	assert(decl != nullptr && decl->getEbnfType() == SyEbnfType::Decl);
 #endif
 	// Decl -> ConstDecl | VarDecl
 	// ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
@@ -460,7 +460,7 @@ llvm::Value* JITCompiler::declIRGen(AstNodePtr decl, bool is_global) {
 			// TODO: finish this
 		} else {
 			// alloc the memory for the variable from stack
-			// thought after interpret we can use the ident->ebnf_type_ to
+			// thought after interpret we can use the ident->getEbnfType() to
 			// identify the type of the variable, we still use the btype
 			// for the sake of simplicity if we compile this function before
 			// interpret in some cases.
@@ -491,11 +491,11 @@ llvm::Value* JITCompiler::declIRGen(AstNodePtr decl, bool is_global) {
 llvm::Value* JITCompiler::blockItemIRGen(AstNodePtr block_item) {
 #ifdef DEBUG
 	assert(block_item != nullptr &&
-	       block_item->ebnf_type_ == SyEbnfType::BlockItem);
+	       block_item->getEbnfType() == SyEbnfType::BlockItem);
 #endif
 
 	llvm::Value* last_val = nullptr;
-	switch (block_item->a_->ebnf_type_) {
+	switch (block_item->a_->getEbnfType()) {
 		case SyEbnfType::Decl:
 			last_val = declIRGen(block_item->a_, 0);
 			break;
@@ -512,7 +512,7 @@ llvm::Value* JITCompiler::blockItemIRGen(AstNodePtr block_item) {
 
 llvm::Value* JITCompiler::blockIRGen(AstNodePtr block) {
 #ifdef DEBUG
-	assert(block != nullptr && block->ebnf_type_ == SyEbnfType::Block);
+	assert(block != nullptr && block->getEbnfType() == SyEbnfType::Block);
 #endif
 	llvm::Value* ret;
 	// block should return a value for it's funciton

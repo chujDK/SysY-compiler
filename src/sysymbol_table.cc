@@ -23,7 +23,7 @@ IdentMemoryPtr SymbolTable::searchCurrentScope(AstNodePtr ident) {
 IdentMemoryPtr IdentMemory::AllocMemoryForIdent(AstNodePtr ident,
                                                 bool is_const) {
 	std::shared_ptr<IdentMemoryAPI> mem(nullptr);
-	switch (ident->ebnf_type_) {
+	switch (ident->getEbnfType()) {
 		case SyEbnfType::TYPE_INT:
 			mem.reset((IdentMemoryAPI*)new IdentMemory(sizeof(int), is_const));
 			return mem;
