@@ -59,25 +59,14 @@ struct AstNode {
 	// if the nodes are in a list, like FuncFParam to FuncFParams,
 	// parent_ and d_ link up a double linked list
 	// be careful when using the d_, make sure it's not in a list
-	std::weak_ptr<AstNode> parent_;  // delete this field in the future
-	AstNodePtr a_, b_, c_, d_;       // delete this field in the future
-	AstNode(int line)
-	    : ebnf_type_(SyEbnfType::END_OF_ENUM),
-	      line_(line),
-	      a_(nullptr),
-	      b_(nullptr),
-	      c_(nullptr),
-	      d_(nullptr) {
+	//	std::weak_ptr<AstNode> parent_;  // delete this field in the future
+	AstNodePtr a_, b_, c_, d_;  // delete this field in the future
+	AstNode(int line) : ebnf_type_(SyEbnfType::END_OF_ENUM), line_(line) {
 		u_.const_val_ = 0xFFFFFFFF;
 	}
 
 	AstNode(enum SyEbnfType ebnf_type, int line)
-	    : ebnf_type_(ebnf_type),
-	      line_(line),
-	      a_(nullptr),
-	      b_(nullptr),
-	      c_(nullptr),
-	      d_(nullptr) {
+	    : ebnf_type_(ebnf_type), line_(line) {
 		u_.const_val_ = 0xFFFFFFFF;
 	}
 
@@ -91,6 +80,8 @@ struct AstNode {
 	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
 	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
 	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
+	virtual AstNodePtr getAstParent() { return nullptr; }
+	virtual void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
 };
 
 class TokenAstNode : public AstNode {
@@ -234,9 +225,14 @@ class NumberAstNode : public AstNode {
 };
 
 class UnaryExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	UnaryExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class UnaryOpAstNode : public AstNode {
@@ -252,39 +248,69 @@ class FuncRParamsAstNode : public AstNode {
 };
 
 class MulExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	MulExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class AddExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	AddExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class RelExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	RelExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class EqExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	EqExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class LAndExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	LAndExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class LOrExpAstNode : public AstNode {
+   private:
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	LOrExpAstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 class ConstExpAstNode : public AstNode {
@@ -294,8 +320,14 @@ class ConstExpAstNode : public AstNode {
 };
 
 class EAstNode : public AstNode {
+   private:
+	// this class has this field for the left recursive
+	std::weak_ptr<AstNode> parent_;
+
    public:
 	EAstNode(enum SyEbnfType ebnf_type, int line) : AstNode(ebnf_type, line) {}
+	void setAstParent(std::shared_ptr<AstNode> parent) { parent_ = parent; }
+	AstNodePtr getAstParent() { return parent_.lock(); }
 };
 
 using TokenPtrIter = typename std::list<TokenPtr>::iterator;
