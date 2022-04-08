@@ -11,7 +11,7 @@
 class InterpreterAPI;
 class SYFunction {
    private:
-	AstNodePtr func_;  // func_->ast_type_ == SyAstType::FuncDef
+	AstNodePtr func_;  // func_->getAstType() == SyAstType::FuncDef
 	char* func_exec_mem_;
 	Value (*exec_call_back_)(
 	    char*, AstNodePtr,

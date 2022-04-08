@@ -19,7 +19,8 @@ void astWalkThrough(AstNodePtr node, int level) {
 			          << "\033[0m";
 		} else {
 			std::cout << "\033[1m\033[33m"
-			          << SyAstTypeDebugInfo[(int)node->ast_type_] << "\033[0m";
+			          << SyAstTypeDebugInfo[(int)node->getAstType()]
+			          << "\033[0m";
 		}
 	} else {
 		if (node->ebnf_type_ != SyEbnfType::END_OF_ENUM) {
@@ -29,7 +30,7 @@ void astWalkThrough(AstNodePtr node, int level) {
 			          << "\033[0m\"";
 		} else {
 			std::cout << "\033[1m\033[34m"
-			          << SyAstTypeDebugInfo[(int)node->ast_type_]
+			          << SyAstTypeDebugInfo[(int)node->getAstType()]
 			          << "\033[0m \"\033[32m" << node->getLiteral()
 			          << "\033[0m\"";
 		}
@@ -64,7 +65,7 @@ int main(int argc, char* argv[]) {
 	// this is the code for lexer
 	Lexer* lexer       = new Lexer(fileStream);
 	LexerIterator iter = lexer->begin();
-	while (iter->ast_type_ != SyAstType::EOF_TYPE) {
+	while (iter->getAstType() != SyAstType::EOF_TYPE) {
 		printSyToken(*iter);
 		++iter;
 	}

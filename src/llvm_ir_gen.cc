@@ -84,7 +84,7 @@ llvm::Value* JITCompiler::unaryExpIRGen(AstNodePtr exp) {
 		return primaryExpIRGen(exp->a_);
 	} else if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
 		llvm::Value* ret = expIRDispatcher(exp->b_);
-		switch (exp->a_->a_->ast_type_) {
+		switch (exp->a_->a_->getAstType()) {
 			case SyAstType::ALU_ADD:
 				return ret;
 			case SyAstType::ALU_SUB:
@@ -108,7 +108,7 @@ llvm::Value* JITCompiler::unaryExpIRGen(AstNodePtr exp) {
 				break;
 		}
 		return nullptr;
-	} else if (exp->a_->ast_type_ == SyAstType::IDENT) {
+	} else if (exp->a_->getAstType() == SyAstType::IDENT) {
 		// TODO: finish this
 		return nullptr;
 	} else {
@@ -207,7 +207,7 @@ llvm::Value* JITCompiler::subExpIRGen(AstNodePtr exp) {
 	auto ir_c  = expIRDispatcher(exp_c);
 	llvm::Value* ret_ir;
 	llvm::Value* cmp_ir;
-	switch (exp->b_->ast_type_) {
+	switch (exp->b_->getAstType()) {
 		case SyAstType::ALU_ADD:
 			ret_ir = builder_.CreateAdd(ir_a, ir_c, "addtmp");
 			break;
@@ -282,9 +282,9 @@ llvm::Value* JITCompiler::condIRGen(AstNodePtr cond) {
 }
 
 llvm::Value* JITCompiler::ifStmtIRGen(AstNodePtr stmt) {
-// we assert that stmt->a_->ast_type_ == SyAstType::STM_IF
+// we assert that stmt->a_->getAstType() == SyAstType::STM_IF
 #ifdef DEBUG
-	assert(stmt->a_->ast_type_ == SyAstType::STM_IF);
+	assert(stmt->a_->getAstType() == SyAstType::STM_IF);
 #endif
 	// TODO
 
@@ -345,9 +345,9 @@ llvm::Value* JITCompiler::ifStmtIRGen(AstNodePtr stmt) {
 }
 
 llvm::Value* JITCompiler::whileStmtIRGen(AstNodePtr stmt) {
-// we assert that stmt->a_->ast_type_ == SyAstType::STM_WHILE
+// we assert that stmt->a_->getAstType() == SyAstType::STM_WHILE
 #ifdef DEBUG
-	assert(stmt->a_->ast_type_ == SyAstType::STM_WHILE);
+	assert(stmt->a_->getAstType() == SyAstType::STM_WHILE);
 #endif
 	//| 'while' '(' Cond ')' Stmt
 
@@ -400,7 +400,7 @@ llvm::Value* JITCompiler::stmtIRGen(AstNodePtr stmt) {
 		// null statement
 		return ret;
 	}
-	switch (stmt->a_->ast_type_) {
+	switch (stmt->a_->getAstType()) {
 		case SyAstType::STM_IF:
 			// if (cond) stmt
 			return ifStmtIRGen(stmt);
@@ -465,7 +465,7 @@ llvm::Value* JITCompiler::declIRGen(AstNodePtr decl, bool is_global) {
 			// for the sake of simplicity if we compile this function before
 			// interpret in some cases.
 			llvm::AllocaInst* var_ir = nullptr;
-			switch (btype->a_->ast_type_) {
+			switch (btype->a_->getAstType()) {
 				case SyAstType::TYPE_INT:
 					var_ir =
 					    builder_.CreateAlloca(llvm::Type::getInt32Ty(context_),
@@ -588,7 +588,7 @@ void JITCompiler::addToLLVMSymbolTable(AstNodePtr func) {
 	// create this function
 	// currently ignore the array type
 	int argc            = 0;
-	auto func_type_enum = func->a_->a_->ast_type_;
+	auto func_type_enum = func->a_->a_->getAstType();
 	auto func_ident     = func->b_;
 	auto func_f_param   = func->c_;
 	auto func_body      = func->d_;
@@ -597,7 +597,7 @@ void JITCompiler::addToLLVMSymbolTable(AstNodePtr func) {
 	std::vector<llvm::Type*> argv;
 	for (; func_f_param != nullptr; func_f_param = func_f_param->d_) {
 		argc++;
-		switch (func_f_param->a_->a_->ast_type_) {
+		switch (func_f_param->a_->a_->getAstType()) {
 			case SyAstType::TYPE_INT:
 				argv.push_back(llvm::Type::getInt32Ty(context_));
 				break;

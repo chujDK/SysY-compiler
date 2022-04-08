@@ -38,8 +38,12 @@ class InputStream {
 #define DEBUG_ASSERT_NOT_REACH
 #endif
 
+class AstNodeVisitor {
+   public:
+	virtual ~AstNodeVisitor() {}
+};
+
 struct AstNode {
-	enum SyAstType ast_type_;    // delete this field in the future
 	enum SyEbnfType ebnf_type_;  // delete this field in the future
 	unsigned int line_;
 	// only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
@@ -51,16 +55,14 @@ struct AstNode {
 		unsigned int array_size_;
 		unsigned int const_val_;
 	} u_;
-	//    std::string literal_; // delete this field in the future
 	// in the ast, the meaning is self-explained;
 	// if the nodes are in a list, like FuncFParam to FuncFParams,
 	// parent_ and d_ link up a double linked list
 	// be careful when using the d_, make sure it's not in a list
 	std::weak_ptr<AstNode> parent_;  // delete this field in the future
 	AstNodePtr a_, b_, c_, d_;       // delete this field in the future
-	AstNode(enum SyAstType ast_type, int line)
-	    : ast_type_(ast_type),
-	      ebnf_type_(SyEbnfType::END_OF_ENUM),
+	AstNode(int line)
+	    : ebnf_type_(SyEbnfType::END_OF_ENUM),
 	      line_(line),
 	      a_(nullptr),
 	      b_(nullptr),
@@ -70,8 +72,7 @@ struct AstNode {
 	}
 
 	AstNode(enum SyEbnfType ebnf_type, int line)
-	    : ast_type_(SyAstType::END_OF_ENUM),
-	      ebnf_type_(ebnf_type),
+	    : ebnf_type_(ebnf_type),
 	      line_(line),
 	      a_(nullptr),
 	      b_(nullptr),
@@ -84,17 +85,26 @@ struct AstNode {
 	virtual std::string const& getLiteral() {
 		DEBUG_ASSERT_NOT_REACH return "";
 	}
+
+	virtual SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
+
+	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
+	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
+	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
 };
 
 class TokenAstNode : public AstNode {
    private:
 	std::string literal_;
+	enum SyAstType ast_type_;
 
    public:
 	TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal)
-	    : AstNode(ast_type, line), literal_(literal) {}
+	    : AstNode(line), literal_(literal), ast_type_(ast_type) {}
 
 	std::string const& getLiteral() { return literal_; }
+
+	SyAstType getAstType() { return ast_type_; }
 };
 
 class CompUnitAstNode : public AstNode {

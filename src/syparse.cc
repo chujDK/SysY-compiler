@@ -727,7 +727,7 @@ TokenPtr Lexer::getNextTokenInternal() {
 
 TokenPtrIter Lexer::getNextToken() {
 	if ((current_token_ != token_stream_.end()) &&
-	    (*current_token_)->ast_type_ == SyAstType::EOF_TYPE) {
+	    (*current_token_)->getAstType() == SyAstType::EOF_TYPE) {
 		return current_token_;
 	}
 	auto token = getNextTokenInternal();
@@ -778,13 +778,13 @@ AstNodePtr Parser::Stmt() {
 	AstNodePtr exp              = nullptr;
 	LexerIterator iter_back     = token_iter_;
 	LexerIterator iter_back_tmp = token_iter_;
-	switch ((token_iter_)->ast_type_) {
+	switch ((token_iter_)->getAstType()) {
 		case SyAstType::STM_IF:
 			// 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
 			stmt->a_               = *(token_iter_);
 			(token_iter_)->parent_ = stmt;
 			++token_iter_;
-			if ((token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+			if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 				// here is status like
 				// ```
 				// if !a) {
@@ -809,9 +809,9 @@ AstNodePtr Parser::Stmt() {
 				                       "\'\033[1m(\033[0m\'"),
 				           stmt->line_);
 				token_iter_ = iter_back_tmp;
-				while ((token_iter_)->ast_type_ !=
+				while ((token_iter_)->getAstType() !=
 				       SyAstType::RIGHT_PARENTHESE) {
-					if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+					if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 						// there we giveup
 						return nullptr;
 					}
@@ -819,7 +819,7 @@ AstNodePtr Parser::Stmt() {
 				}
 				cond = AstNodePool::get(SyEbnfType::E, 0);
 			}
-			if ((token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+			if ((token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE) {
 				// here is status like
 				// ```
 				// if (!a {
@@ -841,7 +841,7 @@ AstNodePtr Parser::Stmt() {
 				// so we just return nullptr and maybe giveup this CompUnit
 				return nullptr;
 			}
-			if ((token_iter_)->ast_type_ == SyAstType::STM_ELSE) {
+			if ((token_iter_)->getAstType() == SyAstType::STM_ELSE) {
 				++token_iter_;
 				stmt_else = Stmt();
 				if (stmt_else == nullptr) {
@@ -866,7 +866,7 @@ AstNodePtr Parser::Stmt() {
 			stmt->a_               = *(token_iter_);
 			(token_iter_)->parent_ = stmt;
 			++token_iter_;
-			if ((token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+			if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 				parseError(
 				    std::string(
 				        "expected \'\033[1m(\033[0m\' before \'\033[1m") +
@@ -881,9 +881,9 @@ AstNodePtr Parser::Stmt() {
 				                       "\'\033[1m(\033[0m\'"),
 				           stmt->line_);
 				token_iter_ = iter_back_tmp;
-				while ((token_iter_)->ast_type_ !=
+				while ((token_iter_)->getAstType() !=
 				       SyAstType::RIGHT_PARENTHESE) {
-					if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+					if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 						// there we giveup
 						return nullptr;
 					}
@@ -891,7 +891,7 @@ AstNodePtr Parser::Stmt() {
 				}
 				cond = AstNodePool::get(SyEbnfType::E, 0);
 			}
-			if ((token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+			if ((token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE) {
 				parseError(
 				    std::string(
 				        "expected \'\033[1m)\033[0m\' before \'\033[1m") +
@@ -916,7 +916,7 @@ AstNodePtr Parser::Stmt() {
 			stmt->a_               = *(token_iter_);
 			(token_iter_)->parent_ = stmt;
 			++token_iter_;
-			if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
 				parseError(
 				    std::string(
@@ -932,7 +932,7 @@ AstNodePtr Parser::Stmt() {
 			stmt->a_               = *(token_iter_);
 			(token_iter_)->parent_ = stmt;
 			++token_iter_;
-			if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
 				parseError(
 				    std::string(
@@ -960,7 +960,7 @@ AstNodePtr Parser::Stmt() {
 				stmt->b_     = exp;
 				exp->parent_ = stmt;
 			}
-			if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
 				parseError(
 				    std::string(
@@ -979,13 +979,13 @@ AstNodePtr Parser::Stmt() {
 	iter_back  = token_iter_;
 	auto l_val = LVal();
 	if (l_val != nullptr) {
-		if ((token_iter_)->ast_type_ == SyAstType::ASSIGN) {
+		if ((token_iter_)->getAstType() == SyAstType::ASSIGN) {
 			++token_iter_;
 			exp = Exp();
 			if (exp == nullptr) {
 				return nullptr;
 			}
-			if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				return nullptr;
 			}
 			++token_iter_;
@@ -1000,7 +1000,7 @@ AstNodePtr Parser::Stmt() {
 	// rewrite [Exp] ';' => Exp ';' | ';'
 	// first we try ';'
 	token_iter_ = iter_back;
-	if ((token_iter_)->ast_type_ == SyAstType::SEMICOLON) {
+	if ((token_iter_)->getAstType() == SyAstType::SEMICOLON) {
 		++token_iter_;
 		// for simplicity, we just return a null stmt
 		// no fancy optimization here
@@ -1010,7 +1010,7 @@ AstNodePtr Parser::Stmt() {
 	token_iter_ = iter_back;
 	exp         = Exp();
 	if (exp != nullptr) {
-		if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+		if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 			// ignore the missing ';' and report a error
 			parseError(
 			    std::string("expected \'\033[1m;\033[0m\' before \'\033[1m") +
@@ -1045,7 +1045,7 @@ AstNodePtr Parser::VarDef() {
 	AstNodePtr const_exp_start = nullptr;
 	AstNodePtr const_exp_last  = nullptr;
 	LexerIterator iter_back    = token_iter_;
-	while ((token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+	while ((token_iter_)->getAstType() == SyAstType::LEFT_BRACKET) {
 		++token_iter_;
 		iter_back      = token_iter_;
 		auto const_exp = ConstExp();
@@ -1057,8 +1057,8 @@ AstNodePtr Parser::VarDef() {
 			        "expected a const expression after \'\033[1m[\033[0m\'"),
 			    ident->line_);
 			token_iter_ = iter_back;
-			while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACKET) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -1066,7 +1066,7 @@ AstNodePtr Parser::VarDef() {
 			}
 			const_exp = AstNodePool::get(SyEbnfType::E, 0);
 		}
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACKET) {
 			// just ignore the missing ']' and report a error
 			parseError(
 			    std::string("expected \'\033[1m]\033[0m\' before \'\033[1m") +
@@ -1086,7 +1086,7 @@ AstNodePtr Parser::VarDef() {
 	}
 	AstNodePtr init_val = nullptr;
 	// '=' InitVal
-	if ((token_iter_)->ast_type_ == SyAstType::ASSIGN) {
+	if ((token_iter_)->getAstType() == SyAstType::ASSIGN) {
 		// it's a var def with init val
 		++token_iter_;
 		init_val = InitVal();
@@ -1097,9 +1097,9 @@ AstNodePtr Parser::VarDef() {
 			parseError(
 			    std::string("expected a init value after \'\033[1m=\033[0m\'"),
 			    ident->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::SEMICOLON &&
-			       (token_iter_)->ast_type_ != SyAstType::COMMA) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::SEMICOLON &&
+			       (token_iter_)->getAstType() != SyAstType::COMMA) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -1133,7 +1133,7 @@ AstNodePtr Parser::VarDecl() {
 	if (var_def_start == nullptr) {
 		return nullptr;
 	}
-	while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+	while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 		++token_iter_;
 		LexerIterator iter_back = token_iter_;
 		auto var_def            = VarDef();
@@ -1144,9 +1144,9 @@ AstNodePtr Parser::VarDecl() {
 			parseError(
 			    std::string("expected a init value after \'\033[1m,\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::SEMICOLON &&
-			       (token_iter_)->ast_type_ != SyAstType::COMMA) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::SEMICOLON &&
+			       (token_iter_)->getAstType() != SyAstType::COMMA) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -1158,7 +1158,7 @@ AstNodePtr Parser::VarDecl() {
 		var_def->parent_ = var_def_last;
 		var_def_last     = var_def;
 	}
-	if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+	if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 		// here we can't ignore the missing ';'
 		// example: int main()
 		// so we giveup
@@ -1178,7 +1178,7 @@ AstNodePtr Parser::InitVal() {
 	// origin: InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
 	auto init_val = AstNodePool::get(SyEbnfType::InitVal, (token_iter_)->line_);
 	// first we try to match '{'
-	if ((token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+	if ((token_iter_)->getAstType() != SyAstType::LEFT_BRACE) {
 		// then we try to match Exp
 		auto exp = Exp();
 		if (exp == nullptr) {
@@ -1209,7 +1209,7 @@ AstNodePtr Parser::InitVal() {
 		// so we still need to find the '}'
 		// first reset the token_iter_
 		token_iter_ = iter_back;
-		if ((token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
+		if ((token_iter_)->getAstType() == SyAstType::RIGHT_BRACE) {
 			++token_iter_;
 			return init_val;
 		}
@@ -1219,8 +1219,8 @@ AstNodePtr Parser::InitVal() {
 		parseError(
 		    std::string("expected a init value after \'\033[1m{\033[0m\'"),
 		    (token_iter_)->line_);
-		while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
-			if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+		while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
+			if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 				// there we giveup
 				return nullptr;
 			}
@@ -1229,7 +1229,7 @@ AstNodePtr Parser::InitVal() {
 		++token_iter_;
 		return init_val;
 	} else {
-		while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+		while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 			++token_iter_;
 			iter_back          = token_iter_;
 			auto init_val_nest = InitVal();
@@ -1247,9 +1247,9 @@ AstNodePtr Parser::InitVal() {
 				    std::string(
 				        "expected a init value after \'\033[1m,\033[0m\'"),
 				    (token_iter_)->line_);
-				while ((token_iter_)->ast_type_ != SyAstType::COMMA &&
-				       (token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
-					if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+				while ((token_iter_)->getAstType() != SyAstType::COMMA &&
+				       (token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
+					if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 						// there we giveup
 						return nullptr;
 					}
@@ -1262,7 +1262,7 @@ AstNodePtr Parser::InitVal() {
 			init_val_next->parent_ = init_val_last;
 			init_val_last          = init_val_next;
 		}
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
 			// here we just ignore the missing '}' and report an error
 			parseError(
 			    std::string("expected a \'\033[1m}\033[0m\' in initial list"),
@@ -1280,19 +1280,19 @@ AstNodePtr Parser::InitVal() {
 
 AstNodePtr Parser::Block() {
 	// origin: Block -> '{' { BlockItem } '}'
-	if ((token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+	if ((token_iter_)->getAstType() != SyAstType::LEFT_BRACE) {
 		return nullptr;
 	}
 	auto block = AstNodePool::get(SyEbnfType::Block, (token_iter_)->line_);
 	++token_iter_;
-	if ((token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
+	if ((token_iter_)->getAstType() == SyAstType::RIGHT_BRACE) {
 		// this is a empty block
 		// just return
 		return block;
 	}
 	AstNodePtr block_item_start = nullptr;
 	AstNodePtr block_item_last  = nullptr;
-	while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
+	while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
 		// if we reach here, then there must have a block item ahead
 		LexerIterator iter_back = token_iter_;
 		auto block_item         = BlockItem();
@@ -1304,8 +1304,8 @@ AstNodePtr Parser::Block() {
 			parseError(
 			    std::string("expected a block item after \'\033[1m{\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -1371,7 +1371,7 @@ AstNodePtr Parser::Cond() {
 
 AstNodePtr Parser::Number() {
 	// origin: Number -> IntConst
-	if ((token_iter_)->ast_type_ != SyAstType::INT_IMM) {
+	if ((token_iter_)->getAstType() != SyAstType::INT_IMM) {
 		// giveup
 		return nullptr;
 	}
@@ -1436,7 +1436,6 @@ static void adjustExpLAst(AstNodePtr node) {
 	}
 }
 
-// !!!!!! TODO: !!!!!!
 // after adjust, a - 2 + 1 will be parsed as a - (2 + 1), which
 // is definitely wrong. FIX IT.
 // take AddExp ast as an example
@@ -1499,10 +1498,10 @@ AstNodePtr Parser::RelExpL() {
 	// RelExpL -> ('<' | '>' | '<=' | '>=') AddExp RelExpL | e
 	auto rel_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	if ((token_iter_)->ast_type_ != SyAstType::LNE &&
-	    (token_iter_)->ast_type_ != SyAstType::GNE &&
-	    (token_iter_)->ast_type_ != SyAstType::LE &&
-	    (token_iter_)->ast_type_ != SyAstType::GE) {
+	if ((token_iter_)->getAstType() != SyAstType::LNE &&
+	    (token_iter_)->getAstType() != SyAstType::GNE &&
+	    (token_iter_)->getAstType() != SyAstType::LE &&
+	    (token_iter_)->getAstType() != SyAstType::GE) {
 		// no need to reset the token_iter_
 		// this is not a failure
 		// just return e
@@ -1553,8 +1552,8 @@ AstNodePtr Parser::EqExpL() {
 	// EqExpL -> ('==' | '!=') RelExp EqExpL | e
 	auto eq_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	if ((token_iter_)->ast_type_ != SyAstType::EQ &&
-	    (token_iter_)->ast_type_ != SyAstType::NEQ) {
+	if ((token_iter_)->getAstType() != SyAstType::EQ &&
+	    (token_iter_)->getAstType() != SyAstType::NEQ) {
 		// no need to reset the token_iter_
 		// this is not a failure
 		// just return e
@@ -1606,7 +1605,7 @@ AstNodePtr Parser::LAndExpL() {
 	// LAndExpL -> '&&' EqExp LAndExpL | e
 	auto l_and_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	if ((token_iter_)->ast_type_ != SyAstType::LOGIC_AND) {
+	if ((token_iter_)->getAstType() != SyAstType::LOGIC_AND) {
 		// no need to reset the token_iter_
 		// this is not a failure
 		// just return e
@@ -1659,7 +1658,7 @@ AstNodePtr Parser::LOrExpL() {
 	// LOrExpL -> '||' LAndExp LOrExpL | e
 	auto l_or_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	if ((token_iter_)->ast_type_ != SyAstType::LOGIC_OR) {
+	if ((token_iter_)->getAstType() != SyAstType::LOGIC_OR) {
 		// no need to reset the token_iter_
 		// this is not a failure
 		// just return e
@@ -1714,14 +1713,14 @@ AstNodePtr Parser::LVal() {
 	// construct the exp list
 	AstNodePtr exp_start = nullptr;
 	AstNodePtr exp_last  = nullptr;
-	while ((token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+	while ((token_iter_)->getAstType() == SyAstType::LEFT_BRACKET) {
 		++token_iter_;
 		auto exp = Exp();
 		if (exp == nullptr) {
 			// this should be an error
 			return nullptr;
 		}
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACKET) {
 			// this should be an error
 			// break the link list
 			exp_start->a_ = nullptr;
@@ -1752,7 +1751,7 @@ AstNodePtr Parser::ConstInitVal() {
 	// ConstInitVal -> ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
 	auto const_init_val =
 	    AstNodePool::get(SyEbnfType::ConstInitVal, (token_iter_)->line_);
-	if ((token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
+	if ((token_iter_)->getAstType() != SyAstType::LEFT_BRACE) {
 		// ConstInitVal -> ConstExp
 		auto const_exp = ConstExp();
 		if (const_exp == nullptr) {
@@ -1774,7 +1773,7 @@ AstNodePtr Parser::ConstInitVal() {
 			// so we still need to find the '}'
 			// first reset the token_iter_
 			token_iter_ = iter_back;
-			if ((token_iter_)->ast_type_ == SyAstType::RIGHT_BRACE) {
+			if ((token_iter_)->getAstType() == SyAstType::RIGHT_BRACE) {
 				++token_iter_;
 				return const_init_val;
 			}
@@ -1785,8 +1784,8 @@ AstNodePtr Parser::ConstInitVal() {
 			    std::string(
 			        "expected a const init value after \'\033[1m{\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -1795,7 +1794,7 @@ AstNodePtr Parser::ConstInitVal() {
 			++token_iter_;
 			return const_init_val;
 		} else {
-			while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+			while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 				++token_iter_;
 				iter_back                = token_iter_;
 				auto const_init_val_next = ConstInitVal();
@@ -1806,9 +1805,11 @@ AstNodePtr Parser::ConstInitVal() {
 					parseError(std::string("expected a const init value after "
 					                       "\'\033[1m,\033[0m\'"),
 					           (token_iter_)->line_);
-					while ((token_iter_)->ast_type_ != SyAstType::COMMA &&
-					       (token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
-						if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+					while ((token_iter_)->getAstType() != SyAstType::COMMA &&
+					       (token_iter_)->getAstType() !=
+					           SyAstType::RIGHT_BRACE) {
+						if ((token_iter_)->getAstType() ==
+						    SyAstType::EOF_TYPE) {
 							// there we giveup
 							return nullptr;
 						}
@@ -1823,7 +1824,7 @@ AstNodePtr Parser::ConstInitVal() {
 			}
 		}
 		// '}'
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACE) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
 			// here we just ignore the missing '}' and report an error
 			parseError(
 			    std::string("expected a \'\033[1m}\033[0m\' in initial list"),
@@ -1848,7 +1849,7 @@ AstNodePtr Parser::FuncRParams() {
 	if (exp_start == nullptr) {
 		return nullptr;
 	}
-	while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+	while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 		++token_iter_;
 		LexerIterator iter_back = token_iter_;
 		auto exp                = Exp();
@@ -1859,8 +1860,8 @@ AstNodePtr Parser::FuncRParams() {
 			    std::string(
 			        "expected a function parameter after \'\033[1m,\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::COMMA) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::COMMA) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// giveup
 					return nullptr;
 				}
@@ -1882,7 +1883,7 @@ AstNodePtr Parser::PrimaryExp() {
 	auto primary_exp =
 	    AstNodePool::get(SyEbnfType::PrimaryExp, (token_iter_)->line_);
 	LexerIterator iter_back = token_iter_;
-	if ((token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+	if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 		// try PrimaryExp -> LVal
 		// there we don't need to use the backup iter
 		auto l_val = LVal();
@@ -1905,7 +1906,7 @@ AstNodePtr Parser::PrimaryExp() {
 		// PrimaryExp -> '(' Exp ')'
 		++token_iter_;
 		auto exp = Exp();
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE) {
 			// this time really failed
 			return nullptr;
 		}
@@ -1941,7 +1942,7 @@ AstNodePtr Parser::UnaryExp() {
 	token_iter_ = iter_back;
 	auto ident  = Ident();
 	if (ident != nullptr) {
-		if ((token_iter_)->ast_type_ == SyAstType::LEFT_PARENTHESE) {
+		if ((token_iter_)->getAstType() == SyAstType::LEFT_PARENTHESE) {
 			++token_iter_;
 			LexerIterator iter_back_for_func_r_params = token_iter_;
 			auto func_r_params                        = FuncRParams();
@@ -1950,7 +1951,7 @@ AstNodePtr Parser::UnaryExp() {
 				// just reset the token_iter
 				token_iter_ = iter_back_for_func_r_params;
 			}
-			if ((token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+			if ((token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE) {
 				// this time really failed
 				// the error can't be handled
 				// because a missing ')' can be hard to find
@@ -1983,9 +1984,9 @@ AstNodePtr Parser::UnaryExp() {
 AstNodePtr Parser::UnaryOp() {
 	// UnaryOp -> '+' | '-' | '!'
 	auto token = *(token_iter_);
-	if (token->ast_type_ != SyAstType::ALU_ADD &&
-	    token->ast_type_ != SyAstType::ALU_SUB &&
-	    token->ast_type_ != SyAstType::LOGIC_NOT) {
+	if (token->getAstType() != SyAstType::ALU_ADD &&
+	    token->getAstType() != SyAstType::ALU_SUB &&
+	    token->getAstType() != SyAstType::LOGIC_NOT) {
 		return nullptr;
 	}
 	auto unary_op = AstNodePool::get(SyEbnfType::UnaryOp, (token_iter_)->line_);
@@ -1999,9 +2000,9 @@ AstNodePtr Parser::UnaryOp() {
 AstNodePtr Parser::MulExpL() {
 	LexerIterator iter_back = token_iter_;
 	// MulExpL -> ('*' | '/' | '%') UnaryExp MulExpL | e
-	if ((token_iter_)->ast_type_ != SyAstType::ALU_MUL &&
-	    (token_iter_)->ast_type_ != SyAstType::ALU_DIV &&
-	    (token_iter_)->ast_type_ != SyAstType::ALU_MOD) {
+	if ((token_iter_)->getAstType() != SyAstType::ALU_MUL &&
+	    (token_iter_)->getAstType() != SyAstType::ALU_DIV &&
+	    (token_iter_)->getAstType() != SyAstType::ALU_MOD) {
 		// this is not an failure
 		// just return e
 		return AstNodePool::get(SyEbnfType::E, 0);
@@ -2052,8 +2053,8 @@ AstNodePtr Parser::MulExp() {
 AstNodePtr Parser::AddExpL() {
 	LexerIterator iter_back = token_iter_;
 	// AddExpL -> ('+' | '−') MulExp AddExpL | e
-	if ((token_iter_)->ast_type_ != SyAstType::ALU_ADD &&
-	    (*token_iter_)->ast_type_ != SyAstType::ALU_SUB) {
+	if ((token_iter_)->getAstType() != SyAstType::ALU_ADD &&
+	    (*token_iter_)->getAstType() != SyAstType::ALU_SUB) {
 		// this is not an failure
 		// just return e
 		return AstNodePool::get(SyEbnfType::E, 0);
@@ -2136,7 +2137,7 @@ AstNodePtr Parser::ConstDef() {
 	AstNodePtr const_exp_start = nullptr;
 	AstNodePtr const_exp_last  = nullptr;
 	LexerIterator iter_back    = token_iter_;
-	while ((token_iter_)->ast_type_ == SyAstType::LEFT_BRACKET) {
+	while ((token_iter_)->getAstType() == SyAstType::LEFT_BRACKET) {
 		++token_iter_;
 		iter_back      = token_iter_;
 		auto const_exp = ConstExp();
@@ -2148,8 +2149,8 @@ AstNodePtr Parser::ConstDef() {
 			        "expected a const expression after \'\033[1m[\033[0m\'"),
 			    ident->line_);
 			token_iter_ = iter_back;
-			while ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACKET) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -2157,7 +2158,7 @@ AstNodePtr Parser::ConstDef() {
 			}
 			const_exp = AstNodePool::get(SyEbnfType::E, 0);
 		}
-		if ((token_iter_)->ast_type_ != SyAstType::RIGHT_BRACKET) {
+		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACKET) {
 			// just ignore the missing ']' and report a error
 			parseError(
 			    std::string("expected \'\033[1m]\033[0m\' before \'\033[1m") +
@@ -2177,7 +2178,7 @@ AstNodePtr Parser::ConstDef() {
 	}
 
 	// '='
-	if ((token_iter_)->ast_type_ != SyAstType::ASSIGN) {
+	if ((token_iter_)->getAstType() != SyAstType::ASSIGN) {
 		// define const whitout init value
 		parseError(std::string("conflicting type qualifiers for \'\033[1m" +
 		                       ident->getLiteral() + "\033[0m\'"),
@@ -2200,9 +2201,9 @@ AstNodePtr Parser::ConstDef() {
 		parseError(std::string(
 		               "expected a const init value after \'\033[1m=\033[0m\'"),
 		           ident->line_);
-		while ((token_iter_)->ast_type_ != SyAstType::SEMICOLON &&
-		       (token_iter_)->ast_type_ != SyAstType::COMMA) {
-			if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+		while ((token_iter_)->getAstType() != SyAstType::SEMICOLON &&
+		       (token_iter_)->getAstType() != SyAstType::COMMA) {
+			if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 				// there we giveup
 				return nullptr;
 			}
@@ -2223,7 +2224,7 @@ AstNodePtr Parser::ConstDef() {
 
 AstNodePtr Parser::ConstDecl() {
 	// origin: ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-	if ((token_iter_)->ast_type_ != SyAstType::STM_CONST) {
+	if ((token_iter_)->getAstType() != SyAstType::STM_CONST) {
 		return nullptr;
 	}
 	++token_iter_;
@@ -2238,7 +2239,7 @@ AstNodePtr Parser::ConstDecl() {
 	}
 	// the following code used the VarDecl()'s code
 	// just changed the type and add the const_def's parser
-	while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+	while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 		++token_iter_;
 		LexerIterator iter_back = token_iter_;
 		auto var_def            = ConstDef();
@@ -2249,9 +2250,9 @@ AstNodePtr Parser::ConstDecl() {
 			parseError(
 			    std::string("expected a init value after \'\033[1m,\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::SEMICOLON &&
-			       (token_iter_)->ast_type_ != SyAstType::COMMA) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::SEMICOLON &&
+			       (token_iter_)->getAstType() != SyAstType::COMMA) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// there we giveup
 					return nullptr;
 				}
@@ -2263,7 +2264,7 @@ AstNodePtr Parser::ConstDecl() {
 		var_def->parent_   = const_def_last;
 		const_def_last     = var_def;
 	}
-	if ((token_iter_)->ast_type_ != SyAstType::SEMICOLON) {
+	if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 		// here we ignore the missing ';' and report an error
 		parseError(
 		    std::string("expected \'\033[1m;\033[0m\' before \'\033[1m") +
@@ -2305,8 +2306,8 @@ AstNodePtr Parser::Decl() {
 AstNodePtr Parser::FuncType() {
 	// origin: FuncType -> 'void' | 'int'
 	AstNodePtr token = *token_iter_;
-	if (token->ast_type_ == SyAstType::TYPE_VOID ||
-	    token->ast_type_ == SyAstType::TYPE_INT) {
+	if (token->getAstType() == SyAstType::TYPE_VOID ||
+	    token->getAstType() == SyAstType::TYPE_INT) {
 		auto func_type = AstNodePool::get(SyEbnfType::FuncType, token->line_);
 		func_type->a_  = token;
 		token->parent_ = func_type;
@@ -2319,7 +2320,7 @@ AstNodePtr Parser::FuncType() {
 
 AstNodePtr Parser::BType() {
 	// origin: BType -> 'int'
-	if ((token_iter_)->ast_type_ != SyAstType::TYPE_INT) {
+	if ((token_iter_)->getAstType() != SyAstType::TYPE_INT) {
 		return nullptr;
 	}
 	auto b_type = AstNodePool::get(SyEbnfType::BType, (token_iter_)->line_);
@@ -2358,7 +2359,7 @@ AstNodePtr Parser::FuncFParams() {
 	auto func_f_param_start = FuncFParam();
 	auto func_f_param_last  = func_f_param_start;
 	// {',' FuncFParam}
-	while ((token_iter_)->ast_type_ == SyAstType::COMMA) {
+	while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 		++token_iter_;
 		LexerIterator iter_back = token_iter_;
 		auto func_f_param       = FuncFParam();
@@ -2371,10 +2372,10 @@ AstNodePtr Parser::FuncFParams() {
 			    std::string(
 			        "expected a function parameter after \'\033[1m(\033[0m\'"),
 			    (token_iter_)->line_);
-			while ((token_iter_)->ast_type_ != SyAstType::COMMA &&
-			       (token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE &&
-			       (token_iter_)->ast_type_ != SyAstType::LEFT_BRACE) {
-				if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+			while ((token_iter_)->getAstType() != SyAstType::COMMA &&
+			       (token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE &&
+			       (token_iter_)->getAstType() != SyAstType::LEFT_BRACE) {
+				if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 					// we giveup
 					return nullptr;
 				}
@@ -2404,7 +2405,7 @@ AstNodePtr Parser::FuncDef() {
 		return nullptr;
 	}
 	// '('
-	if ((token_iter_)->ast_type_ != SyAstType::LEFT_PARENTHESE) {
+	if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 		return nullptr;
 	}
 	++token_iter_;
@@ -2417,7 +2418,7 @@ AstNodePtr Parser::FuncDef() {
 		// so we need to reset token_iter_ to token_back
 		token_iter_ = token_back;
 	}
-	if ((token_iter_)->ast_type_ != SyAstType::RIGHT_PARENTHESE) {
+	if ((token_iter_)->getAstType() != SyAstType::RIGHT_PARENTHESE) {
 		// here we ignore the missing ')'
 		// and report an error
 		parseError(
@@ -2474,7 +2475,7 @@ AstNodePtr Parser::CompUnit() {
 }
 
 AstNodePtr Parser::Ident() {
-	if ((token_iter_)->ast_type_ != SyAstType::IDENT) {
+	if ((token_iter_)->getAstType() != SyAstType::IDENT) {
 		return nullptr;
 	}
 	auto ident = *(token_iter_);
@@ -2483,7 +2484,7 @@ AstNodePtr Parser::Ident() {
 }
 
 AstNodePtr Parser::parse() {
-	if ((token_iter_)->ast_type_ == SyAstType::EOF_TYPE) {
+	if ((token_iter_)->getAstType() == SyAstType::EOF_TYPE) {
 		end_parse_ = 1;
 		return nullptr;
 	}

@@ -108,7 +108,7 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
 	if (exp->a_->ebnf_type_ == SyEbnfType::PrimaryExp) {
 		return primaryExpHandler(exp);
 	}
-	if (exp->a_->ast_type_ == SyAstType::IDENT) {
+	if (exp->a_->getAstType() == SyAstType::IDENT) {
 		auto function = func_table_->getFunc(exp->a_->getLiteral());
 		auto args     = exp->b_;
 		if (function) {
@@ -122,7 +122,7 @@ Value Interpreter::unaryExpHandler(AstNodePtr exp) {
 	}
 	if (exp->a_->ebnf_type_ == SyEbnfType::UnaryOp) {
 		Value ret = expDispatcher(exp->b_);
-		switch (exp->a_->a_->ast_type_) {
+		switch (exp->a_->a_->getAstType()) {
 			case SyAstType::ALU_ADD:
 				return ret;
 			case SyAstType::ALU_SUB:
@@ -160,7 +160,7 @@ Value Interpreter::subExpHandler(AstNodePtr exp) {
 	auto exp_c  = exp->c_;
 	Value val_a = expDispatcher(exp_a);
 	Value val_c = expDispatcher(exp_c);
-	switch (exp->b_->ast_type_) {
+	switch (exp->b_->getAstType()) {
 		case SyAstType::ALU_ADD:
 			ret.i32 = val_a.i32 + val_c.i32;
 			break;
@@ -519,7 +519,7 @@ void Interpreter::variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum) {
 	ident->ebnf_type_ = type_enum;
 }
 void Interpreter::variableIdentTyper(AstNodePtr ident, AstNodePtr type) {
-	switch (type->ast_type_) {
+	switch (type->getAstType()) {
 		case SyAstType::TYPE_INT:
 			ident->ebnf_type_ = SyEbnfType::TYPE_INT;
 			break;
@@ -672,7 +672,7 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 		// null statement
 		return ret;
 	}
-	switch (stmt->a_->ast_type_) {
+	switch (stmt->a_->getAstType()) {
 		case SyAstType::STM_IF:
 			// if (cond) stmt
 			cond = expDispatcher(stmt->b_->a_).i32;

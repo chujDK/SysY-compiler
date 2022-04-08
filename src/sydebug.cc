@@ -152,8 +152,8 @@ void debugInfoInit() {
 }
 
 void printSyToken(TokenPtr token) {
-	std::cout << "\033[1m\033[34m" << SyAstTypeDebugInfo[(int)token->ast_type_]
-	          << "\033[0m"
+	std::cout << "\033[1m\033[34m"
+	          << SyAstTypeDebugInfo[(int)token->getAstType()] << "\033[0m"
 	          << " \""
 	             "\033[32m"
 	          << token->getLiteral() << "\033[0m"
