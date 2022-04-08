@@ -781,8 +781,7 @@ AstNodePtr Parser::Stmt() {
 	switch ((token_iter_)->getAstType()) {
 		case SyAstType::STM_IF:
 			// 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
-			stmt->a_               = *(token_iter_);
-			(token_iter_)->parent_ = stmt;
+			stmt->a_ = *(token_iter_);
 			++token_iter_;
 			if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 				// here is status like
@@ -851,20 +850,16 @@ AstNodePtr Parser::Stmt() {
 					return nullptr;
 				}
 			}
-			stmt->b_           = cond;
-			cond->parent_      = stmt;
-			stmt->c_           = stmt_nest;
-			stmt_nest->parent_ = stmt;
+			stmt->b_ = cond;
+			stmt->c_ = stmt_nest;
 			if (stmt_else != nullptr) {
-				stmt->d_           = stmt_else;
-				stmt_else->parent_ = stmt;
+				stmt->d_ = stmt_else;
 			}
 			return stmt;
 		case SyAstType::STM_WHILE:
 			// 'while' '(' Cond ')' Stmt
 			// error handling is almost same as 'if'
-			stmt->a_               = *(token_iter_);
-			(token_iter_)->parent_ = stmt;
+			stmt->a_ = *(token_iter_);
 			++token_iter_;
 			if ((token_iter_)->getAstType() != SyAstType::LEFT_PARENTHESE) {
 				parseError(
@@ -906,15 +901,12 @@ AstNodePtr Parser::Stmt() {
 				// so we just return nullptr and maybe giveup this CompUnit
 				return nullptr;
 			}
-			stmt->b_           = cond;
-			cond->parent_      = stmt;
-			stmt->c_           = stmt_nest;
-			stmt_nest->parent_ = stmt;
+			stmt->b_ = cond;
+			stmt->c_ = stmt_nest;
 			return stmt;
 		case SyAstType::STM_BREAK:
 			// 'break' ';'
-			stmt->a_               = *(token_iter_);
-			(token_iter_)->parent_ = stmt;
+			stmt->a_ = *(token_iter_);
 			++token_iter_;
 			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
@@ -929,8 +921,7 @@ AstNodePtr Parser::Stmt() {
 			return stmt;
 		case SyAstType::STM_CONTINUE:
 			// 'continue' ';'
-			stmt->a_               = *(token_iter_);
-			(token_iter_)->parent_ = stmt;
+			stmt->a_ = *(token_iter_);
 			++token_iter_;
 			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
@@ -945,8 +936,7 @@ AstNodePtr Parser::Stmt() {
 			return stmt;
 		case SyAstType::STM_RETURN:
 			// 'return' [Exp] ';'
-			stmt->a_               = *(token_iter_);
-			(token_iter_)->parent_ = stmt;
+			stmt->a_ = *(token_iter_);
 			++token_iter_;
 			iter_back = token_iter_;
 			exp       = Exp();
@@ -957,8 +947,7 @@ AstNodePtr Parser::Stmt() {
 				token_iter_ = iter_back;
 			} else {
 				// link
-				stmt->b_     = exp;
-				exp->parent_ = stmt;
+				stmt->b_ = exp;
 			}
 			if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
 				// ignore the missing ';' and report a error
@@ -989,10 +978,8 @@ AstNodePtr Parser::Stmt() {
 				return nullptr;
 			}
 			++token_iter_;
-			stmt->a_       = l_val;
-			l_val->parent_ = stmt;
-			stmt->b_       = exp;
-			exp->parent_   = stmt;
+			stmt->a_ = l_val;
+			stmt->b_ = exp;
 			return stmt;
 		}
 	}
@@ -1019,8 +1006,7 @@ AstNodePtr Parser::Stmt() {
 			--token_iter_;
 		}
 		++token_iter_;
-		stmt->a_     = exp;
-		exp->parent_ = stmt;
+		stmt->a_ = exp;
 		return stmt;
 	}
 	// try Block
@@ -1030,8 +1016,7 @@ AstNodePtr Parser::Stmt() {
 		// here we giveup
 		return nullptr;
 	}
-	stmt->a_       = block;
-	block->parent_ = stmt;
+	stmt->a_ = block;
 	return stmt;
 }
 
@@ -1080,7 +1065,6 @@ AstNodePtr Parser::VarDef() {
 			const_exp_last  = const_exp;
 		} else {
 			const_exp_last->d_ = const_exp;
-			const_exp->parent_ = const_exp_last;
 			const_exp_last     = const_exp;
 		}
 	}
@@ -1108,16 +1092,13 @@ AstNodePtr Parser::VarDef() {
 			init_val = AstNodePool::get(SyEbnfType::E, 0);
 		}
 	}
-	auto var_def   = AstNodePool::get(SyEbnfType::VarDef, ident->line_);
-	var_def->a_    = ident;
-	ident->parent_ = var_def;
+	auto var_def = AstNodePool::get(SyEbnfType::VarDef, ident->line_);
+	var_def->a_  = ident;
 	if (const_exp_start != nullptr) {
-		var_def->b_              = const_exp_start;
-		const_exp_start->parent_ = var_def;
+		var_def->b_ = const_exp_start;
 	}
 	if (init_val != nullptr) {
-		var_def->c_       = init_val;
-		init_val->parent_ = var_def;
+		var_def->c_ = init_val;
 	}
 	return var_def;
 }
@@ -1155,7 +1136,6 @@ AstNodePtr Parser::VarDecl() {
 			var_def = AstNodePool::get(SyEbnfType::E, 0);
 		}
 		var_def_last->d_ = var_def;
-		var_def->parent_ = var_def_last;
 		var_def_last     = var_def;
 	}
 	if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
@@ -1166,11 +1146,9 @@ AstNodePtr Parser::VarDecl() {
 		return nullptr;
 	}
 	++token_iter_;
-	auto var_decl   = AstNodePool::get(SyEbnfType::VarDecl, b_type->line_);
-	var_decl->a_    = b_type;
-	b_type->parent_ = var_decl;
-	var_decl->b_    = var_def_start;
-	var_def_start->parent_ = var_decl;
+	auto var_decl = AstNodePool::get(SyEbnfType::VarDecl, b_type->line_);
+	var_decl->a_  = b_type;
+	var_decl->b_  = var_def_start;
 	return var_decl;
 }
 
@@ -1185,7 +1163,6 @@ AstNodePtr Parser::InitVal() {
 			return nullptr;
 		}
 		init_val->a_ = exp;
-		exp->parent_ = init_val;
 		return init_val;
 	}
 	// '{' is matched
@@ -1199,9 +1176,8 @@ AstNodePtr Parser::InitVal() {
 	if (init_val_nest != nullptr) {
 		init_val_start =
 		    AstNodePool::get(SyEbnfType::InitVal, init_val_nest->line_);
-		init_val_start->a_     = init_val_nest;
-		init_val_nest->parent_ = init_val_start;
-		init_val_last          = init_val_start;
+		init_val_start->a_ = init_val_nest;
+		init_val_last      = init_val_start;
 	}
 	if (init_val_start == nullptr) {
 		// it ok to return nullptr if the next token is '}'
@@ -1237,8 +1213,7 @@ AstNodePtr Parser::InitVal() {
 			if (init_val_nest != nullptr) {
 				init_val_next =
 				    AstNodePool::get(SyEbnfType::InitVal, init_val_nest->line_);
-				init_val_next->a_      = init_val_nest;
-				init_val_nest->parent_ = init_val_next;
+				init_val_next->a_ = init_val_nest;
 			}
 			if (init_val_next == nullptr) {
 				// here we just find the nearest '}' or ',' and report an error
@@ -1258,9 +1233,8 @@ AstNodePtr Parser::InitVal() {
 				init_val_next = AstNodePool::get(SyEbnfType::E, 0);
 			}
 			// link
-			init_val_last->d_      = init_val_next;
-			init_val_next->parent_ = init_val_last;
-			init_val_last          = init_val_next;
+			init_val_last->d_ = init_val_next;
+			init_val_last     = init_val_next;
 		}
 		if ((token_iter_)->getAstType() != SyAstType::RIGHT_BRACE) {
 			// here we just ignore the missing '}' and report an error
@@ -1271,8 +1245,7 @@ AstNodePtr Parser::InitVal() {
 		}
 		++token_iter_;
 		if (init_val_start != nullptr) {
-			init_val->a_            = init_val_start;
-			init_val_start->parent_ = init_val;
+			init_val->a_ = init_val_start;
 		}
 		return init_val;
 	}
@@ -1319,14 +1292,12 @@ AstNodePtr Parser::Block() {
 		} else {
 			// link
 			block_item_last->d_ = block_item;
-			block_item->parent_ = block_item_last;
 			block_item_last     = block_item;
 		}
 	}
 	++token_iter_;
 	if (block_item_start != nullptr) {
-		block->a_                 = block_item_start;
-		block_item_start->parent_ = block;
+		block->a_ = block_item_start;
 	}
 	return block;
 }
@@ -1340,7 +1311,6 @@ AstNodePtr Parser::BlockItem() {
 	auto decl = Decl();
 	if (decl != nullptr) {
 		block_item->a_ = decl;
-		decl->parent_  = block_item;
 		return block_item;
 	}
 	// try Stmt
@@ -1352,7 +1322,6 @@ AstNodePtr Parser::BlockItem() {
 		return nullptr;
 	}
 	block_item->a_ = stmt;
-	stmt->parent_  = block_item;
 	return block_item;
 }
 
@@ -1363,9 +1332,8 @@ AstNodePtr Parser::Cond() {
 		// giveup
 		return nullptr;
 	}
-	auto cond         = AstNodePool::get(SyEbnfType::Cond, l_or_exp->line_);
-	cond->a_          = l_or_exp;
-	l_or_exp->parent_ = cond;
+	auto cond = AstNodePool::get(SyEbnfType::Cond, l_or_exp->line_);
+	cond->a_  = l_or_exp;
 	return cond;
 }
 
@@ -1377,7 +1345,6 @@ AstNodePtr Parser::Number() {
 	}
 	auto number = AstNodePool::get(SyEbnfType::Number, (token_iter_)->line_);
 	number->a_  = *(token_iter_);
-	(token_iter_)->parent_ = number;
 	++token_iter_;
 	return number;
 }
@@ -1423,8 +1390,8 @@ static void adjustExpLAst(AstNodePtr node) {
 				assert(1 != 1);
 				break;
 		}
-		node->parent_.lock()->c_             = node->a_;
-		node->parent_.lock()->c_->ebnf_type_ = ebnf_type;
+		node->getAstParent()->c_             = node->a_;
+		node->getAstParent()->c_->ebnf_type_ = ebnf_type;
 		return;
 	} else {
 		auto add_exp_l        = node->c_;
@@ -1487,8 +1454,8 @@ static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node) {
 		return node;
 	}
 	node->c_ = right_node->a_;
-	right_node->parent_.reset();
-	node->parent_  = right_node;
+	right_node->setAstParent(nullptr);
+	node->setAstParent(right_node);
 	right_node->a_ = node;
 	return adjustExpAstRightBindToLeftBind(right_node);
 }
@@ -1508,7 +1475,6 @@ AstNodePtr Parser::RelExpL() {
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
 	rel_exp_l->a_ = *(token_iter_);  // link the '<' or '>' or '<=' or '>='
-	(token_iter_)->parent_ = rel_exp_l;
 	++token_iter_;
 	auto add_exp = AddExp();
 	if (add_exp == nullptr) {
@@ -1519,10 +1485,10 @@ AstNodePtr Parser::RelExpL() {
 		rel_exp_l->a_ = nullptr;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	rel_exp_l->b_          = add_exp;
-	add_exp->parent_       = rel_exp_l;
-	rel_exp_l->c_          = RelExpL();
-	rel_exp_l->c_->parent_ = rel_exp_l;
+	rel_exp_l->b_ = add_exp;
+	add_exp->setAstParent(rel_exp_l);
+	rel_exp_l->c_ = RelExpL();
+	rel_exp_l->c_->setAstParent(rel_exp_l);
 	return rel_exp_l;
 }
 
@@ -1536,13 +1502,13 @@ AstNodePtr Parser::RelExp() {
 		return nullptr;
 	}
 	// need not to check the return value of RelExpL
-	auto rel_exp_l   = RelExpL();
-	rel_exp->a_      = add_exp;
-	add_exp->parent_ = rel_exp;
+	auto rel_exp_l = RelExpL();
+	rel_exp->a_    = add_exp;
+	add_exp->setAstParent(rel_exp);
 	if (rel_exp_l->ebnf_type_ != SyEbnfType::E) {
-		rel_exp->b_        = rel_exp_l;
-		rel_exp_l->parent_ = rel_exp;
-		rel_exp            = adjustExpAst(rel_exp);
+		rel_exp->b_ = rel_exp_l;
+		rel_exp_l->setAstParent(rel_exp);
+		rel_exp = adjustExpAst(rel_exp);
 	}
 	return rel_exp;
 }
@@ -1559,8 +1525,7 @@ AstNodePtr Parser::EqExpL() {
 		// just return e
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	eq_exp_l->a_           = *(token_iter_);  // link the '==' or '!='
-	(token_iter_)->parent_ = eq_exp_l;
+	eq_exp_l->a_ = *(token_iter_);  // link the '==' or '!='
 	++token_iter_;
 	auto rel_exp = RelExp();
 	if (rel_exp == nullptr) {
@@ -1571,10 +1536,10 @@ AstNodePtr Parser::EqExpL() {
 		eq_exp_l->a_ = nullptr;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	eq_exp_l->b_          = rel_exp;
-	rel_exp->parent_      = eq_exp_l;
-	eq_exp_l->c_          = EqExpL();
-	eq_exp_l->c_->parent_ = eq_exp_l;
+	eq_exp_l->b_ = rel_exp;
+	rel_exp->setAstParent(eq_exp_l);
+	eq_exp_l->c_ = EqExpL();
+	eq_exp_l->c_->setAstParent(eq_exp_l);
 	return eq_exp_l;
 }
 
@@ -1588,13 +1553,13 @@ AstNodePtr Parser::EqExp() {
 		return nullptr;
 	}
 	// need not to check the return value of EqExpL
-	auto eq_exp_l    = EqExpL();
-	eq_exp->a_       = rel_exp;
-	rel_exp->parent_ = eq_exp;
+	auto eq_exp_l = EqExpL();
+	eq_exp->a_    = rel_exp;
+	rel_exp->setAstParent(eq_exp);
 	if (eq_exp_l->ebnf_type_ != SyEbnfType::E) {
-		eq_exp->b_        = eq_exp_l;
-		eq_exp_l->parent_ = eq_exp;
-		eq_exp            = adjustExpAst(eq_exp);
+		eq_exp->b_ = eq_exp_l;
+		eq_exp_l->setAstParent(eq_exp);
+		eq_exp = adjustExpAst(eq_exp);
 	}
 	return eq_exp;
 }
@@ -1611,8 +1576,7 @@ AstNodePtr Parser::LAndExpL() {
 		// just return e
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	l_and_exp_l->a_        = *(token_iter_);  // link the '&&'
-	(token_iter_)->parent_ = l_and_exp_l;
+	l_and_exp_l->a_ = *(token_iter_);  // link the '&&'
 	++token_iter_;
 	auto eq_exp = EqExp();
 	if (eq_exp == nullptr) {
@@ -1623,10 +1587,10 @@ AstNodePtr Parser::LAndExpL() {
 		l_and_exp_l->a_ = nullptr;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	l_and_exp_l->b_          = eq_exp;
-	eq_exp->parent_          = l_and_exp_l;
-	l_and_exp_l->c_          = LAndExpL();
-	l_and_exp_l->c_->parent_ = l_and_exp_l;
+	l_and_exp_l->b_ = eq_exp;
+	eq_exp->setAstParent(l_and_exp_l);
+	l_and_exp_l->c_ = LAndExpL();
+	l_and_exp_l->c_->setAstParent(l_and_exp_l);
 	return l_and_exp_l;
 }
 
@@ -1643,11 +1607,11 @@ AstNodePtr Parser::LAndExp() {
 	// need not to check the return value of LAndExpL
 	auto l_and_exp_l = LAndExpL();
 	l_and_exp->a_    = eq_exp;
-	eq_exp->parent_  = l_and_exp;
+	eq_exp->setAstParent(l_and_exp);
 	if (l_and_exp_l->ebnf_type_ != SyEbnfType::E) {
-		l_and_exp->b_        = l_and_exp_l;
-		l_and_exp_l->parent_ = l_and_exp;
-		l_and_exp            = adjustExpAst(l_and_exp);
+		l_and_exp->b_ = l_and_exp_l;
+		l_and_exp_l->setAstParent(l_and_exp);
+		l_and_exp = adjustExpAst(l_and_exp);
 	}
 	return l_and_exp;
 }
@@ -1664,8 +1628,7 @@ AstNodePtr Parser::LOrExpL() {
 		// just return e
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	l_or_exp_l->a_         = *(token_iter_);  // link the '||'
-	(token_iter_)->parent_ = l_or_exp_l;
+	l_or_exp_l->a_ = *(token_iter_);  // link the '||'
 	++token_iter_;
 	auto l_and_exp = LAndExp();
 	if (l_and_exp == nullptr) {
@@ -1676,10 +1639,10 @@ AstNodePtr Parser::LOrExpL() {
 		l_or_exp_l->a_ = nullptr;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	l_or_exp_l->b_          = l_and_exp;
-	l_and_exp->parent_      = l_or_exp_l;
-	l_or_exp_l->c_          = LOrExpL();
-	l_or_exp_l->c_->parent_ = l_or_exp_l;
+	l_or_exp_l->b_ = l_and_exp;
+	l_and_exp->setAstParent(l_or_exp_l);
+	l_or_exp_l->c_ = LOrExpL();
+	l_or_exp_l->c_->setAstParent(l_or_exp_l);
 	return l_or_exp_l;
 }
 
@@ -1693,13 +1656,13 @@ AstNodePtr Parser::LOrExp() {
 		return nullptr;
 	}
 	// need not to check the return value of LOrExpL
-	auto l_or_exp_l    = LOrExpL();
-	l_or_exp->a_       = l_and_exp;
-	l_and_exp->parent_ = l_or_exp;
+	auto l_or_exp_l = LOrExpL();
+	l_or_exp->a_    = l_and_exp;
+	l_and_exp->setAstParent(l_or_exp);
 	if (l_or_exp_l->ebnf_type_ != SyEbnfType::E) {
-		l_or_exp->b_        = l_or_exp_l;
-		l_or_exp_l->parent_ = l_or_exp;
-		l_or_exp            = adjustExpAst(l_or_exp);
+		l_or_exp->b_ = l_or_exp_l;
+		l_or_exp_l->setAstParent(l_or_exp);
+		l_or_exp = adjustExpAst(l_or_exp);
 	}
 	return l_or_exp;
 }
@@ -1733,16 +1696,13 @@ AstNodePtr Parser::LVal() {
 			exp_last  = exp;
 		} else {
 			exp_last->d_ = exp;
-			exp->parent_ = exp_last;
 			exp_last     = exp;
 		}
 	}
-	auto l_val     = AstNodePool::get(SyEbnfType::LVal, ident->line_);
-	l_val->a_      = ident;
-	ident->parent_ = l_val;
+	auto l_val = AstNodePool::get(SyEbnfType::LVal, ident->line_);
+	l_val->a_  = ident;
 	if (exp_start != nullptr) {
-		l_val->b_          = exp_start;
-		exp_start->parent_ = l_val;
+		l_val->b_ = exp_start;
 	}
 	return l_val;
 }
@@ -1758,7 +1718,6 @@ AstNodePtr Parser::ConstInitVal() {
 			return nullptr;
 		}
 		const_init_val->a_ = const_exp;
-		const_exp->parent_ = const_init_val;
 		return const_init_val;
 	} else {
 		// ConstInitVal -> '{' [ ConstInitVal { ',' ConstInitVal } ] '}'
@@ -1818,9 +1777,8 @@ AstNodePtr Parser::ConstInitVal() {
 					const_init_val_next = AstNodePool::get(SyEbnfType::E, 0);
 				}
 				// link
-				const_init_val_last->d_      = const_init_val_next;
-				const_init_val_next->parent_ = const_init_val_last;
-				const_init_val_last          = const_init_val_next;
+				const_init_val_last->d_ = const_init_val_next;
+				const_init_val_last     = const_init_val_next;
 			}
 		}
 		// '}'
@@ -1833,8 +1791,7 @@ AstNodePtr Parser::ConstInitVal() {
 		}
 		++token_iter_;
 		if (const_init_val_start != nullptr) {
-			const_init_val->a_            = const_init_val_start;
-			const_init_val_start->parent_ = const_init_val;
+			const_init_val->a_ = const_init_val_start;
 		}
 		return const_init_val;
 	}
@@ -1870,11 +1827,9 @@ AstNodePtr Parser::FuncRParams() {
 			exp = AstNodePool::get(SyEbnfType::E, 0);
 		}
 		exp_last->d_ = exp;
-		exp->parent_ = exp_last;
 		exp_last     = exp;
 	}
-	func_r_params->a_  = exp_start;
-	exp_start->parent_ = func_r_params;
+	func_r_params->a_ = exp_start;
 	return func_r_params;
 }
 
@@ -1896,11 +1851,9 @@ AstNodePtr Parser::PrimaryExp() {
 				return nullptr;
 			}
 			primary_exp->a_ = number;
-			number->parent_ = primary_exp;
 			return primary_exp;
 		}
 		primary_exp->a_ = l_val;
-		l_val->parent_  = primary_exp;
 		return primary_exp;
 	} else {
 		// PrimaryExp -> '(' Exp ')'
@@ -1912,7 +1865,6 @@ AstNodePtr Parser::PrimaryExp() {
 		}
 		++token_iter_;
 		primary_exp->a_ = exp;
-		exp->parent_    = primary_exp;
 		return primary_exp;
 	}
 }
@@ -1931,10 +1883,8 @@ AstNodePtr Parser::UnaryExp() {
 	if (unary_op != nullptr) {
 		auto unary_exp_new = UnaryExp();
 		if (unary_exp_new != nullptr) {
-			unary_exp->a_          = unary_op;
-			unary_op->parent_      = unary_exp;
-			unary_exp->b_          = unary_exp_new;
-			unary_exp_new->parent_ = unary_exp;
+			unary_exp->a_ = unary_op;
+			unary_exp->b_ = unary_exp_new;
 			return unary_exp;
 		}
 	}
@@ -1961,11 +1911,9 @@ AstNodePtr Parser::UnaryExp() {
 				return nullptr;
 			}
 			++token_iter_;
-			unary_exp->a_  = ident;
-			ident->parent_ = unary_exp;
+			unary_exp->a_ = ident;
 			if (func_r_params != nullptr) {
-				unary_exp->b_          = func_r_params;
-				func_r_params->parent_ = unary_exp;
+				unary_exp->b_ = func_r_params;
 			}
 			return unary_exp;
 		}
@@ -1976,8 +1924,7 @@ AstNodePtr Parser::UnaryExp() {
 	if (primary_exp == nullptr) {
 		return nullptr;
 	}
-	unary_exp->a_        = primary_exp;
-	primary_exp->parent_ = unary_exp;
+	unary_exp->a_ = primary_exp;
 	return unary_exp;
 }
 
@@ -1991,7 +1938,6 @@ AstNodePtr Parser::UnaryOp() {
 	}
 	auto unary_op = AstNodePool::get(SyEbnfType::UnaryOp, (token_iter_)->line_);
 	unary_op->a_  = token;
-	token->parent_ = unary_op;
 	++token_iter_;
 	return unary_op;
 }
@@ -2009,8 +1955,7 @@ AstNodePtr Parser::MulExpL() {
 	}
 	auto mul_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	mul_exp_l->a_          = *(token_iter_);
-	(token_iter_)->parent_ = mul_exp_l;
+	mul_exp_l->a_ = *(token_iter_);
 	++token_iter_;
 	auto unary_exp = UnaryExp();
 	if (unary_exp == nullptr) {
@@ -2021,10 +1966,10 @@ AstNodePtr Parser::MulExpL() {
 		mul_exp_l->a_ = nullptr;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	mul_exp_l->b_          = unary_exp;
-	unary_exp->parent_     = mul_exp_l;
-	mul_exp_l->c_          = MulExpL();
-	mul_exp_l->c_->parent_ = mul_exp_l;
+	mul_exp_l->b_ = unary_exp;
+	unary_exp->setAstParent(mul_exp_l);
+	mul_exp_l->c_ = MulExpL();
+	mul_exp_l->c_->setAstParent(mul_exp_l);
 	return mul_exp_l;
 }
 
@@ -2037,14 +1982,14 @@ AstNodePtr Parser::MulExp() {
 	if (unary_exp == nullptr) {
 		return nullptr;
 	}
-	mul_exp->a_        = unary_exp;
-	unary_exp->parent_ = mul_exp;
-	auto mul_exp_l     = MulExpL();
+	mul_exp->a_ = unary_exp;
+	unary_exp->setAstParent(mul_exp);
+	auto mul_exp_l = MulExpL();
 	// merge mul_exp_l
 	if (mul_exp_l->ebnf_type_ != SyEbnfType::E) {
-		mul_exp->b_        = mul_exp_l;
-		mul_exp_l->parent_ = mul_exp;
-		mul_exp            = adjustExpAst(mul_exp);
+		mul_exp->b_ = mul_exp_l;
+		mul_exp_l->setAstParent(mul_exp);
+		mul_exp = adjustExpAst(mul_exp);
 	}
 	return mul_exp;
 }
@@ -2061,8 +2006,7 @@ AstNodePtr Parser::AddExpL() {
 	}
 	auto add_exp_l =
 	    AstNodePool::get(SyEbnfType::END_OF_ENUM, (token_iter_)->line_);
-	add_exp_l->a_          = *(token_iter_);
-	(token_iter_)->parent_ = add_exp_l;
+	add_exp_l->a_ = *(token_iter_);
 	++token_iter_;
 	auto mul_exp = MulExp();
 	if (mul_exp == nullptr) {
@@ -2071,10 +2015,10 @@ AstNodePtr Parser::AddExpL() {
 		token_iter_ = iter_back;
 		return AstNodePool::get(SyEbnfType::E, 0);
 	}
-	add_exp_l->b_          = mul_exp;
-	mul_exp->parent_       = add_exp_l;
-	add_exp_l->c_          = AddExpL();
-	add_exp_l->c_->parent_ = add_exp_l;
+	add_exp_l->b_ = mul_exp;
+	mul_exp->setAstParent(add_exp_l);
+	add_exp_l->c_ = AddExpL();
+	add_exp_l->c_->setAstParent(add_exp_l);
 	return add_exp_l;
 }
 
@@ -2087,13 +2031,13 @@ AstNodePtr Parser::AddExp() {
 	if (mul_exp == nullptr) {
 		return nullptr;
 	}
-	add_exp->a_      = mul_exp;
-	mul_exp->parent_ = add_exp;
-	auto add_exp_l   = AddExpL();
+	add_exp->a_ = mul_exp;
+	mul_exp->setAstParent(add_exp);
+	auto add_exp_l = AddExpL();
 	// merge add_exp_l
 	if (add_exp_l->ebnf_type_ != SyEbnfType::E) {
-		add_exp->b_        = add_exp_l;
-		add_exp_l->parent_ = add_exp;
+		add_exp->b_ = add_exp_l;
+		add_exp_l->setAstParent(add_exp);
 		// we need to change the AddExpL to AddExp
 		add_exp = adjustExpAst(add_exp);
 	}
@@ -2106,9 +2050,8 @@ AstNodePtr Parser::Exp() {
 	if (add_exp == nullptr) {
 		return nullptr;
 	}
-	auto exp         = AstNodePool::get(SyEbnfType::Exp, add_exp->line_);
-	exp->a_          = add_exp;
-	add_exp->parent_ = exp;
+	auto exp = AstNodePool::get(SyEbnfType::Exp, add_exp->line_);
+	exp->a_  = add_exp;
 	return exp;
 }
 
@@ -2118,9 +2061,8 @@ AstNodePtr Parser::ConstExp() {
 	if (add_exp == nullptr) {
 		return nullptr;
 	}
-	auto const_exp   = AstNodePool::get(SyEbnfType::ConstExp, add_exp->line_);
-	const_exp->a_    = add_exp;
-	add_exp->parent_ = const_exp;
+	auto const_exp = AstNodePool::get(SyEbnfType::ConstExp, add_exp->line_);
+	const_exp->a_  = add_exp;
 	return const_exp;
 }
 
@@ -2172,7 +2114,6 @@ AstNodePtr Parser::ConstDef() {
 			const_exp_last  = const_exp;
 		} else {
 			const_exp_last->d_ = const_exp;
-			const_exp->parent_ = const_exp_last;
 			const_exp_last     = const_exp;
 		}
 	}
@@ -2183,11 +2124,9 @@ AstNodePtr Parser::ConstDef() {
 		parseError(std::string("conflicting type qualifiers for \'\033[1m" +
 		                       ident->getLiteral() + "\033[0m\'"),
 		           (token_iter_)->line_);
-		const_def->a_           = ident;
-		ident->parent_          = const_def;
-		auto const_init_val     = AstNodePool::get(SyEbnfType::E, 0);
-		const_def->c_           = const_init_val;
-		const_init_val->parent_ = const_def;
+		const_def->a_       = ident;
+		auto const_init_val = AstNodePool::get(SyEbnfType::E, 0);
+		const_def->c_       = const_init_val;
 		return const_def;
 	}
 	++token_iter_;
@@ -2211,14 +2150,11 @@ AstNodePtr Parser::ConstDef() {
 		}
 		const_init_val = AstNodePool::get(SyEbnfType::E, 0);
 	}
-	const_def->a_  = ident;
-	ident->parent_ = const_def;
+	const_def->a_ = ident;
 	if (const_exp_start != nullptr) {
-		const_def->b_            = const_exp_start;
-		const_exp_start->parent_ = const_def;
+		const_def->b_ = const_exp_start;
 	}
-	const_def->c_           = const_init_val;
-	const_init_val->parent_ = const_def;
+	const_def->c_ = const_init_val;
 	return const_def;
 }
 
@@ -2261,7 +2197,6 @@ AstNodePtr Parser::ConstDecl() {
 			var_def = AstNodePool::get(SyEbnfType::E, 0);
 		}
 		const_def_last->d_ = var_def;
-		var_def->parent_   = const_def_last;
 		const_def_last     = var_def;
 	}
 	if ((token_iter_)->getAstType() != SyAstType::SEMICOLON) {
@@ -2273,11 +2208,9 @@ AstNodePtr Parser::ConstDecl() {
 		--token_iter_;
 	}
 	++token_iter_;
-	auto var_decl   = AstNodePool::get(SyEbnfType::ConstDecl, b_type->line_);
-	var_decl->a_    = b_type;
-	b_type->parent_ = var_decl;
-	var_decl->b_    = const_def_start;
-	const_def_start->parent_ = var_decl;
+	auto var_decl = AstNodePool::get(SyEbnfType::ConstDecl, b_type->line_);
+	var_decl->a_  = b_type;
+	var_decl->b_  = const_def_start;
 	return var_decl;
 }
 
@@ -2288,16 +2221,14 @@ AstNodePtr Parser::Decl() {
 	// ConstDecl
 	auto const_decl = ConstDecl();
 	if (const_decl != nullptr) {
-		decl->a_            = const_decl;
-		const_decl->parent_ = decl;
+		decl->a_ = const_decl;
 		return decl;
 	}
 	// VarDecl
 	token_iter_   = iter_back;
 	auto var_decl = VarDecl();
 	if (var_decl != nullptr) {
-		decl->a_          = var_decl;
-		var_decl->parent_ = decl;
+		decl->a_ = var_decl;
 		return decl;
 	}
 	return nullptr;
@@ -2310,7 +2241,6 @@ AstNodePtr Parser::FuncType() {
 	    token->getAstType() == SyAstType::TYPE_INT) {
 		auto func_type = AstNodePool::get(SyEbnfType::FuncType, token->line_);
 		func_type->a_  = token;
-		token->parent_ = func_type;
 		++token_iter_;
 		return func_type;
 	} else {
@@ -2325,7 +2255,6 @@ AstNodePtr Parser::BType() {
 	}
 	auto b_type = AstNodePool::get(SyEbnfType::BType, (token_iter_)->line_);
 	b_type->a_  = *token_iter_;
-	(token_iter_)->parent_ = b_type;
 	++token_iter_;
 	return b_type;
 }
@@ -2347,9 +2276,7 @@ AstNodePtr Parser::FuncFParam() {
 
 	// link when suceess
 	func_f_param->a_ = b_type;
-	b_type->parent_  = func_f_param;
 	func_f_param->b_ = ident;
-	ident->parent_   = func_f_param;
 	return func_f_param;
 }
 
@@ -2385,7 +2312,6 @@ AstNodePtr Parser::FuncFParams() {
 		}
 		// link when suceess
 		func_f_param_last->d_ = func_f_param;
-		func_f_param->parent_ = func_f_param_last;
 		func_f_param_last     = func_f_param;
 	}
 	return func_f_param_start;
@@ -2437,16 +2363,12 @@ AstNodePtr Parser::FuncDef() {
 	// if we reach here, it means that we successed
 	// so we need to set the parent of all the nodes in func_def
 	// and set the children of func_def
-	func_def->a_       = func_type;
-	func_type->parent_ = func_def;
-	func_def->b_       = ident;
-	ident->parent_     = func_def;
-	func_def->c_       = func_f_params;
+	func_def->a_ = func_type;
+	func_def->b_ = ident;
+	func_def->c_ = func_f_params;
 	if (func_f_params != nullptr) {
-		func_f_params->parent_ = func_def;
 	}
-	func_def->d_   = block;
-	block->parent_ = func_def;
+	func_def->d_ = block;
 	return func_def;
 }
 
@@ -2459,14 +2381,12 @@ AstNodePtr Parser::CompUnit() {
 	auto decl = Decl();
 	if (decl != nullptr) {
 		comp_unit->a_ = decl;
-		decl->parent_ = comp_unit;
 		return comp_unit;
 	}
 	token_iter_   = iter_back;
 	auto func_def = FuncDef();
 	if (func_def != nullptr) {
-		comp_unit->a_     = func_def;
-		func_def->parent_ = comp_unit;
+		comp_unit->a_ = func_def;
 		return comp_unit;
 	}
 	parseError("\033[1m\033[35mFATAL ERROR, STOP NOW\033[0m",
