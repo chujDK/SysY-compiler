@@ -1400,7 +1400,7 @@ static void adjustExpLAst(AstNodePtr node) {
 }
 
 // after adjust, a - 2 + 1 will be parsed as a - (2 + 1), which
-// is definitely wrong. FIX IT.
+// is definitely wrong. this is fixed by the `adjustExpAstRightBindToLeftBind'
 // take AddExp ast as an example
 // origin: AddExp -> MulExp | AddExp ('+' | '−') MulExp
 // ast:        AddExp
@@ -1427,6 +1427,14 @@ static void adjustExpLAst(AstNodePtr node) {
 //           MulExp '+' MulExp type: END_OF_ENUM => MulExp
 //
 // after adjust, all AddExpL is a AddExp
+
+// right bind to left bind
+// ast:	     AddExp(L)
+//			/   |   \
+//      AddExp '+' MulExp
+//      /  |  \
+// MulExp '+' MulExp
+
 // @input: root of the ast
 static AstNodePtr adjustExpAst(AstNodePtr root) {
 	// before addjust, node->b_ is an AddExpL
