@@ -110,6 +110,7 @@ llvm::Value* JITCompiler::unaryExpIRGen(AstNodePtr exp) {
 		return nullptr;
 	} else if (exp->a_->getAstType() == SyAstType::IDENT) {
 		// TODO: finish this
+		// function calling
 		return nullptr;
 	} else {
 		assert(0);
@@ -119,7 +120,7 @@ llvm::Value* JITCompiler::unaryExpIRGen(AstNodePtr exp) {
 
 llvm::Value* JITCompiler::lValRightIRGen(AstNodePtr l_val) {
 	// currently, we don't consider the case that l_val is an array
-	// TOOD: add support for array
+	// TODO: add support for array
 	auto l_val_name = l_val->a_->getLiteral();
 	auto l_val_ir   = named_values_[l_val_name];
 	if (l_val_ir == nullptr) {
@@ -133,7 +134,7 @@ llvm::Value* JITCompiler::lValRightIRGen(AstNodePtr l_val) {
 
 llvm::Value* JITCompiler::lValLeftIRGen(AstNodePtr l_val) {
 	// currently, we don't consider the case that l_val is an array
-	// TOOD: add support for array
+	// TODO: add support for array
 	auto l_val_name = l_val->a_->getLiteral();
 	auto l_val_ir   = named_values_[l_val_name];
 	if (l_val_ir == nullptr) {

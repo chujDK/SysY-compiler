@@ -1,6 +1,6 @@
 #ifndef _SYDEBUG_H_
 #define _SYDEBUG_H_
-#include "sy.h"
+#include "syparse.h"
 
 extern const char* SyAstTypeDebugInfo[(int)SyAstType::END_OF_ENUM];
 extern const char* SyEbnfTypeDebugInfo[(int)SyEbnfType::END_OF_ENUM];

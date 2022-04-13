@@ -68,6 +68,8 @@ struct AstNodeBase {
 	virtual void setEbnfType(enum SyEbnfType type) = 0;
 
 	virtual void Accept(AstNodeVisitor* visitor) = 0;
+	// FIXME: to use the irGen virtual method, the compiler's componet should be
+	// accessed globally, currently i don't know how to make it right
 	virtual void irGen()                         = 0;
 	virtual void checkSemantic()                 = 0;
 	virtual AstNodePtr getAstParent()            = 0;
@@ -112,7 +114,8 @@ class AstNode : public AstNodeBase {
 
 	virtual ~AstNode() {}
 	virtual std::string const& getLiteral() {
-		return std::move(std::string(""));
+		static std::string null_string = "";
+		return null_string;
 	}
 
 	enum SyAstType getAstType() { return SyAstType::END_OF_ENUM; }

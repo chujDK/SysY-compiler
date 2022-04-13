@@ -1,4 +1,4 @@
-TESTFILE_DIR=./test/testfile
+UNIT_TEST_DIR=./test/unit-test
 TESTCASE_DIR=./test/testcase
 TESTCASES=$(foreach x, $(TESTCASE_DIR), \
           $(wildcard \
@@ -64,6 +64,18 @@ test-interpreter: syinterpreter
 	@echo "begin interpreter test.. testcases: ${TESTCASES}"
 	@$(foreach x, ${TESTCASES}, echo "\033[35m${x}\033[0m"; echo "----- \033[32msrc\033[0m -----"; cat ${x}; \
 	echo "----- \033[33mend of src\033[0m -----";)
+
+# FIXME: this is buggy
+.PHONY:btype
+parser/btype: ${UNIT_TEST_DIR}/parser/btype/btype_test.cc ${SRC} | ${LIB}
+	clang++ -I $(LIB_DIR) -DUNIT_TEST $(DEFINE) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^
+	$(BIN_DIR)/$@ > /tmp/_$@_output
+	diff /tmp/_$@_output ${TESTFILE_DIR}/$@_output_expect
+	if [ $$? -eq 0 ]; then
+		echo "\033[1;32m[+]\033\0[m $@ \033[1;32msuccess!\033[0m"
+	else
+		echo "\033[1;31m[-]\033\0[m $@ \033[1;31mfailed!\033[0m"
+	fi
 
 #.ONESHELL:
 .PHONY:UNIT_test
