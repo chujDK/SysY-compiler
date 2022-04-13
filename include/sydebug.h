@@ -4,6 +4,7 @@
 
 extern const char* SyAstTypeDebugInfo[(int)SyAstType::END_OF_ENUM];
 extern const char* SyEbnfTypeDebugInfo[(int)SyEbnfType::END_OF_ENUM];
+void astWalkThrough(AstNodePtr node, int level);
 
 // this class is mainly for test
 class CharStream : public InputStream {

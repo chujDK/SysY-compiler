@@ -48,7 +48,12 @@ struct AstNodeBase {
 	// if the nodes are in a list, like FuncFParam to FuncFParams,
 	// parent_ and d_ link up a double linked list
 	// be careful when using the d_, make su
-	AstNodePtr a_, b_, c_, d_;  // FIXME: maybe delete this field in the future?
+	AstNodePtr a_, b_, c_, d_;  // TODO: maybe delete this field in the future?
+	// only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
+	// this also means that this complier can only support array size up to
+	// 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
+	// it's tempting to move the line_ into this union, but giveup
+	// delete this field in the future
 	union {
 		unsigned int array_size_;
 		unsigned int const_val_;
@@ -94,21 +99,21 @@ class TokenAstNode : public AstNodeBase {
 };
 
 class AstNode : public AstNodeBase {
-	// only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
-	// this also means that this complier can only support array size up to
-	// 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
-	// it's tempting to move the line_ into this union, but giveup
-	// delete this field in the future
    private:
+	// TODO: there is no need to use the ebnf_type_ to record the type, we can
+	// use the virtual function getEbnfType() to return the correct type.
+	// so this field can be removed. however, for simplicity, keep it is also
+	// pretty fair.
 	SyEbnfType ebnf_type_;
 
    public:
-	// ire it's not in a list
 	AstNode(enum SyEbnfType ebnf_type, int line)
 	    : AstNodeBase(line), ebnf_type_(ebnf_type) {}
 
 	virtual ~AstNode() {}
-	virtual std::string const& getLiteral() { return ""; }
+	virtual std::string const& getLiteral() {
+		return std::move(std::string(""));
+	}
 
 	enum SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
 	enum SyEbnfType getEbnfType() { return ebnf_type_; }
