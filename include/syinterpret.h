@@ -94,7 +94,7 @@ class Interpreter : public InterpreterAPI {
 
 	std::pair<StmtState, Value> blockHandler(AstNodePtr block);
 	std::pair<StmtState, Value> stmtHandler(AstNodePtr stmt);
-	std::pair<char*, SyEbnfType> lValLeftHandler(AstNodePtr l_val);
+	std::pair<char*, SyAstType> lValLeftHandler(AstNodePtr l_val);
 
    public:
 	int exec();

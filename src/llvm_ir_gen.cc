@@ -52,6 +52,9 @@
 // maybe in the future i will refactor the ir-gen to use virtual methods of
 // each node. but currently i want to jump to the optimizer first
 
+// about the ssa, for simplicity i use the memory access to bypass that
+// i tend to implement a pass the convert it to phi node myself
+
 JITCompiler::JITCompiler() : builder_(context_) {
 	module_ = std::make_unique<llvm::Module>("JIT! COOOL!", context_);
 	named_values_.clear();
@@ -287,8 +290,6 @@ llvm::Value* JITCompiler::ifStmtIRGen(AstNodePtr stmt) {
 #ifdef DEBUG
 	assert(stmt->a_->getAstType() == SyAstType::STM_IF);
 #endif
-	// TODO
-
 	// thought it is a logical expression, it returns i32
 	auto cond_ir = condIRGen(stmt->b_);
 	// here we convert the i32 to i1

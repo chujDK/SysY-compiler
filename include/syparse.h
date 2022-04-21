@@ -19,8 +19,6 @@ class AstNodePool {
    public:
 	static TokenPtr get(SyAstType type, int line, std::string&& literal);
 	static AstNodePtr get(SyEbnfType type, int line);
-	template <typename T>
-	static T get(int line);
 };
 
 class InputStream {
@@ -66,6 +64,7 @@ struct AstNodeBase {
 
 	virtual enum SyAstType getAstType()            = 0;
 	virtual enum SyEbnfType getEbnfType()          = 0;
+	virtual void setAstType(enum SyAstType type)   = 0;
 	virtual void setEbnfType(enum SyEbnfType type) = 0;
 
 	virtual void Accept(AstNodeVisitor* visitor) = 0;
@@ -93,6 +92,7 @@ class TokenAstNode : public AstNodeBase {
 	enum SyAstType getAstType() { return ast_type_; }
 	enum SyEbnfType getEbnfType() { return SyEbnfType::END_OF_ENUM; }
 
+	void setAstType(enum SyAstType type) { ast_type_ = type; }
 	void setEbnfType(enum SyEbnfType type) { DEBUG_ASSERT_NOT_REACH }
 	void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
 	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
@@ -121,6 +121,7 @@ class AstNode : public AstNodeBase {
 
 	enum SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
 	enum SyEbnfType getEbnfType() { return ebnf_type_; }
+	void setAstType(enum SyAstType type) { DEBUG_ASSERT_NOT_REACH }
 	void setEbnfType(enum SyEbnfType type) { ebnf_type_ = type; }
 
 	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }

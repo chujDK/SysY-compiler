@@ -171,11 +171,6 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
 	return token;
 }
 
-template <typename T>
-T AstNodePool::get(int line) {
-	return std::make_shared<T>(line);
-}
-
 AstNodePtr AstNodePool::get(SyEbnfType type, int line) {
 	AstNodePtr node = nullptr;
 	switch (type) {

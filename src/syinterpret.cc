@@ -339,7 +339,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 			// example: int a[10][0x10] = {{0}, {0}}, b;
 			// arr_size: 10 * 0x10
 			// add this ident to symbol_table_
-			ident->setEbnfType(SyEbnfType::TYPE_INT_ARRAY);
+			ident->setAstType(SyAstType::VAL_TYPE_INT_ARRAY);
 			ident->u_.array_size_ = arr_size;
 			auto mem =
 			    (is_global ? symbol_table_->addGlobalSymbol(ident, is_const)
@@ -394,7 +394,7 @@ void Interpreter::declHandler(AstNodePtr decl, bool is_global) {
 			// ident: a
 			// init_val: nullptr
 			// const_exp: nullptr
-			ident->setEbnfType(SyEbnfType::TYPE_INT);
+			ident->setAstType(SyAstType::VAL_TYPE_INT);
 			auto mem =
 			    (is_global ? symbol_table_->addGlobalSymbol(ident, is_const)
 			               : symbol_table_->addSymbol(ident, is_const));
@@ -522,7 +522,7 @@ void Interpreter::variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum) {
 void Interpreter::variableIdentTyper(AstNodePtr ident, AstNodePtr type) {
 	switch (type->getAstType()) {
 		case SyAstType::TYPE_INT:
-			ident->setEbnfType(SyEbnfType::TYPE_INT);
+			ident->setAstType(SyAstType::VAL_TYPE_INT);
 			break;
 		default:
 			// shouldn't reach here
@@ -560,7 +560,7 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
 			// non array
 			auto mem     = symbol_table_->addSymbol(ident, false);
 			auto mem_raw = mem->getMem();
-			if (ident->getEbnfType() == SyEbnfType::TYPE_INT) {
+			if (ident->getAstType() == SyAstType::VAL_TYPE_INT) {
 				int init_val = expDispatcher(arg_exp->a_).i32;
 				memcpy(mem_raw, &init_val, sizeof(int));
 			} else {
@@ -602,8 +602,8 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
 	auto l_val = lValLeftHandler(exp);
 	Value ret;
 	switch (l_val.second) {
-		case SyEbnfType::TYPE_CONST_INT:
-		case SyEbnfType::TYPE_INT:
+		case SyAstType::VAL_TYPE_CONST_INT:
+		case SyAstType::VAL_TYPE_INT:
 			ret.i32 = *((int*)l_val.first);
 			break;
 		default:
@@ -612,7 +612,7 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
 	return ret;
 }
 
-std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
+std::pair<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 	// LVal -> Ident {'[' Exp ']'}
 	auto mem = symbol_table_->searchTable(l_val->a_);
 	if (mem == nullptr) {
@@ -623,9 +623,9 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 	if (l_val->b_ == nullptr) {
 		// this is a non-array ident
 		if (mem->isConst()) {
-			return std::make_pair(mem->getMem(), SyEbnfType::TYPE_CONST_INT);
+			return std::make_pair(mem->getMem(), SyAstType::VAL_TYPE_CONST_INT);
 		} else {
-			return std::make_pair(mem->getMem(), SyEbnfType::TYPE_INT);
+			return std::make_pair(mem->getMem(), SyAstType::VAL_TYPE_INT);
 		}
 	} else {
 		ArrayMemoryPtr array = std::static_pointer_cast<ArrayMemoryAPI>(mem);
@@ -652,12 +652,12 @@ std::pair<char*, SyEbnfType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 			exp = exp->d_;
 		}
 		if (mem->isConst()) {
-			return std::make_pair(mem_raw, SyEbnfType::TYPE_CONST_INT);
+			return std::make_pair(mem_raw, SyAstType::VAL_TYPE_CONST_INT);
 		} else {
-			return std::make_pair(mem_raw, SyEbnfType::TYPE_INT);
+			return std::make_pair(mem_raw, SyAstType::VAL_TYPE_INT);
 		}
 	}
-	return std::make_pair(nullptr, SyEbnfType::END_OF_ENUM);
+	return std::make_pair(nullptr, SyAstType::END_OF_ENUM);
 }
 
 std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
@@ -729,9 +729,9 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 		auto l_val_ret = lValLeftHandler(l_val);
 		auto exp       = stmt->b_;
 		auto exp_val   = expDispatcher(exp);
-		if (l_val_ret.second == SyEbnfType::TYPE_INT) {
+		if (l_val_ret.second == SyAstType::VAL_TYPE_INT) {
 			*((int*)l_val_ret.first) = exp_val.i32;
-		} else if (l_val_ret.second == SyEbnfType::TYPE_CONST_INT) {
+		} else if (l_val_ret.second == SyAstType::VAL_TYPE_CONST_INT) {
 			interpretError("can't assign to a const variable", exp->line_);
 		}
 	} else if (stmt->a_->getEbnfType() == SyEbnfType::Exp) {

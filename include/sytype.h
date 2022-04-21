@@ -61,6 +61,13 @@ enum class SyAstType {
 	STRING,
 	IDENT,  // [_a-zA-Z][_-a-zA-Z0-9]*
 	EOF_TYPE,
+
+	VAL_TYPE_INT,              // 'int'
+	VAL_TYPE_CONST_INT,        // 'const int'
+	VAL_TYPE_VOID,             // 'void'
+	VAL_TYPE_INT_ARRAY,        // 'int[]'
+	VAL_TYPE_CONST_INT_ARRAY,  // 'const int[]'
+
 	END_OF_ENUM
 };
 
@@ -110,11 +117,6 @@ enum class SyEbnfType {
 	E,            // epsilon
 
 	// typing
-	TYPE_INT,              // 'int'
-	TYPE_CONST_INT,        // 'const int'
-	TYPE_VOID,             // 'void'
-	TYPE_INT_ARRAY,        // 'int[]'
-	TYPE_CONST_INT_ARRAY,  // 'const int[]'
 	END_OF_ENUM
 };
 
