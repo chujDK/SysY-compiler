@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 static void adjustExpLAst(AstNodePtr node);
 static AstNodePtr adjustExpAst(AstNodePtr node);
@@ -168,6 +169,11 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
 			assert(0);
 	}
 	return token;
+}
+
+template <typename T>
+T AstNodePool::get(int line) {
+	return std::make_shared<T>(line);
 }
 
 AstNodePtr AstNodePool::get(SyEbnfType type, int line) {

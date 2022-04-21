@@ -1,3 +1,4 @@
+// tend to deprecate this
 #ifndef _SYINTERPRET_H_
 #define _SYINTERPRET_H_
 #include <llvm/IR/Function.h>

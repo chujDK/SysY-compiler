@@ -43,3 +43,6 @@ package.json
 
 bin/*
 .vscode/*
+compile_commands.json
+
+.cache
