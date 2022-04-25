@@ -462,74 +462,113 @@ TokenPtr Lexer::getIdent() {
 			}
 		}
 		// if and int
-		ident_jump['i'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_IF;
-		ident_jump['f'][(int)SyAstType::STM_IF]      = SyAstType::END_OF_ENUM;
-		ident_jump['n'][(int)SyAstType::STM_IF]      = SyAstType::TYPE_INT;
-		ident_jump['t'][(int)SyAstType::TYPE_INT]    = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('i')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_IF;
+		ident_jump[static_cast<int>('f')][(int)SyAstType::STM_IF] =
+		    SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('n')][(int)SyAstType::STM_IF] =
+		    SyAstType::TYPE_INT;
+		ident_jump[static_cast<int>('t')][(int)SyAstType::TYPE_INT] =
+		    SyAstType::END_OF_ENUM;
 
 		// void
-		ident_jump['v'][(int)SyAstType::END_OF_ENUM] = SyAstType::TYPE_VOID;
-		ident_jump['o'][(int)SyAstType::TYPE_VOID]   = SyAstType::TYPE_VOID;
-		ident_jump['i'][(int)SyAstType::TYPE_VOID]   = SyAstType::TYPE_VOID;
-		ident_jump['d'][(int)SyAstType::TYPE_VOID]   = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('v')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::TYPE_VOID;
+		ident_jump[static_cast<int>('o')][(int)SyAstType::TYPE_VOID] =
+		    SyAstType::TYPE_VOID;
+		ident_jump[static_cast<int>('i')][(int)SyAstType::TYPE_VOID] =
+		    SyAstType::TYPE_VOID;
+		ident_jump[static_cast<int>('d')][(int)SyAstType::TYPE_VOID] =
+		    SyAstType::END_OF_ENUM;
 
 		// else
-		ident_jump['e'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_ELSE;
-		ident_jump['l'][(int)SyAstType::STM_ELSE]    = SyAstType::STM_ELSE;
-		ident_jump['s'][(int)SyAstType::STM_ELSE]    = SyAstType::STM_ELSE;
-		ident_jump['e'][(int)SyAstType::STM_ELSE]    = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_ELSE;
+		ident_jump[static_cast<int>('l')][(int)SyAstType::STM_ELSE] =
+		    SyAstType::STM_ELSE;
+		ident_jump[static_cast<int>('s')][(int)SyAstType::STM_ELSE] =
+		    SyAstType::STM_ELSE;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::STM_ELSE] =
+		    SyAstType::END_OF_ENUM;
 
 		// while
-		ident_jump['w'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_WHILE;
-		ident_jump['h'][(int)SyAstType::STM_WHILE]   = SyAstType::STM_WHILE;
-		ident_jump['i'][(int)SyAstType::STM_WHILE]   = SyAstType::STM_WHILE;
-		ident_jump['l'][(int)SyAstType::STM_WHILE]   = SyAstType::STM_WHILE;
-		ident_jump['e'][(int)SyAstType::STM_WHILE]   = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('w')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_WHILE;
+		ident_jump[static_cast<int>('h')][(int)SyAstType::STM_WHILE] =
+		    SyAstType::STM_WHILE;
+		ident_jump[static_cast<int>('i')][(int)SyAstType::STM_WHILE] =
+		    SyAstType::STM_WHILE;
+		ident_jump[static_cast<int>('l')][(int)SyAstType::STM_WHILE] =
+		    SyAstType::STM_WHILE;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::STM_WHILE] =
+		    SyAstType::END_OF_ENUM;
 
 		// break
-		ident_jump['b'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_BREAK;
-		ident_jump['r'][(int)SyAstType::STM_BREAK]   = SyAstType::STM_BREAK;
-		ident_jump['e'][(int)SyAstType::STM_BREAK]   = SyAstType::STM_BREAK;
-		ident_jump['a'][(int)SyAstType::STM_BREAK]   = SyAstType::STM_BREAK;
-		ident_jump['k'][(int)SyAstType::STM_BREAK]   = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('b')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_BREAK;
+		ident_jump[static_cast<int>('r')][(int)SyAstType::STM_BREAK] =
+		    SyAstType::STM_BREAK;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::STM_BREAK] =
+		    SyAstType::STM_BREAK;
+		ident_jump[static_cast<int>('a')][(int)SyAstType::STM_BREAK] =
+		    SyAstType::STM_BREAK;
+		ident_jump[static_cast<int>('k')][(int)SyAstType::STM_BREAK] =
+		    SyAstType::END_OF_ENUM;
 
 		// continue and const
-		ident_jump['c'][(int)SyAstType::END_OF_ENUM]  = SyAstType::STM_CONTINUE;
-		ident_jump['o'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['n'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['s'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONST;
-		ident_jump['t'][(int)SyAstType::STM_CONST]    = SyAstType::END_OF_ENUM;
-		ident_jump['t'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['i'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['n'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['u'][(int)SyAstType::STM_CONTINUE] = SyAstType::STM_CONTINUE;
-		ident_jump['e'][(int)SyAstType::STM_CONTINUE] = SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('c')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('o')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('n')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('s')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONST;
+		ident_jump[static_cast<int>('t')][(int)SyAstType::STM_CONST] =
+		    SyAstType::END_OF_ENUM;
+		ident_jump[static_cast<int>('t')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('i')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('n')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('u')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::STM_CONTINUE;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::STM_CONTINUE] =
+		    SyAstType::END_OF_ENUM;
 
 		// return
-		ident_jump['r'][(int)SyAstType::END_OF_ENUM] = SyAstType::STM_RETURN;
-		ident_jump['e'][(int)SyAstType::STM_RETURN]  = SyAstType::STM_RETURN;
-		ident_jump['t'][(int)SyAstType::STM_RETURN]  = SyAstType::STM_RETURN;
-		ident_jump['u'][(int)SyAstType::STM_RETURN]  = SyAstType::STM_RETURN;
-		ident_jump['r'][(int)SyAstType::STM_RETURN]  = SyAstType::STM_RETURN;
-		ident_jump['n'][(int)SyAstType::STM_RETURN]  = SyAstType::END_OF_ENUM;
-		init                                         = true;
+		ident_jump[static_cast<int>('r')][(int)SyAstType::END_OF_ENUM] =
+		    SyAstType::STM_RETURN;
+		ident_jump[static_cast<int>('e')][(int)SyAstType::STM_RETURN] =
+		    SyAstType::STM_RETURN;
+		ident_jump[static_cast<int>('t')][(int)SyAstType::STM_RETURN] =
+		    SyAstType::STM_RETURN;
+		ident_jump[static_cast<int>('u')][(int)SyAstType::STM_RETURN] =
+		    SyAstType::STM_RETURN;
+		ident_jump[static_cast<int>('r')][(int)SyAstType::STM_RETURN] =
+		    SyAstType::STM_RETURN;
+		ident_jump[static_cast<int>('n')][(int)SyAstType::STM_RETURN] =
+		    SyAstType::END_OF_ENUM;
+		init = true;
 	}
 	char current_char = input_stream_->getChar();
 	SyAstType current_state =
-	    ident_jump[current_char][(int)SyAstType::END_OF_ENUM];
+	    ident_jump[static_cast<int>(current_char)][(int)SyAstType::END_OF_ENUM];
 	std::string ident = std::string(1, current_char);
 	while (1) {
 		current_char = input_stream_->getChar();
 		if (isIdentPart(current_char)) {
 			if (current_state != SyAstType::END_OF_ENUM &&
-			    ident_jump[current_char][(int)current_state] ==
-			        SyAstType::END_OF_ENUM &&
+			    ident_jump[static_cast<int>(current_char)]
+			              [(int)current_state] == SyAstType::END_OF_ENUM &&
 			    isEndForIdentAndNumber(input_stream_->peakChar())) {
 				// this is a STMT or TYPE or so
 				ident += current_char;
 				return AstNodePool::get(current_state, line_, std::move(ident));
 			}
-			current_state = ident_jump[current_char][(int)current_state];
+			current_state =
+			    ident_jump[static_cast<int>(current_char)][(int)current_state];
 			ident += current_char;
 		} else if (isEndForIdentAndNumber(current_char)) {
 			input_stream_->ungetChar();
@@ -714,7 +753,7 @@ TokenPtr Lexer::getNextTokenInternal() {
 		}
 		if (isDigit(current_char)) {
 			return AstNodePool::get(SyAstType::INT_IMM, line_,
-			                        std::move(getNumber()));
+			                        std::move(getNumber()));  // FIXME
 		} else if (isIdentStart(current_char)) {
 			return getIdent();
 		} else {
@@ -1813,8 +1852,7 @@ AstNodePtr Parser::FuncRParams() {
 	}
 	while ((token_iter_)->getAstType() == SyAstType::COMMA) {
 		++token_iter_;
-		LexerIterator iter_back = token_iter_;
-		auto exp                = Exp();
+		auto exp = Exp();
 		if (exp == nullptr) {
 			// the caller should be confident the next factor is FuncRParams
 			// so we just skip the exp and report a error
