@@ -83,15 +83,15 @@ class TokenAstNode : public AstNodeBase {
 	TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal)
 	    : AstNodeBase(line), literal_(literal), ast_type_(ast_type) {}
 
-	std::string const& getLiteral() { return literal_; }
+	std::string const& getLiteral() override { return literal_; }
 
-	enum SyAstType getAstType() { return ast_type_; }
-	enum SyEbnfType getEbnfType() { return SyEbnfType::END_OF_ENUM; }
+	enum SyAstType getAstType() override { return ast_type_; }
+	enum SyEbnfType getEbnfType() override { return SyEbnfType::END_OF_ENUM; }
 
-	void setAstType(enum SyAstType type) { ast_type_ = type; }
-	void setEbnfType(enum SyEbnfType type) { DEBUG_ASSERT_NOT_REACH }
-	void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
-	virtual AstNodePtr getAstParent() { return nullptr; }
+	void setAstType(enum SyAstType type) override { ast_type_ = type; }
+	void setEbnfType(enum SyEbnfType type) override { DEBUG_ASSERT_NOT_REACH }
+	void setAstParent(AstNodePtr parent) override { DEBUG_ASSERT_NOT_REACH }
+	virtual AstNodePtr getAstParent() override { return nullptr; }
 };
 
 class AstNode : public AstNodeBase {
@@ -107,18 +107,20 @@ class AstNode : public AstNodeBase {
 	    : AstNodeBase(line), ebnf_type_(ebnf_type) {}
 
 	virtual ~AstNode() {}
-	virtual std::string const& getLiteral() {
+	virtual std::string const& getLiteral() override {
 		static std::string null_string = "";
 		return null_string;
 	}
 
-	enum SyAstType getAstType() { return SyAstType::END_OF_ENUM; }
-	enum SyEbnfType getEbnfType() { return ebnf_type_; }
-	void setAstType(enum SyAstType type) { DEBUG_ASSERT_NOT_REACH }
-	void setEbnfType(enum SyEbnfType type) { ebnf_type_ = type; }
+	enum SyAstType getAstType() override { return SyAstType::END_OF_ENUM; }
+	enum SyEbnfType getEbnfType() override { return ebnf_type_; }
+	void setAstType(enum SyAstType type) override { DEBUG_ASSERT_NOT_REACH }
+	void setEbnfType(enum SyEbnfType type) override { ebnf_type_ = type; }
 
-	virtual AstNodePtr getAstParent() { return nullptr; }
-	virtual void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
+	virtual AstNodePtr getAstParent() override { return nullptr; }
+	virtual void setAstParent(AstNodePtr parent) override {
+		DEBUG_ASSERT_NOT_REACH
+	}
 };
 
 class AstIterator {
@@ -285,8 +287,10 @@ class UnaryExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	UnaryExpAstNode(int line) : AstNode(SyEbnfType::UnaryExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class UnaryOpAstNode : public AstNode {
@@ -311,8 +315,10 @@ class MulExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	MulExpAstNode(int line) : AstNode(SyEbnfType::MulExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class AddExpAstNode : public AstNode {
@@ -323,8 +329,10 @@ class AddExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	AddExpAstNode(int line) : AstNode(SyEbnfType::AddExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class RelExpAstNode : public AstNode {
@@ -335,8 +343,10 @@ class RelExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	RelExpAstNode(int line) : AstNode(SyEbnfType::RelExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class EqExpAstNode : public AstNode {
@@ -347,8 +357,10 @@ class EqExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	EqExpAstNode(int line) : AstNode(SyEbnfType::EqExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class LAndExpAstNode : public AstNode {
@@ -359,8 +371,10 @@ class LAndExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class LOrExpAstNode : public AstNode {
@@ -371,8 +385,10 @@ class LOrExpAstNode : public AstNode {
 	using AstNode::AstNode;
 
 	LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 class ConstExpAstNode : public AstNode {
@@ -390,8 +406,10 @@ class EAstNode : public AstNode {
    public:
 	using AstNode::AstNode;
 	EAstNode(int line) : AstNode(SyEbnfType::E, line) {}
-	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
-	AstNodePtr getAstParent() { return parent_.lock(); }
+	void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+		parent_ = parent;
+	}
+	AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
 using TokenPtrIter = typename std::list<TokenPtr>::iterator;
