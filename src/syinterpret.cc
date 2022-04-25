@@ -1,9 +1,15 @@
 #include "syinterpret.h"
 
 #include <cassert>
+#include <cstdarg>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <string>
+#include <tuple>
+#include <utility>
+
+#include "syparse.h"
 
 // TODO:
 // we can't yet handle the array passing
@@ -448,10 +454,10 @@ SYFunction::SYFunction(void* func, bool no_fail,
                                                InterpreterAPI*))
     : func_(nullptr),
       func_exec_mem_(reinterpret_cast<char*>(func)),
+      exec_call_back_(exec_call_back),
       jited_(true),
       no_fail_(no_fail),
-      called_times_(0),
-      exec_call_back_(exec_call_back){};
+      called_times_(0){};
 
 Value SYFunction::exec(AstNodePtr args, InterpreterAPI* interpreter) {
 	if (jited_) {
@@ -494,7 +500,7 @@ int Interpreter::execOneCompUnit(AstNodePtr comp_unit) {
 	return 0;
 }
 
-std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
+std::tuple<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 	auto block_item = block->a_;
 	for (; block_item != nullptr; block_item = block_item->d_) {
 		if (block_item->a_->getEbnfType() == SyEbnfType::Decl) {
@@ -502,18 +508,17 @@ std::pair<StmtState, Value> Interpreter::blockHandler(AstNodePtr block) {
 			declHandler(decl, 0);
 		}
 		if (block_item->a_->getEbnfType() == SyEbnfType::Stmt) {
-			auto stmt = block_item->a_;
-			auto ret  = stmtHandler(stmt);
-			if (ret.first == StmtState::RETURN ||
-			    ret.first == StmtState::BREAK) {
-				return ret;
+			auto stmt           = block_item->a_;
+			auto [state, value] = stmtHandler(stmt);
+			if (state == StmtState::RETURN || state == StmtState::BREAK) {
+				return std::make_tuple(state, value);
 			}
-			if (ret.first == StmtState::CONTINUE) {
-				return ret;
+			if (state == StmtState::CONTINUE) {
+				return std::make_tuple(state, value);
 			}
 		}
 	}
-	return std::make_pair(StmtState::END_OF_ENUM, Value());
+	return std::make_tuple(StmtState::END_OF_ENUM, Value());
 }
 
 void Interpreter::variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum) {
@@ -573,8 +578,8 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
 		arg_exp = arg_exp->d_;
 	}
 
-	auto ret = blockHandler(func_ast->d_);
-	if (ret.first == StmtState::BREAK) {
+	auto [state, value] = blockHandler(func_ast->d_);
+	if (state == StmtState::BREAK) {
 		interpretWarning(
 		    std::string("\033[1;31mbreak signal\033[0m unhandled until "
 		                "function \"\033[1m") +
@@ -584,7 +589,7 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
 		            "break statement not within loop"),
 		    func_ast->line_);
 	}
-	if (ret.first == StmtState::CONTINUE) {
+	if (state == StmtState::CONTINUE) {
 		interpretWarning(
 		    std::string("\033[1;31mcontiue signal\033[0m unhandled until "
 		                "function \"\033[1m") +
@@ -595,16 +600,16 @@ Value Interpreter::execFunction(AstNodePtr func_ast, AstNodePtr args) {
 		    func_ast->line_);
 	}
 	symbol_table_->exitScope();
-	return ret.second;
+	return value;
 }
 
 Value Interpreter::lValRightHandler(AstNodePtr exp) {
-	auto l_val = lValLeftHandler(exp);
+	auto [mem, type] = lValLeftHandler(exp);
 	Value ret;
-	switch (l_val.second) {
+	switch (type) {
 		case SyAstType::VAL_TYPE_CONST_INT:
 		case SyAstType::VAL_TYPE_INT:
-			ret.i32 = *((int*)l_val.first);
+			ret.i32 = *(reinterpret_cast<int*>(mem));
 			break;
 		default:
 			break;
@@ -612,7 +617,7 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
 	return ret;
 }
 
-std::pair<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
+std::tuple<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 	// LVal -> Ident {'[' Exp ']'}
 	auto mem = symbol_table_->searchTable(l_val->a_);
 	if (mem == nullptr) {
@@ -623,13 +628,14 @@ std::pair<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 	if (l_val->b_ == nullptr) {
 		// this is a non-array ident
 		if (mem->isConst()) {
-			return std::make_pair(mem->getMem(), SyAstType::VAL_TYPE_CONST_INT);
+			return std::make_tuple(mem->getMem(),
+			                       SyAstType::VAL_TYPE_CONST_INT);
 		} else {
-			return std::make_pair(mem->getMem(), SyAstType::VAL_TYPE_INT);
+			return std::make_tuple(mem->getMem(), SyAstType::VAL_TYPE_INT);
 		}
 	} else {
 		ArrayMemoryPtr array = std::static_pointer_cast<ArrayMemoryAPI>(mem);
-		auto array_size      = array->getArraySize();
+		// auto array_size = array->getArraySize(); FIXME: where to use?
 		auto exp             = l_val->b_;
 		auto array_dimension = array->getDimension();
 		auto mem_raw         = array->getMem();
@@ -652,23 +658,23 @@ std::pair<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
 			exp = exp->d_;
 		}
 		if (mem->isConst()) {
-			return std::make_pair(mem_raw, SyAstType::VAL_TYPE_CONST_INT);
+			return std::make_tuple(mem_raw, SyAstType::VAL_TYPE_CONST_INT);
 		} else {
-			return std::make_pair(mem_raw, SyAstType::VAL_TYPE_INT);
+			return std::make_tuple(mem_raw, SyAstType::VAL_TYPE_INT);
 		}
 	}
-	return std::make_pair(nullptr, SyAstType::END_OF_ENUM);
+	return std::make_tuple(nullptr, SyAstType::END_OF_ENUM);
 }
 
-std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
+std::tuple<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 	// Stmt -> LVal '=' Exp ';' | [Exp] ';' | Block
 	//| 'if' '(' Cond ')' Stmt [ 'else' Stmt ]
 	//| 'while' '(' Cond ')' Stmt
 	//| 'break' ';' | 'continue' ';'
 	//| 'return' [Exp] ';'
 	bool cond;
-	std::pair<StmtState, Value> ret(StmtState::END_OF_ENUM, Value());
-	std::pair<StmtState, Value> callee_ret(StmtState::END_OF_ENUM, Value());
+	std::tuple<StmtState, Value> ret(StmtState::END_OF_ENUM, Value());
+	std::tuple<StmtState, Value> callee_ret(StmtState::END_OF_ENUM, Value());
 	if (stmt->a_ == nullptr) {
 		// null statement
 		return ret;
@@ -691,14 +697,14 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 			cond = expDispatcher(stmt->b_->a_).i32;
 			symbol_table_->enterScope();
 			while (cond) {
-				callee_ret = stmtHandler(stmt->c_);
-				if (callee_ret.first == StmtState::BREAK) {
+				auto [state, val] = stmtHandler(stmt->c_);
+				if (state == StmtState::BREAK) {
 					return ret;
 				}
-				if (callee_ret.first == StmtState::RETURN) {
+				if (state == StmtState::RETURN) {
 					return callee_ret;
 				}
-				if (callee_ret.first == StmtState::CONTINUE) {
+				if (state == StmtState::CONTINUE) {
 					// no problem, we go on!
 					// do nothing
 				}
@@ -707,17 +713,17 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 			symbol_table_->exitScope();
 			return ret;
 		case SyAstType::STM_BREAK:
-			ret.first = StmtState::BREAK;
+			std::get<0>(ret) = StmtState::BREAK;
 			return ret;
 		case SyAstType::STM_CONTINUE:
-			ret.first = StmtState::CONTINUE;
+			std::get<0>(ret) = StmtState::CONTINUE;
 			return ret;
 		case SyAstType::STM_RETURN:
 			// TODO: check if the return val type is correct
 			if (stmt->b_ != nullptr) {
-				ret.second = expDispatcher(stmt->b_);
+				std::get<1>(ret) = expDispatcher(stmt->b_);
 			}
-			ret.first = StmtState::RETURN;
+			std::get<0>(ret) = StmtState::RETURN;
 			return ret;
 		default:
 			break;
@@ -725,13 +731,13 @@ std::pair<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
 	// LVal '=' Exp ';' | [Exp] ';' | Block
 	if (stmt->a_->getEbnfType() == SyEbnfType::LVal) {
 		// LVal '=' Exp ';'
-		auto l_val     = stmt->a_;
-		auto l_val_ret = lValLeftHandler(l_val);
-		auto exp       = stmt->b_;
-		auto exp_val   = expDispatcher(exp);
-		if (l_val_ret.second == SyAstType::VAL_TYPE_INT) {
-			*((int*)l_val_ret.first) = exp_val.i32;
-		} else if (l_val_ret.second == SyAstType::VAL_TYPE_CONST_INT) {
+		auto l_val       = stmt->a_;
+		auto [mem, type] = lValLeftHandler(l_val);
+		auto exp         = stmt->b_;
+		auto exp_val     = expDispatcher(exp);
+		if (type == SyAstType::VAL_TYPE_INT) {
+			*(reinterpret_cast<int*>(mem)) = exp_val.i32;
+		} else if (type == SyAstType::VAL_TYPE_CONST_INT) {
 			interpretError("can't assign to a const variable", exp->line_);
 		}
 	} else if (stmt->a_->getEbnfType() == SyEbnfType::Exp) {
@@ -761,4 +767,39 @@ int Interpreter::exec() {
 		execOneCompUnit(comp_unit);
 	}
 	return 0;
+}
+
+// FIXME:
+// alright, the init val handle is really tricky, i just skip it right now
+
+// helper function to transform a InitValAstNode to a Value return a std::tuple,
+// the first is wheather it can transform to a Value, true for yes, false for
+// no, second for the Value it self
+static std::tuple<bool, Value> toNumber(AstNodePtr init_val,
+                                        Interpreter* interpreter) {
+	if (init_val->getEbnfType() == SyEbnfType::Exp) {
+		auto exp_val = interpreter->expDispatcher(init_val);
+		return std::make_tuple(true, exp_val);
+	} else {
+		return std::make_tuple(false, Value());
+	}
+}
+
+void Interpreter::setInitValMemoryLayout(
+    int dimension, std::vector<unsigned int> size_for_dimension, Value* mem_raw,
+    AstNodePtr init_val) {
+	AstNodePtr current_init_val = init_val->a_;
+	for (int i = 0; i < size_for_dimension[dimension]; i++) {
+		if (current_init_val == nullptr) {
+			return;
+		}
+		auto [state, value] = toNumber(current_init_val, this);
+		if (state == false) {
+			// this means current_init_val is also a list, so we jump to the
+			// next dimension
+			// TODO
+		} else {
+			mem_raw[i] = value;
+		}
+	}
 }

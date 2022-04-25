@@ -4,6 +4,7 @@
 #include <llvm/IR/Function.h>
 
 #include <string>
+#include <tuple>
 
 #include "syparse.h"
 #include "sysymbol_table.h"
@@ -92,9 +93,13 @@ class Interpreter : public InterpreterAPI {
 	void variableIdentTyper(AstNodePtr ident, SyEbnfType type_enum);
 	void variableIdentTyper(AstNodePtr ident, AstNodePtr type);
 
-	std::pair<StmtState, Value> blockHandler(AstNodePtr block);
-	std::pair<StmtState, Value> stmtHandler(AstNodePtr stmt);
-	std::pair<char*, SyAstType> lValLeftHandler(AstNodePtr l_val);
+	void setInitValMemoryLayout(int dimension,
+	                            std::vector<unsigned int> size_for_dimension,
+	                            Value* mem_raw, AstNodePtr init_val);
+
+	std::tuple<StmtState, Value> blockHandler(AstNodePtr block);
+	std::tuple<StmtState, Value> stmtHandler(AstNodePtr stmt);
+	std::tuple<char*, SyAstType> lValLeftHandler(AstNodePtr l_val);
 
    public:
 	int exec();
