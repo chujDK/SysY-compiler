@@ -4,6 +4,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "sytype.h"
 #include "utils.h"
@@ -67,11 +68,6 @@ struct AstNodeBase {
 	virtual void setAstType(enum SyAstType type)   = 0;
 	virtual void setEbnfType(enum SyEbnfType type) = 0;
 
-	virtual void Accept(AstNodeVisitor* visitor) = 0;
-	// FIXME: to use the irGen virtual method, the compiler's componet should be
-	// accessed globally, currently i don't know how to make it right
-	virtual void irGen()                         = 0;
-	virtual void checkSemantic()                 = 0;
 	virtual AstNodePtr getAstParent()            = 0;
 	virtual void setAstParent(AstNodePtr parent) = 0;
 
@@ -95,9 +91,6 @@ class TokenAstNode : public AstNodeBase {
 	void setAstType(enum SyAstType type) { ast_type_ = type; }
 	void setEbnfType(enum SyEbnfType type) { DEBUG_ASSERT_NOT_REACH }
 	void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
-	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
-	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
-	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
 	virtual AstNodePtr getAstParent() { return nullptr; }
 };
 
@@ -124,9 +117,6 @@ class AstNode : public AstNodeBase {
 	void setAstType(enum SyAstType type) { DEBUG_ASSERT_NOT_REACH }
 	void setEbnfType(enum SyEbnfType type) { ebnf_type_ = type; }
 
-	virtual void Accept(AstNodeVisitor* visitor) { DEBUG_ASSERT_NOT_REACH }
-	virtual void irGen() { DEBUG_ASSERT_NOT_REACH }
-	virtual void checkSemantic() { DEBUG_ASSERT_NOT_REACH }
 	virtual AstNodePtr getAstParent() { return nullptr; }
 	virtual void setAstParent(AstNodePtr parent) { DEBUG_ASSERT_NOT_REACH }
 };
@@ -141,168 +131,148 @@ class CompUnitAstNode : public AstNode {
 	class iterator : public AstIterator {};
 
    public:
-	CompUnitAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	CompUnitAstNode(int line) : AstNode(SyEbnfType::CompUnit, line) {}
 };
 
 class DeclAstNode : public AstNode {
    public:
-	DeclAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	DeclAstNode(int line) : AstNode(SyEbnfType::Decl, line) {}
 };
 
 class ConstDeclAstNode : public AstNode {
    public:
-	ConstDeclAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	ConstDeclAstNode(int line) : AstNode(SyEbnfType::ConstDecl, line) {}
 };
 
 class BTypeAstNode : public AstNode {
    public:
-	BTypeAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	BTypeAstNode(int line) : AstNode(SyEbnfType::BType, line) {}
 };
 
 class ConstDefAstNode : public AstNode {
    public:
-	ConstDefAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	ConstDefAstNode(int line) : AstNode(SyEbnfType::ConstDef, line) {}
 };
 
 class ConstInitValAstNode : public AstNode {
    public:
-	ConstInitValAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	ConstInitValAstNode(int line) : AstNode(SyEbnfType::ConstInitVal, line) {}
 };
 
 class VarDeclAstNode : public AstNode {
    public:
-	VarDeclAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	VarDeclAstNode(int line) : AstNode(SyEbnfType::VarDecl, line) {}
 };
 
 class VarDefAstNode : public AstNode {
    public:
-	VarDefAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	VarDefAstNode(int line) : AstNode(SyEbnfType::VarDef, line) {}
 };
 
 class InitValAstNode : public AstNode {
+	// this part is very tricky.
    public:
-	InitValAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	InitValAstNode(int line) : AstNode(SyEbnfType::InitVal, line) {}
 };
 
 class FuncDefAstNode : public AstNode {
    public:
-	FuncDefAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	FuncDefAstNode(int line) : AstNode(SyEbnfType::FuncDef, line) {}
 };
 
 class FuncTypeAstNode : public AstNode {
    public:
-	FuncTypeAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	FuncTypeAstNode(int line) : AstNode(SyEbnfType::FuncType, line) {}
 };
 
 class FuncFParamsAstNode : public AstNode {
    public:
-	FuncFParamsAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	FuncFParamsAstNode(int line) : AstNode(SyEbnfType::FuncFParams, line) {}
 };
 
 class FuncFParamAstNode : public AstNode {
    public:
-	FuncFParamAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	FuncFParamAstNode(int line) : AstNode(SyEbnfType::FuncFParam, line) {}
 };
 
 class BlockAstNode : public AstNode {
    public:
-	BlockAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	BlockAstNode(int line) : AstNode(SyEbnfType::Block, line) {}
 };
 
 class BlockItemAstNode : public AstNode {
    public:
-	BlockItemAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	BlockItemAstNode(int line) : AstNode(SyEbnfType::BlockItem, line) {}
 };
 
 class StmtAstNode : public AstNode {
    public:
-	StmtAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	StmtAstNode(int line) : AstNode(SyEbnfType::Stmt, line) {}
 };
 
 class ExpAstNode : public AstNode {
    public:
-	ExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	ExpAstNode(int line) : AstNode(SyEbnfType::Exp, line) {}
 };
 
 class CondAstNode : public AstNode {
    public:
-	CondAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	CondAstNode(int line) : AstNode(SyEbnfType::Cond, line) {}
 };
 
 class LValAstNode : public AstNode {
    public:
-	LValAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	LValAstNode(int line) : AstNode(SyEbnfType::LVal, line) {}
 };
 
 class PrimaryExpAstNode : public AstNode {
    public:
-	PrimaryExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	PrimaryExpAstNode(int line) : AstNode(SyEbnfType::PrimaryExp, line) {}
 };
 
 class NumberAstNode : public AstNode {
    public:
-	NumberAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	NumberAstNode(int line) : AstNode(SyEbnfType::Number, line) {}
 };
@@ -312,8 +282,7 @@ class UnaryExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	UnaryExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	UnaryExpAstNode(int line) : AstNode(SyEbnfType::UnaryExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -322,16 +291,14 @@ class UnaryExpAstNode : public AstNode {
 
 class UnaryOpAstNode : public AstNode {
    public:
-	UnaryOpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	UnaryOpAstNode(int line) : AstNode(SyEbnfType::UnaryOp, line) {}
 };
 
 class FuncRParamsAstNode : public AstNode {
    public:
-	FuncRParamsAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	FuncRParamsAstNode(int line) : AstNode(SyEbnfType::FuncRParams, line) {}
 };
@@ -341,8 +308,7 @@ class MulExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	MulExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	MulExpAstNode(int line) : AstNode(SyEbnfType::MulExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -354,8 +320,7 @@ class AddExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	AddExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	AddExpAstNode(int line) : AstNode(SyEbnfType::AddExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -367,8 +332,7 @@ class RelExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	RelExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	RelExpAstNode(int line) : AstNode(SyEbnfType::RelExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -380,8 +344,7 @@ class EqExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	EqExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	EqExpAstNode(int line) : AstNode(SyEbnfType::EqExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -393,8 +356,7 @@ class LAndExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	LAndExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -406,8 +368,7 @@ class LOrExpAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	LOrExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
@@ -416,8 +377,7 @@ class LOrExpAstNode : public AstNode {
 
 class ConstExpAstNode : public AstNode {
    public:
-	ConstExpAstNode(enum SyEbnfType ebnf_type, int line)
-	    : AstNode(ebnf_type, line) {}
+	using AstNode::AstNode;
 
 	ConstExpAstNode(int line) : AstNode(SyEbnfType::ConstExp, line) {}
 };
@@ -428,8 +388,7 @@ class EAstNode : public AstNode {
 	std::weak_ptr<AstNodeBase> parent_;
 
    public:
-	EAstNode(enum SyEbnfType ebnf_type, int line) : AstNode(ebnf_type, line) {}
-
+	using AstNode::AstNode;
 	EAstNode(int line) : AstNode(SyEbnfType::E, line) {}
 	void setAstParent(std::shared_ptr<AstNodeBase> parent) { parent_ = parent; }
 	AstNodePtr getAstParent() { return parent_.lock(); }

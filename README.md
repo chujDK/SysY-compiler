@@ -16,7 +16,7 @@ Currently my intention is to implement a simple jit compiler (of course this int
 
 #### refactor
 
-将所有的代码生成变成使用各类重写的 irGen 方法
+~~将所有的代码生成变成使用各类重写的 irGen 方法~~ 不知道该怎么设计555
 ### Pre-requirement
 
 clang-12+llvm is needed as the jit compiler will use llvm ir. In ubuntu20.04, just use apt to install them.

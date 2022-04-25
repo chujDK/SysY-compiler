@@ -8,7 +8,7 @@ SRC=$(foreach x, $(SRC_DIR), ${x}/*.cc)
 LIB_DIR=./include
 LIB=$(foreach x, $(LIB_DIR), ${x}/*.h)
 BIN_DIR=./bin
-CXXFLAGS=-gdwarf-2 -ggdb -frtti# -fsanitize=address
+CXXFLAGS=-std=c++2a -gdwarf-2 -ggdb -frtti# -fsanitize=address
 DEFINE=-DDEBUG
 LLVMFLAGS=`llvm-config --cxxflags --ldflags --libs --libfiles --system-libs`
 
