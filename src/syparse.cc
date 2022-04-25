@@ -335,7 +335,7 @@ void Parser::parseError(std::string msg, int line) {
 	error_occured_ = 1;
 }
 
-std::string Lexer::getString() {
+std::string&& Lexer::getString() {
 	std::string str;
 	lexWarning("string is no supported yet, complier will stop after scaning");
 	error_occured_ = 1;
@@ -373,10 +373,10 @@ std::string Lexer::getString() {
 		}
 		str += c;
 	}
-	return str;
+	return std::move(str);
 }
 
-std::string Lexer::getNumber() {
+std::string&& Lexer::getNumber() {
 	std::string num_str;
 	char c;
 	if (input_stream_->peakChar() == '0' &&
@@ -388,7 +388,7 @@ std::string Lexer::getNumber() {
 			c = input_stream_->getChar();
 			if (c == EOF) {
 				lexError(std::string("unexpected EOF in hex number"));
-				return std::string("0");
+				return std::move(std::string("0"));
 			}
 			if (c == '_') {
 				continue;
@@ -414,7 +414,7 @@ std::string Lexer::getNumber() {
 			c = input_stream_->getChar();
 			if (c == EOF) {
 				lexError(std::string("unexpected EOF in oct number"));
-				return std::string("0");
+				return std::move(std::string("0"));
 			}
 			if (isEndForIdentAndNumber(c)) {
 				input_stream_->ungetChar();
@@ -433,7 +433,7 @@ std::string Lexer::getNumber() {
 			c = input_stream_->getChar();
 			if (c == EOF) {
 				lexError(std::string("unexpected EOF in decimal number"));
-				return std::string("0");
+				return std::move(std::string("0"));
 			}
 			if (isEndForIdentAndNumber(c)) {
 				input_stream_->ungetChar();
@@ -446,7 +446,7 @@ std::string Lexer::getNumber() {
 			num_str += c;
 		}
 	}
-	return num_str;
+	return std::move(num_str);
 }
 
 TokenPtr Lexer::getIdent() {
@@ -753,7 +753,7 @@ TokenPtr Lexer::getNextTokenInternal() {
 		}
 		if (isDigit(current_char)) {
 			return AstNodePool::get(SyAstType::INT_IMM, line_,
-			                        std::move(getNumber()));  // FIXME
+			                        std::move(getNumber()));
 		} else if (isIdentStart(current_char)) {
 			return getIdent();
 		} else {

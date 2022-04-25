@@ -425,8 +425,8 @@ class Lexer {
 
 	void lexError(std::string msg);
 	void lexWarning(std::string msg);
-	std::string getString();
-	std::string getNumber();
+	std::string&& getString();
+	std::string&& getNumber();
 	TokenPtr getIdent();
 	TokenPtr getNextTokenInternal();
 	TokenPtrIter getNextToken();
@@ -467,7 +467,7 @@ class Lexer {
 	}
 
 	Lexer(InputStream* input_stream)
-	    : line_(1), input_stream_(input_stream), token_stream_() {
+	    : input_stream_(input_stream), line_(1), token_stream_() {
 		current_token_ = token_stream_.begin();
 	}
 	~Lexer() { delete input_stream_; }
