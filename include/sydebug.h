@@ -9,40 +9,40 @@ void astWalkThrough(AstNodePtr node, int level);
 // this class is mainly for test
 class CharStream : public InputStream {
    private:
-	const char* buf;
-	int buf_size;
-	int buf_pos;
+    const char* buf;
+    int buf_size;
+    int buf_pos;
 
    public:
-	// this class is made to read the input "file"
-	char getChar();         // get the current char
-	char peakChar();        // get the current char
-	char peakNextChar();    // get the next char
-	void ungetChar();       // unget the current char
-	std::string getLine();  // get the current line
+    // this class is made to read the input "file"
+    char getChar();         // get the current char
+    char peakChar();        // get the current char
+    char peakNextChar();    // get the next char
+    void ungetChar();       // unget the current char
+    std::string getLine();  // get the current line
 
-	CharStream(const char* _buf, int _buf_size)
-	    : buf(_buf), buf_size(_buf_size), buf_pos(0) {}
-	~CharStream() {}
+    CharStream(const char* _buf, int _buf_size)
+        : buf(_buf), buf_size(_buf_size), buf_pos(0) {}
+    ~CharStream() {}
 };
 
 // this class is very plain, just read all the file into a buffer
 // then delegate the work to CharStream
 class FileStream : public InputStream {
    private:
-	CharStream* char_stream_;
-	char* buf_;
+    CharStream* char_stream_;
+    char* buf_;
 
    public:
-	// this class is made to read the input "file"
-	char getChar();         // get the current char
-	char peakChar();        // get the current char
-	char peakNextChar();    // get the next char
-	void ungetChar();       // unget the current char
-	std::string getLine();  // get the current line
+    // this class is made to read the input "file"
+    char getChar();         // get the current char
+    char peakChar();        // get the current char
+    char peakNextChar();    // get the next char
+    void ungetChar();       // unget the current char
+    std::string getLine();  // get the current line
 
-	FileStream(const char* file_name);
-	~FileStream();
+    FileStream(const char* file_name);
+    ~FileStream();
 };
 
 void debugInfoInit();

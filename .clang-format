@@ -2,5 +2,5 @@ Language: Cpp
 BasedOnStyle: Google
 TabWidth: 4
 AlignConsecutiveAssignments: true
-UseTab: ForIndentation
+UseTab: Never
 IndentWidth: 4

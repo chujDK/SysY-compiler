@@ -1,4 +1,4 @@
-int main(int a, int b) {
+int foo(int a, int b) {
     a + 1 + b;
     a * 2 + b;
     b / 2 + a;
@@ -25,4 +25,17 @@ int main(int a, int b) {
     d = 20;
 
     return (a + b) + ((a + b) * 2) * ((a + b) * 2);
+}
+
+int main() {
+    int c;
+    int d = foo(1, 2);
+    if (d > 0x100) {
+        c = 1;
+    }
+    else {
+        c = 0;
+    }
+
+    return c;
 }
