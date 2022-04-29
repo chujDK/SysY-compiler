@@ -346,6 +346,8 @@ class UnaryOpAstNode : public AstNode {
 
     UnaryOpAstNode(int line) : AstNode(SyEbnfType::UnaryOp, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr op() { return a_; }
 };
 
 class FuncRParamsAstNode : public AstNode {

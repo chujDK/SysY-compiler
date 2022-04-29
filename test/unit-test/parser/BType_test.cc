@@ -14,7 +14,7 @@ class BTypeVisitor : public AstNodeBase::AstNodeVisitor {
     }
 };
 
-class ParserTest : private Parser {
+class ParserTest : public Parser {
    public:
     using Parser::Parser;
     void testBType() {
