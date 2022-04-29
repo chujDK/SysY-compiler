@@ -2459,3 +2459,12 @@ AstNodePtr Parser::parse() {
     }
     return node;
 }
+
+// here define all the visitor accept
+#define DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE(type)         \
+    void type##AstNode::accept(AstNodeVisitor& visitor) { \
+        visitor.visit##type(*this);                       \
+    }
+
+SY_EBNF_TYPE_LIST(DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE)
+#undef DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE

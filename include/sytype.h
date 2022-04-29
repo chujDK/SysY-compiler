@@ -121,4 +121,39 @@ enum class SyEbnfType {
     END_OF_ENUM
 };
 
+#define SY_EBNF_TYPE_LIST(F) \
+    F(CompUnit)              \
+    F(Decl)                  \
+    F(ConstDecl)             \
+    F(BType)                 \
+    F(ConstDef)              \
+    F(ConstInitVal)          \
+    F(VarDecl)               \
+    F(VarDef)                \
+    F(InitVal)               \
+    F(FuncDef)               \
+    F(FuncType)              \
+    F(FuncFParams)           \
+    F(FuncFParam)            \
+    F(Block)                 \
+    F(BlockItem)             \
+    F(Stmt)                  \
+    F(Exp)                   \
+    F(Cond)                  \
+    F(LVal)                  \
+    F(PrimaryExp)            \
+    F(Number)                \
+    F(UnaryExp)              \
+    F(UnaryOp)               \
+    F(FuncRParams)           \
+    F(MulExp)                \
+    F(AddExp)                \
+    F(RelExp)                \
+    F(EqExp)                 \
+    F(LAndExp)               \
+    F(LOrExp)                \
+    F(ConstExp)              \
+    F(E)                     \
+    F(Token)
+
 #endif

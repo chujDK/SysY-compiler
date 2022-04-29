@@ -39,11 +39,6 @@ class InputStream {
 #define DEBUG_ASSERT_NOT_REACH
 #endif
 
-class AstNodeVisitor {
-   public:
-    virtual ~AstNodeVisitor() {}
-};
-
 struct AstNodeBase {
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
@@ -72,6 +67,9 @@ struct AstNodeBase {
     virtual void setAstParent(AstNodePtr parent) = 0;
 
     AstNodeBase(int line) : line_(line) { u_.const_val_ = UINT32_MAX; }
+
+    class AstNodeVisitor;
+    virtual void accept(AstNodeVisitor& visitor) = 0;
 };
 
 class TokenAstNode : public AstNodeBase {
@@ -92,6 +90,8 @@ class TokenAstNode : public AstNodeBase {
     void setEbnfType(enum SyEbnfType type) override { DEBUG_ASSERT_NOT_REACH }
     void setAstParent(AstNodePtr parent) override { DEBUG_ASSERT_NOT_REACH }
     virtual AstNodePtr getAstParent() override { return nullptr; }
+
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class AstNode : public AstNodeBase {
@@ -121,6 +121,10 @@ class AstNode : public AstNodeBase {
     virtual void setAstParent(AstNodePtr parent) override {
         DEBUG_ASSERT_NOT_REACH
     }
+
+    virtual void accept(AstNodeVisitor& visitor) override {
+        DEBUG_ASSERT_NOT_REACH
+    }
 };
 
 class AstIterator {
@@ -136,6 +140,10 @@ class CompUnitAstNode : public AstNode {
     using AstNode::AstNode;
 
     CompUnitAstNode(int line) : AstNode(SyEbnfType::CompUnit, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr decl() { return a_; }
+    AstNodePtr func_def() { return a_; }
 };
 
 class DeclAstNode : public AstNode {
@@ -143,6 +151,10 @@ class DeclAstNode : public AstNode {
     using AstNode::AstNode;
 
     DeclAstNode(int line) : AstNode(SyEbnfType::Decl, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr const_decl() { return a_; }
+    AstNodePtr var_decl() { return a_; }
 };
 
 class ConstDeclAstNode : public AstNode {
@@ -150,6 +162,10 @@ class ConstDeclAstNode : public AstNode {
     using AstNode::AstNode;
 
     ConstDeclAstNode(int line) : AstNode(SyEbnfType::ConstDecl, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr b_type() { return a_; }
+    AstNodePtr const_def() { return b_; }
 };
 
 class BTypeAstNode : public AstNode {
@@ -157,6 +173,9 @@ class BTypeAstNode : public AstNode {
     using AstNode::AstNode;
 
     BTypeAstNode(int line) : AstNode(SyEbnfType::BType, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr token() { return a_; }
 };
 
 class ConstDefAstNode : public AstNode {
@@ -164,6 +183,11 @@ class ConstDefAstNode : public AstNode {
     using AstNode::AstNode;
 
     ConstDefAstNode(int line) : AstNode(SyEbnfType::ConstDef, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr ident() { return a_; }
+    AstNodePtr const_exp() { return b_; }
+    AstNodePtr const_init_val() { return c_; }
 };
 
 class ConstInitValAstNode : public AstNode {
@@ -171,6 +195,10 @@ class ConstInitValAstNode : public AstNode {
     using AstNode::AstNode;
 
     ConstInitValAstNode(int line) : AstNode(SyEbnfType::ConstInitVal, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr const_exp() { return a_; }
+    AstNodePtr const_init_val() { return a_; }
 };
 
 class VarDeclAstNode : public AstNode {
@@ -178,6 +206,10 @@ class VarDeclAstNode : public AstNode {
     using AstNode::AstNode;
 
     VarDeclAstNode(int line) : AstNode(SyEbnfType::VarDecl, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr b_type() { return a_; }
+    AstNodePtr var_def() { return b_; }
 };
 
 class VarDefAstNode : public AstNode {
@@ -185,6 +217,7 @@ class VarDefAstNode : public AstNode {
     using AstNode::AstNode;
 
     VarDefAstNode(int line) : AstNode(SyEbnfType::VarDef, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class InitValAstNode : public AstNode {
@@ -193,6 +226,7 @@ class InitValAstNode : public AstNode {
     using AstNode::AstNode;
 
     InitValAstNode(int line) : AstNode(SyEbnfType::InitVal, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class FuncDefAstNode : public AstNode {
@@ -200,6 +234,7 @@ class FuncDefAstNode : public AstNode {
     using AstNode::AstNode;
 
     FuncDefAstNode(int line) : AstNode(SyEbnfType::FuncDef, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class FuncTypeAstNode : public AstNode {
@@ -207,6 +242,7 @@ class FuncTypeAstNode : public AstNode {
     using AstNode::AstNode;
 
     FuncTypeAstNode(int line) : AstNode(SyEbnfType::FuncType, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class FuncFParamsAstNode : public AstNode {
@@ -214,6 +250,7 @@ class FuncFParamsAstNode : public AstNode {
     using AstNode::AstNode;
 
     FuncFParamsAstNode(int line) : AstNode(SyEbnfType::FuncFParams, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class FuncFParamAstNode : public AstNode {
@@ -221,6 +258,7 @@ class FuncFParamAstNode : public AstNode {
     using AstNode::AstNode;
 
     FuncFParamAstNode(int line) : AstNode(SyEbnfType::FuncFParam, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class BlockAstNode : public AstNode {
@@ -228,6 +266,7 @@ class BlockAstNode : public AstNode {
     using AstNode::AstNode;
 
     BlockAstNode(int line) : AstNode(SyEbnfType::Block, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class BlockItemAstNode : public AstNode {
@@ -235,6 +274,7 @@ class BlockItemAstNode : public AstNode {
     using AstNode::AstNode;
 
     BlockItemAstNode(int line) : AstNode(SyEbnfType::BlockItem, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class StmtAstNode : public AstNode {
@@ -242,6 +282,7 @@ class StmtAstNode : public AstNode {
     using AstNode::AstNode;
 
     StmtAstNode(int line) : AstNode(SyEbnfType::Stmt, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class ExpAstNode : public AstNode {
@@ -249,6 +290,7 @@ class ExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     ExpAstNode(int line) : AstNode(SyEbnfType::Exp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class CondAstNode : public AstNode {
@@ -256,6 +298,7 @@ class CondAstNode : public AstNode {
     using AstNode::AstNode;
 
     CondAstNode(int line) : AstNode(SyEbnfType::Cond, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class LValAstNode : public AstNode {
@@ -263,6 +306,7 @@ class LValAstNode : public AstNode {
     using AstNode::AstNode;
 
     LValAstNode(int line) : AstNode(SyEbnfType::LVal, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class PrimaryExpAstNode : public AstNode {
@@ -270,6 +314,7 @@ class PrimaryExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     PrimaryExpAstNode(int line) : AstNode(SyEbnfType::PrimaryExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class NumberAstNode : public AstNode {
@@ -277,6 +322,7 @@ class NumberAstNode : public AstNode {
     using AstNode::AstNode;
 
     NumberAstNode(int line) : AstNode(SyEbnfType::Number, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class UnaryExpAstNode : public AstNode {
@@ -287,6 +333,7 @@ class UnaryExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     UnaryExpAstNode(int line) : AstNode(SyEbnfType::UnaryExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -298,6 +345,7 @@ class UnaryOpAstNode : public AstNode {
     using AstNode::AstNode;
 
     UnaryOpAstNode(int line) : AstNode(SyEbnfType::UnaryOp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class FuncRParamsAstNode : public AstNode {
@@ -305,6 +353,7 @@ class FuncRParamsAstNode : public AstNode {
     using AstNode::AstNode;
 
     FuncRParamsAstNode(int line) : AstNode(SyEbnfType::FuncRParams, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class MulExpAstNode : public AstNode {
@@ -315,6 +364,7 @@ class MulExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     MulExpAstNode(int line) : AstNode(SyEbnfType::MulExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -329,6 +379,7 @@ class AddExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     AddExpAstNode(int line) : AstNode(SyEbnfType::AddExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -343,6 +394,7 @@ class RelExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     RelExpAstNode(int line) : AstNode(SyEbnfType::RelExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -357,6 +409,7 @@ class EqExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     EqExpAstNode(int line) : AstNode(SyEbnfType::EqExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -371,6 +424,7 @@ class LAndExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -385,6 +439,7 @@ class LOrExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -396,6 +451,7 @@ class ConstExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     ConstExpAstNode(int line) : AstNode(SyEbnfType::ConstExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
 };
 
 class EAstNode : public AstNode {
@@ -406,10 +462,19 @@ class EAstNode : public AstNode {
    public:
     using AstNode::AstNode;
     EAstNode(int line) : AstNode(SyEbnfType::E, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
     AstNodePtr getAstParent() override { return parent_.lock(); }
+};
+
+class AstNodeBase::AstNodeVisitor {
+   public:
+#define DEF_VISIT_FUNC(type) virtual void visit##type(type##AstNode& node) = 0;
+    SY_EBNF_TYPE_LIST(DEF_VISIT_FUNC)
+#undef DEF_VISIT_FUNC
+    virtual ~AstNodeVisitor() {}
 };
 
 using TokenPtrIter = typename std::list<TokenPtr>::iterator;
