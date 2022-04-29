@@ -28,13 +28,15 @@ sudo apt install llvm
 
 ### Usage
 
-- type `make sylexer` to make the lexer
-- type `make syparser` to make the parser
-- type `make syinterpreter` to make the interpreter
-- type `make test-lexer` to feed all testcases in `/test/testcase/*.sy` to sylexer
-- type `make test-parser` to feed all testcases in `/test/testcase/*.sy` to syparser
-- type `make clean` to delete all binary
-- type `make all` to make both the lexer and parser
+this project use CMake for building
+
+use following command to build
+
+```
+mkdir build && cd ./build
+cmake .. -DLLVM_DIR=$(llvm-config --cmakedir) -DCMAKE_CXX_COMPILER="clang++"
+make all -j$(nproc)
+```
 
 ### Note
 

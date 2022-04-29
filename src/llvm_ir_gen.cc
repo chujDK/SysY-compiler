@@ -1,9 +1,9 @@
 #include "llvm_ir_gen.h"
 
-#include <llvm-10/llvm/IR/PassManager.h>
-#include <llvm-10/llvm/Passes/PassBuilder.h>
-#include <llvm-10/llvm/Support/raw_ostream.h>
 #include <llvm/IR/Attributes.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <cassert>
 #include <map>
@@ -593,7 +593,7 @@ llvm::Function* JITCompiler::functionDefinitionLLVMIrGen(AstNodePtr func) {
     // TODO: maybe we should do a error handling?
     blockIRGen(func->d_);
 
-#ifdef DEBUG
+#ifdef DO_OPT
     // do the opt here
     //	module_pass_manager_->run(*module_, *module_analysis_manager_);
     // Create the analysis managers.

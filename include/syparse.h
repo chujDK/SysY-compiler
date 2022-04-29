@@ -175,7 +175,7 @@ class BTypeAstNode : public AstNode {
     BTypeAstNode(int line) : AstNode(SyEbnfType::BType, line) {}
     void accept(AstNodeVisitor& visitor) override;
 
-    AstNodePtr token() { return a_; }
+    AstNodePtr type() { return a_; }
 };
 
 class ConstDefAstNode : public AstNode {
@@ -471,7 +471,8 @@ class EAstNode : public AstNode {
 
 class AstNodeBase::AstNodeVisitor {
    public:
-#define DEF_VISIT_FUNC(type) virtual void visit##type(type##AstNode& node) = 0;
+#define DEF_VISIT_FUNC(type) \
+    virtual void visit##type(type##AstNode& node){DEBUG_ASSERT_NOT_REACH};
     SY_EBNF_TYPE_LIST(DEF_VISIT_FUNC)
 #undef DEF_VISIT_FUNC
     virtual ~AstNodeVisitor() {}
@@ -556,6 +557,9 @@ class Parser : ParserAPI {
     bool end_parse_;
 
     void parseError(std::string msg, int line);
+
+    // they are protected instead of private is mainly for testing
+   protected:
     AstNodePtr BType();         // no error handling
     AstNodePtr CompUnit();      // no error handling
     AstNodePtr Decl();          // no error handling

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 project(sycompiler)
 
@@ -12,9 +12,13 @@ include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
-aux_source_directory(./src/ DIR_SRC)
-include_directories(./include)
-add_definitions(-DLEXER)
+enable_testing()
+
+# set the flags
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -Og -DDEBUG")
+
+aux_source_directory(${CMAKE_SOURCE_DIR}/src/ DIR_SRC)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(lexer ./test/lexer.cc ${DIR_SRC})
 add_executable(parser ./test/parser.cc ${DIR_SRC})
 add_executable(interpreter ./test/interpreter.cc ${DIR_SRC})
@@ -24,3 +28,5 @@ target_link_libraries(lexer ${llvm_libs})
 target_link_libraries(parser ${llvm_libs})
 target_link_libraries(interpreter ${llvm_libs})
 target_link_libraries(compiler ${llvm_libs})
+
+add_subdirectory(test)
