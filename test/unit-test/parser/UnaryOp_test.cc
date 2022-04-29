@@ -12,7 +12,7 @@ class UnaryOpVisitor : public AstNodeBase::AstNodeVisitor {
         type_return_ = op->getAstType();
     }
 };
-class UnaryOpTest : public Parser {
+class TestParser : public Parser {
    public:
     using Parser::Parser;
     void testUnaryOp() {
@@ -35,4 +35,6 @@ TEST(UnaryOpTest, unary_op_test) {
     const char* test_input = "+-! ";
 
     CharStream* cs = new CharStream(test_input, strlen(test_input));
+    TestParser parser(cs);
+    parser.testUnaryOp();
 }
