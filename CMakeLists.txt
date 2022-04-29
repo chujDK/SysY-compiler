@@ -15,7 +15,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 enable_testing()
 
 # set the flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -Og -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -Og -DDEBUG -Wall")
 
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ DIR_SRC)
 include_directories(${CMAKE_SOURCE_DIR}/include)

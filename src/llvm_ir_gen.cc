@@ -94,6 +94,7 @@ llvm::Value* JITCompiler::compilerError(std::string msg, int line) {
 }
 
 llvm::Value* JITCompiler::numberIRGen(AstNodePtr number) {
+    // FIXME: stoi will throw exception if the string is out of int
     int value = std::stoi(number->a_->getLiteral());
     return llvm::ConstantInt::get(context_, llvm::APInt(32, value, true));
 }

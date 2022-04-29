@@ -99,6 +99,7 @@ Value Interpreter::expDispatcher(AstNodePtr exp) {
 
 Value Interpreter::numberHandler(AstNodePtr exp) {
     Value ret;
+    // FIXME: stoi will throw exception if the string is out of int
     ret.i32 = std::stoi(exp->a_->getLiteral());
     return ret;
 }
