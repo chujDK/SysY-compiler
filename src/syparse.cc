@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <utility>
 
 static void adjustExpLAst(AstNodePtr node);
 static AstNodePtr adjustExpAst(AstNodePtr node);
@@ -335,7 +336,7 @@ void Parser::parseError(std::string msg, int line) {
     error_occured_ = 1;
 }
 
-std::string&& Lexer::getString() {
+std::string Lexer::getString() {
     std::string str;
     lexWarning("string is no supported yet, complier will stop after scaning");
     error_occured_ = 1;
@@ -373,10 +374,12 @@ std::string&& Lexer::getString() {
         }
         str += c;
     }
-    return std::move(str);
+    return str;
 }
 
-std::string&& Lexer::getNumber() {
+// if the case is [number][EOF], we take the [EOF] is "in" the [number] and
+// report an error
+std::string Lexer::getNumber() {
     std::string num_str;
     char c;
     if (input_stream_->peakChar() == '0' &&
@@ -388,7 +391,7 @@ std::string&& Lexer::getNumber() {
             c = input_stream_->getChar();
             if (c == EOF) {
                 lexError(std::string("unexpected EOF in hex number"));
-                return std::move(std::string("0"));
+                return std::string("0");
             }
             if (c == '_') {
                 continue;
@@ -414,7 +417,7 @@ std::string&& Lexer::getNumber() {
             c = input_stream_->getChar();
             if (c == EOF) {
                 lexError(std::string("unexpected EOF in oct number"));
-                return std::move(std::string("0"));
+                return std::string("0");
             }
             if (isEndForIdentAndNumber(c)) {
                 input_stream_->ungetChar();
@@ -433,7 +436,7 @@ std::string&& Lexer::getNumber() {
             c = input_stream_->getChar();
             if (c == EOF) {
                 lexError(std::string("unexpected EOF in decimal number"));
-                return std::move(std::string("0"));
+                return std::string("0");
             }
             if (isEndForIdentAndNumber(c)) {
                 input_stream_->ungetChar();
@@ -446,7 +449,7 @@ std::string&& Lexer::getNumber() {
             num_str += c;
         }
     }
-    return std::move(num_str);
+    return num_str;
 }
 
 TokenPtr Lexer::getIdent() {
@@ -752,8 +755,9 @@ TokenPtr Lexer::getNextTokenInternal() {
                 break;
         }
         if (isDigit(current_char)) {
-            return AstNodePool::get(SyAstType::INT_IMM, line_,
-                                    std::move(getNumber()));
+            auto num = getNumber();
+            return AstNodePool::get(SyAstType::INT_IMM, line_, std::move(num));
+
         } else if (isIdentStart(current_char)) {
             return getIdent();
         } else {

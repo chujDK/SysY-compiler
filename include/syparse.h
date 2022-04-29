@@ -323,6 +323,8 @@ class NumberAstNode : public AstNode {
 
     NumberAstNode(int line) : AstNode(SyEbnfType::Number, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr token() { return a_; }
 };
 
 class UnaryExpAstNode : public AstNode {
@@ -493,8 +495,8 @@ class Lexer {
 
     void lexError(std::string msg);
     void lexWarning(std::string msg);
-    std::string&& getString();
-    std::string&& getNumber();
+    std::string getString();
+    std::string getNumber();
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
     TokenPtrIter getNextToken();
