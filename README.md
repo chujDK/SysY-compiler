@@ -27,7 +27,7 @@ sudo apt install clang
 sudo apt install llvm
 ```
 
-### Usage
+### Build
 
 this project use CMake for building
 
