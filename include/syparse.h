@@ -142,8 +142,21 @@ class CompUnitAstNode : public AstNode {
     CompUnitAstNode(int line) : AstNode(SyEbnfType::CompUnit, line) {}
     void accept(AstNodeVisitor& visitor) override;
 
-    AstNodePtr decl() { return a_; }
-    AstNodePtr func_def() { return a_; }
+    AstNodePtr decl() {
+        if (a_->getEbnfType() == SyEbnfType::Decl) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+    AstNodePtr func_def() {
+        if (a_->getEbnfType() == SyEbnfType::FuncDef) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+    AstNodePtr getChild() { return a_; }
 };
 
 class DeclAstNode : public AstNode {
@@ -153,8 +166,21 @@ class DeclAstNode : public AstNode {
     DeclAstNode(int line) : AstNode(SyEbnfType::Decl, line) {}
     void accept(AstNodeVisitor& visitor) override;
 
-    AstNodePtr const_decl() { return a_; }
-    AstNodePtr var_decl() { return a_; }
+    AstNodePtr const_decl() {
+        if (a_->getEbnfType() == SyEbnfType::ConstDef) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr var_decl() {
+        if (a_->getEbnfType() == SyEbnfType::VarDecl) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class ConstDeclAstNode : public AstNode {
@@ -218,6 +244,11 @@ class VarDefAstNode : public AstNode {
 
     VarDefAstNode(int line) : AstNode(SyEbnfType::VarDef, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr ident() { return a_; }
+    // TODO: for the simplicity, maybe add a type of const_exp_list
+    AstNodePtr const_exp_list() { return b_; }
+    AstNodePtr init_val() { return c_; }
 };
 
 class InitValAstNode : public AstNode {
@@ -227,6 +258,8 @@ class InitValAstNode : public AstNode {
 
     InitValAstNode(int line) : AstNode(SyEbnfType::InitVal, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    // TODO: consider add a new type of init_val_list
 };
 
 class FuncDefAstNode : public AstNode {
@@ -235,6 +268,11 @@ class FuncDefAstNode : public AstNode {
 
     FuncDefAstNode(int line) : AstNode(SyEbnfType::FuncDef, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr func_type() { return a_; }
+    AstNodePtr ident() { return b_; }
+    AstNodePtr func_f_params() { return c_; }
+    AstNodePtr block() { return d_; }
 };
 
 class FuncTypeAstNode : public AstNode {
@@ -243,6 +281,8 @@ class FuncTypeAstNode : public AstNode {
 
     FuncTypeAstNode(int line) : AstNode(SyEbnfType::FuncType, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr type() { return a_; }
 };
 
 class FuncFParamsAstNode : public AstNode {

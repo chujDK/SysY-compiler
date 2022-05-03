@@ -1,4 +1,4 @@
-#include "sysymbol_table.h"
+#include "sy_interpreter_symbol_table.h"
 
 #include <cassert>
 #include <unordered_map>

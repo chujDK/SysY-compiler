@@ -594,6 +594,7 @@ llvm::Function* JITCompiler::functionDefinitionLLVMIrGen(AstNodePtr func) {
     // TODO: maybe we should do a error handling?
     blockIRGen(func->d_);
 
+#ifdef DEBUG
 #ifdef DO_OPT
     // do the opt here
     //	module_pass_manager_->run(*module_, *module_analysis_manager_);
@@ -633,6 +634,7 @@ llvm::Function* JITCompiler::functionDefinitionLLVMIrGen(AstNodePtr func) {
 
     // Optimize the IR!
     MPM.run(*module_, MAM);  // O2 is too strong
+#endif
     module_->print(llvm::errs(), nullptr);
 #endif
 

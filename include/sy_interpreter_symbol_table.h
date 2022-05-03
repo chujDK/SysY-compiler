@@ -1,5 +1,6 @@
 #ifndef _SYSYMBOL_TABLE_H_
 #define _SYSYMBOL_TABLE_H_
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <vector>

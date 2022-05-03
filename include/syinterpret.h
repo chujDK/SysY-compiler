@@ -3,11 +3,12 @@
 #define _SYINTERPRET_H_
 #include <llvm/IR/Function.h>
 
+#include <map>
 #include <string>
 #include <tuple>
 
+#include "sy_interpreter_symbol_table.h"
 #include "syparse.h"
-#include "sysymbol_table.h"
 #include "sytype.h"
 
 class InterpreterAPI;
@@ -59,12 +60,17 @@ using FunctionTalbePtr = std::shared_ptr<FunctionTable>;
 enum class StmtState { BREAK, CONTINUE, RETURN, END_OF_ENUM };
 
 // this interpreter is a simple tree walking and executing interpreter
-class Interpreter : public InterpreterAPI {
+class Interpreter : public InterpreterAPI, public AstNodeBase::AstNodeVisitor {
    private:
     ParserAPI* parser_;
     SymbolTablePtr symbol_table_;
     FunctionTalbePtr func_table_;
     bool error_occured_;
+
+// define all the visit method
+#define DEF_VISIT_FUNC(type) void visit##type(type##AstNode& node) override{};
+    SY_EBNF_TYPE_LIST(DEF_VISIT_FUNC)
+#undef DEF_VISIT_FUNC
 
     void interpretError(std::string msg, int line);
     void interpretWarning(std::string msg, int line);
@@ -102,10 +108,10 @@ class Interpreter : public InterpreterAPI {
     std::tuple<char*, SyAstType> lValLeftHandler(AstNodePtr l_val);
 
    public:
-    int exec();
-    Value execFunction(AstNodePtr func_ast, AstNodePtr args);
-    Value expDispatcher(AstNodePtr exp);
-    void addFunction(SYFunctionPtr function, std::string name);
+    int exec() override;
+    Value execFunction(AstNodePtr func_ast, AstNodePtr args) override;
+    Value expDispatcher(AstNodePtr exp) override;
+    void addFunction(SYFunctionPtr function, std::string name) override;
     Interpreter(ParserAPI* parser)
         : parser_(parser),
           symbol_table_((SymbolTableAPI*)new SymbolTable()),
