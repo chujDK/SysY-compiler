@@ -16,7 +16,8 @@ Currently my intention is to implement a simple jit compiler (of course this int
 
 #### refactor
 
-~~将所有的代码生成变成使用各类重写的 irGen 方法~~ 不知道该怎么设计555
+使用访问者模式重构代码生成部分。同时抛弃解释器，实现一个独立的语法分析器。
+
 ### Pre-requirement
 
 clang-12+llvm is needed as the jit compiler will use llvm ir. In ubuntu20.04, just use apt to install them.
@@ -26,7 +27,7 @@ sudo apt install clang
 sudo apt install llvm
 ```
 
-### Usage
+### Build
 
 this project use CMake for building
 
@@ -35,7 +36,7 @@ use following command to build
 ```
 mkdir build && cd ./build
 cmake .. -DLLVM_DIR=$(llvm-config --cmakedir) -DCMAKE_CXX_COMPILER="clang++"
-make all -j$(nproc)
+make all -j$(nproc) # this will make all the tests
 ```
 
 ### Note
