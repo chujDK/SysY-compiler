@@ -3,6 +3,7 @@
 #include <cassert>
 #include <unordered_map>
 
+namespace interpreter {
 IdentMemoryPtr SymbolTable::searchTable(AstNodePtr ident) {
     for (int i = current_scope_; i >= 0; i--) {
         if (symbol_table_[i].find(ident->getLiteral()) !=
@@ -71,3 +72,4 @@ inline void SymbolTable::exitScope() {
     symbol_table_.pop_back();
     current_scope_--;
 }
+}  // namespace interpreter

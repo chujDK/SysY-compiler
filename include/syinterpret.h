@@ -63,7 +63,7 @@ enum class StmtState { BREAK, CONTINUE, RETURN, END_OF_ENUM };
 class Interpreter : public InterpreterAPI, public AstNodeBase::AstNodeVisitor {
    private:
     ParserAPI* parser_;
-    SymbolTablePtr symbol_table_;
+    interpreter::SymbolTablePtr symbol_table_;
     FunctionTalbePtr func_table_;
     bool error_occured_;
 
@@ -114,7 +114,8 @@ class Interpreter : public InterpreterAPI, public AstNodeBase::AstNodeVisitor {
     void addFunction(SYFunctionPtr function, std::string name) override;
     Interpreter(ParserAPI* parser)
         : parser_(parser),
-          symbol_table_((SymbolTableAPI*)new SymbolTable()),
+          symbol_table_(
+              (interpreter::SymbolTableAPI*)new interpreter::SymbolTable()),
           func_table_(new FunctionTable()) {}
     ~Interpreter() { delete parser_; }
 };

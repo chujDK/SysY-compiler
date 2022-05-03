@@ -50,7 +50,8 @@ struct AstNodeBase {
     // it's tempting to move the line_ into this union, but giveup
     // delete this field in the future
     union {
-        unsigned int array_size_;
+        unsigned int array_size_;  // FIXME: DELETE ME WHEN WE DEPRECATE THE
+                                   // INTERPRETER !
         unsigned int const_val_;
     } u_;
     unsigned int line_;

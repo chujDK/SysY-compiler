@@ -11,6 +11,8 @@
 
 #include "syparse.h"
 
+using namespace interpreter;
+
 // TODO:
 // we can't yet handle the array passing
 // [ ] FuncFParams should added to the symbol table

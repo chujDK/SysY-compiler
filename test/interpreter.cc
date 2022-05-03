@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "sy.h"
+#include "sy_interpreter_symbol_table.h"
 #include "sydebug.h"
 
 int main(int argc, char* argv[]) {

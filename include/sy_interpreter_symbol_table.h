@@ -10,6 +10,7 @@
 class AstNode;
 using AstNodePtr = std::shared_ptr<AstNodeBase>;
 
+namespace interpreter {
 class IdentMemoryAPI {
    public:
     virtual char* getMem()   = 0;
@@ -117,5 +118,6 @@ class SymbolTable : SymbolTableAPI {
         symbol_table_.push_back(Scope());
     }
 };
+}  // namespace interpreter
 
 #endif
