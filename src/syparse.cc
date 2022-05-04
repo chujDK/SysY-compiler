@@ -2472,3 +2472,12 @@ AstNodePtr Parser::parse() {
 
 SY_EBNF_TYPE_LIST(DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE)
 #undef DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE
+
+// here define the iterator
+AstNodeBase::AstNodeIterator AstNodeBase::begin() {
+    return AstNodeIterator(this);
+}
+
+AstNodeBase::AstNodeIterator AstNodeBase::end() {
+    return AstNodeIterator(nullptr);
+}

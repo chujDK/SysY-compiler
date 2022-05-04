@@ -44,13 +44,14 @@ struct AstNodeBase {
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and d_ link up a double linked list
     AstNodePtr a_, b_, c_, d_;  // TODO: maybe delete this field in the future?
+                                // anyway, this field won't used in the visitors
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
     // this also means that this complier can only support array size up to
     // 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
     // it's tempting to move the line_ into this union, but giveup
     // delete this field in the future
     union {
-        unsigned int array_size_;  // FIXME: DELETE ME WHEN WE DEPRECATE THE
+        unsigned int array_size_;  // FIXME: DELETE ME(u_) WHEN WE DEPRECATE THE
                                    // INTERPRETER !
         unsigned int const_val_;
     } u_;
@@ -71,6 +72,34 @@ struct AstNodeBase {
 
     class AstNodeVisitor;
     virtual void accept(AstNodeVisitor& visitor) = 0;
+
+    class AstNodeIterator;
+    virtual AstNodeIterator begin();
+    virtual AstNodeIterator end();
+};
+
+// a simple iterator.
+class AstNodeBase::AstNodeIterator {
+   private:
+    // note: here we use raw ptr to avoid the samrt pointer problem. moreover,
+    // when iterator is used, the node itself can't be deleted. after the
+    // iterator is used, the node do nothing to the node (means no effects to
+    // the smart pointer's ref count).
+    AstNodeBase* node_;
+
+   public:
+    bool operator!=(const AstNodeIterator& other) const {
+        return node_ != other.node_;
+    }
+
+    const AstNodeBase* operator*() { return node_; }
+    const AstNodeBase::AstNodeIterator operator++() {
+        node_ = node_->d_.get();
+        return *this;
+    }
+    const AstNodeBase* operator->() { return node_; }
+
+    AstNodeIterator(AstNodeBase* node) : node_(node) {}
 };
 
 class TokenAstNode : public AstNodeBase {
@@ -182,6 +211,8 @@ class DeclAstNode : public AstNode {
             return nullptr;
         }
     }
+
+    AstNodePtr const_decl_or_var_decl() { return a_; }
 };
 
 class ConstDeclAstNode : public AstNode {
