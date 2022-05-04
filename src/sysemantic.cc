@@ -74,8 +74,10 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
             array_mem->setSizeForDimension(i, size_for_each_dimension[i]);
         }
 
-        // B.d check the init val
+        // B.d check the init val. to const case, the init val is exist promised
+        // by the parser, so we can do a assert here
         auto init_val = def->getChildAt(2);
+        DEBUG_ASSERT(is_const == true ? init_val != nullptr : 1);
         if (init_val != nullptr) {
             // here we need give some context to the init val check, which means
             // the `array_mem_'
@@ -152,7 +154,19 @@ void SemanticAnalysisVisitor::visitMulExp(MulExpAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
+    auto [calced, const_exp_val] = node.const_val();
+    if (calced) {
+        // good, just set the context and return
+        const_exp_val_ = const_exp_val;
+        return;
+    } else {
+        // do the calc
+        const_exp_flag_ = true;
+        node.add_exp()->accept(*this);
+        const_exp_flag_ = false;
+    }
+}
 
 void SemanticAnalysisVisitor::visitFuncType(FuncTypeAstNode &node) {}
 
@@ -162,11 +176,7 @@ void SemanticAnalysisVisitor::visitStmt(StmtAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitPrimaryExp(PrimaryExpAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitLAndExp(LAndExpAstNode &node) {}
-
 void SemanticAnalysisVisitor::visitToken(TokenAstNode &node) {}
-
-void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {}
 
