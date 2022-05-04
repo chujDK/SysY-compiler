@@ -14,7 +14,6 @@ using AstNodePtr = std::shared_ptr<AstNodeBase>;
 
 class IdentMemoryAPI {
    public:
-    virtual Value* getMem()     = 0;
     virtual SyAstType getType() = 0;
     virtual size_t getSize()    = 0;
     virtual bool isConst()      = 0;
@@ -35,7 +34,6 @@ using IdentMemoryPtr = std::shared_ptr<IdentMemoryAPI>;
 using ArrayMemoryPtr = std::shared_ptr<ArrayMemoryAPI>;
 class IdentMemory : IdentMemoryAPI {
    private:
-    Value* mem_;
     SyAstType type_;
     size_t size_;
     bool is_const_;
@@ -43,25 +41,20 @@ class IdentMemory : IdentMemoryAPI {
    public:
     // this is a factory method
     static IdentMemoryPtr AllocMemoryForIdent(std::string ident, SyAstType type,
-                                              Value* init_mem, int n_elem,
-                                              bool is_const);
-    IdentMemory(SyAstType type, bool is_const, Value* init_mem) {
+                                              int n_elem, bool is_const);
+    IdentMemory(SyAstType type, bool is_const) {
         // this can cause a serious memory waste when too much
         // small memory (< 0x18 with glibc) is allocated
         // consider to make a pool
         type_     = type;
-        mem_      = init_mem;
         is_const_ = is_const;
         size_     = 1;
     }
-    IdentMemory(size_t size, SyAstType type, bool is_const, Value* init_mem) {
+    IdentMemory(size_t size, SyAstType type, bool is_const) {
         type_     = type;
-        mem_      = init_mem;
         is_const_ = is_const;
         size_     = size;
     }
-    ~IdentMemory() { delete[] mem_; }
-    Value* getMem() override { return mem_; }
     SyAstType getType() override { return type_; }
     size_t getSize() override { return size_; }
     bool isConst() override { return is_const_; }
@@ -85,12 +78,11 @@ class ArrayMemory : public IdentMemory, public ArrayMemoryAPI {
     unsigned int getSizeForDimension(unsigned int dimension) override {
         return size_for_dimension_[dimension];
     }
-    ArrayMemory(size_t size, SyAstType type, bool is_const, Value* init_mem)
-        : IdentMemory(size, type, is_const, init_mem) {
+    ArrayMemory(size_t size, SyAstType type, bool is_const)
+        : IdentMemory(size, type, is_const) {
         dimension_ = 0;
     }
 
-    Value* getMem() override { return IdentMemory::getMem(); }
     SyAstType getType() override { return IdentMemory::getType(); }
     size_t getSize() override { return IdentMemory::getSize(); }
     bool isConst() override { return IdentMemory::isConst(); }
@@ -98,17 +90,15 @@ class ArrayMemory : public IdentMemory, public ArrayMemoryAPI {
 
 class SymbolTableAPI {
    public:
-    virtual IdentMemoryPtr searchTable(std::string ident)        = 0;
-    virtual IdentMemoryPtr searchCurrentScope(std::string ident) = 0;
+    virtual IdentMemoryPtr searchTable(std::string ident)             = 0;
+    virtual IdentMemoryPtr searchCurrentScope(std::string ident)      = 0;
     virtual IdentMemoryPtr addGlobalSymbol(std::string ident, SyAstType type,
-                                           Value* init_mem, int n_elem,
-                                           bool is_const)        = 0;
+                                           int n_elem, bool is_const) = 0;
     virtual IdentMemoryPtr addSymbol(std::string ident, SyAstType type,
-                                     Value* init_mem, int n_elem,
-                                     bool is_const)              = 0;
-    virtual void deleteSymbol(std::string ident)                 = 0;
-    virtual void enterScope()                                    = 0;
-    virtual void exitScope()                                     = 0;
+                                     int n_elem, bool is_const)       = 0;
+    virtual void deleteSymbol(std::string ident)                      = 0;
+    virtual void enterScope()                                         = 0;
+    virtual void exitScope()                                          = 0;
     virtual ~SymbolTableAPI() {}
 };
 using SymbolTablePtr = std::shared_ptr<SymbolTableAPI>;
@@ -122,8 +112,7 @@ class SymbolTable : SymbolTableAPI {
     int current_scope_;
 
     IdentMemoryPtr addSymbolInternal(std::string ident, SyAstType type,
-                                     Value* init_mem, int n_elem, bool is_const,
-                                     int scope);
+                                     int n_elem, bool is_const, int scope);
 
    public:
     IdentMemoryPtr searchTable(std::string ident);
@@ -131,12 +120,12 @@ class SymbolTable : SymbolTableAPI {
 
     // @n_elem is the number of elements in the *array*, only used when type
     // is array
-    IdentMemoryPtr addSymbol(std::string ident, SyAstType type, Value* init_mem,
-                             int n_elem, bool is_const);
+    IdentMemoryPtr addSymbol(std::string ident, SyAstType type, int n_elem,
+                             bool is_const);
     // @n_elem is the number of elements in the *array*, only used when type is
     // array
     IdentMemoryPtr addGlobalSymbol(std::string ident, SyAstType type,
-                                   Value* init_mem, int n_elem, bool is_const);
+                                   int n_elem, bool is_const);
     void deleteSymbol(std::string ident);
     void enterScope();
     void exitScope();

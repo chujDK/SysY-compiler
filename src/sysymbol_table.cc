@@ -22,17 +22,15 @@ IdentMemoryPtr SymbolTable::searchCurrentScope(std::string ident) {
 }
 
 IdentMemoryPtr IdentMemory::AllocMemoryForIdent(std::string ident,
-                                                SyAstType type, Value* init_mem,
-                                                int n_elem, bool is_const) {
+                                                SyAstType type, int n_elem,
+                                                bool is_const) {
     std::shared_ptr<IdentMemoryAPI> mem(nullptr);
     switch (type) {
         case SyAstType::VAL_TYPE_INT:
-            mem.reset(
-                (IdentMemoryAPI*)new IdentMemory(type, is_const, init_mem));
+            mem.reset((IdentMemoryAPI*)new IdentMemory(type, is_const));
             return mem;
         case SyAstType::VAL_TYPE_INT_ARRAY:
-            mem.reset((ArrayMemoryAPI*)new ArrayMemory(n_elem, type, is_const,
-                                                       init_mem));
+            mem.reset((ArrayMemoryAPI*)new ArrayMemory(n_elem, type, is_const));
             return mem;
         default:
             // shouldn't reach here
@@ -43,26 +41,23 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(std::string ident,
 }
 
 IdentMemoryPtr SymbolTable::addSymbolInternal(std::string ident, SyAstType type,
-                                              Value* init_mem, int n_elem,
-                                              bool is_const, int scope) {
+                                              int n_elem, bool is_const,
+                                              int scope) {
     // no need to delete the ident, just write through it
-    IdentMemoryPtr mem = IdentMemory::AllocMemoryForIdent(ident, type, init_mem,
-                                                          n_elem, is_const);
+    IdentMemoryPtr mem =
+        IdentMemory::AllocMemoryForIdent(ident, type, n_elem, is_const);
     symbol_table_[scope][ident] = mem;
     return mem;
 }
 
 IdentMemoryPtr SymbolTable::addSymbol(std::string ident, SyAstType type,
-                                      Value* init_mem, int n_elem,
-                                      bool is_const) {
-    return addSymbolInternal(ident, type, init_mem, n_elem, is_const,
-                             current_scope_);
+                                      int n_elem, bool is_const) {
+    return addSymbolInternal(ident, type, n_elem, is_const, current_scope_);
 }
 
 IdentMemoryPtr SymbolTable::addGlobalSymbol(std::string ident, SyAstType type,
-                                            Value* init_mem, int n_elem,
-                                            bool is_const) {
-    return addSymbolInternal(ident, type, init_mem, n_elem, is_const, 0);
+                                            int n_elem, bool is_const) {
+    return addSymbolInternal(ident, type, n_elem, is_const, 0);
 }
 
 // note that this function can still work when ident isn't exist in the current
