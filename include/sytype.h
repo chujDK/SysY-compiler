@@ -166,10 +166,12 @@ enum class SyEbnfType {
     F(AddExp)                \
     F(RelExp)                \
     F(EqExp)                 \
+    F(LAndExp)               \
+    F(LOrExp)                \
     F(ConstExp)              \
     F(E)                     \
     F(Token)                 \
-    F(ExpBase)  // note: the ExpBase here is a helper for the exp handle, as
-                // they are all the same
+    F(ExpBase)  // note: the ExpBase here is a helper for the
+                // exp handle, as they are all the same
 
 #endif

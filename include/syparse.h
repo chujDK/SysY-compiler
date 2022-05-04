@@ -516,6 +516,7 @@ class LAndExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -530,6 +531,7 @@ class LOrExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }

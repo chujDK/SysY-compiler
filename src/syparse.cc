@@ -7,6 +7,8 @@
 #include <memory>
 #include <utility>
 
+#include "utils.h"
+
 static void adjustExpLAst(AstNodePtr node);
 static AstNodePtr adjustExpAst(AstNodePtr node);
 static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
@@ -1424,10 +1426,7 @@ static void adjustExpLAst(AstNodePtr node) {
                 ebnf_type = SyEbnfType::LAndExp;
                 break;
             default:
-                // won't reach here
-                // trigger a bug
-                // just for debugging
-                assert(1 != 1);
+                DEBUG_ASSERT_NOT_REACH
                 break;
         }
         node->getAstParent()->c_ = node->a_;

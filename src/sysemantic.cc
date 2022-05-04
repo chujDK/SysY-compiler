@@ -176,7 +176,11 @@ void SemanticAnalysisVisitor::visitStmt(StmtAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitPrimaryExp(PrimaryExpAstNode &node) {}
 
+void SemanticAnalysisVisitor::visitLAndExp(LAndExpAstNode &node) {}
+
 void SemanticAnalysisVisitor::visitToken(TokenAstNode &node) {}
+
+void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {}
 
