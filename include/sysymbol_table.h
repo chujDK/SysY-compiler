@@ -8,15 +8,18 @@
 #include <vector>
 
 #include "syparse.h"
+#include "sytype.h"
 
 struct AstNodeBase;
 using AstNodePtr = std::shared_ptr<AstNodeBase>;
 
 class IdentMemoryAPI {
    public:
-    virtual SyAstType getType() = 0;
-    virtual size_t getSize()    = 0;
-    virtual bool isConst()      = 0;
+    virtual Value* getInitVal()               = 0;
+    virtual void setInitVal(Value*& init_val) = 0;
+    virtual SyAstType getType()               = 0;
+    virtual size_t getSize()                  = 0;
+    virtual bool isConst()                    = 0;
     virtual ~IdentMemoryAPI() {}
 };
 
@@ -37,6 +40,7 @@ class IdentMemory : IdentMemoryAPI {
     SyAstType type_;
     size_t size_;
     bool is_const_;
+    Value* init_val_;
 
    public:
     // this is a factory method
@@ -58,6 +62,11 @@ class IdentMemory : IdentMemoryAPI {
     SyAstType getType() override { return type_; }
     size_t getSize() override { return size_; }
     bool isConst() override { return is_const_; }
+    Value* getInitVal() override { return init_val_; }
+    void setInitVal(Value*& init_val) override {
+        init_val_ = init_val;
+        init_val  = nullptr;
+    }
 };
 
 class ArrayMemory : public IdentMemory, public ArrayMemoryAPI {
@@ -86,6 +95,10 @@ class ArrayMemory : public IdentMemory, public ArrayMemoryAPI {
     SyAstType getType() override { return IdentMemory::getType(); }
     size_t getSize() override { return IdentMemory::getSize(); }
     bool isConst() override { return IdentMemory::isConst(); }
+    Value* getInitVal() override { return IdentMemory::getInitVal(); }
+    void setInitVal(Value*& init_val) override {
+        IdentMemory::setInitVal(init_val);
+    }
 };
 
 class SymbolTableAPI {
