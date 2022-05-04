@@ -508,14 +508,14 @@ class EqExpAstNode : public ExpBaseAstNode {
     AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
-class LAndExpAstNode : public AstNode {
+class LAndExpAstNode : public ExpBaseAstNode {
    private:
     std::weak_ptr<AstNodeBase> parent_;
 
    public:
-    using AstNode::AstNode;
+    using ExpBaseAstNode::ExpBaseAstNode;
 
-    LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
+    LAndExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::LAndExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
@@ -523,14 +523,14 @@ class LAndExpAstNode : public AstNode {
     AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
-class LOrExpAstNode : public AstNode {
+class LOrExpAstNode : public ExpBaseAstNode {
    private:
     std::weak_ptr<AstNodeBase> parent_;
 
    public:
-    using AstNode::AstNode;
+    using ExpBaseAstNode::ExpBaseAstNode;
 
-    LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
+    LOrExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::LOrExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
