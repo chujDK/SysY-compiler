@@ -6,7 +6,6 @@
 // 5. exit a scope
 // 6. search a symbol in the current scope
 // 7. search a symbol in the global scope
-// 8. get a symbol's memory (which means its inital value)
 #include <gtest/gtest.h>
 
 #include <cstring>

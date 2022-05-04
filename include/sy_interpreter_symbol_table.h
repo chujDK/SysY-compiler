@@ -1,5 +1,5 @@
-#ifndef _SYSYMBOL_TABLE_H_
-#define _SYSYMBOL_TABLE_H_
+#ifndef _SY_INTERPRETER_SYMBOL_TABLE_H_
+#define _SY_INTERPRETER_SYMBOL_TABLE_H_
 #include <map>
 #include <memory>
 #include <unordered_map>

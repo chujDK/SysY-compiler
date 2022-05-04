@@ -2464,6 +2464,21 @@ AstNodePtr Parser::parse() {
     return node;
 }
 
+AstNodePtr AstNodeBase::getChildAt(int index) const {
+    switch (index) {
+        case 0:
+            return a_;
+        case 1:
+            return b_;
+        case 2:
+            return c_;
+        case 3:
+            return d_;
+        default:
+            return nullptr;
+    }
+}
+
 // here define all the visitor accept
 #define DEF_VISIT_DISPATCH_FOR_EACH_ASTNODE(type)         \
     void type##AstNode::accept(AstNodeVisitor& visitor) { \

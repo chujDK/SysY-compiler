@@ -4,6 +4,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "sytype.h"
@@ -45,6 +46,11 @@ struct AstNodeBase {
     // parent_ and d_ link up a double linked list
     AstNodePtr a_, b_, c_, d_;  // TODO: maybe delete this field in the future?
                                 // anyway, this field won't used in the visitors
+
+    // getter for the children. sometimes we want to treat two kinds of nodes as
+    // the same in visiting, in that case, we need a more common getter
+    virtual AstNodePtr getChildAt(int index) const;
+
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
     // this also means that this complier can only support array size up to
     // 2^32-1 only to the EBnfType::ConstDef, array_size_ can be used
@@ -58,7 +64,7 @@ struct AstNodeBase {
     unsigned int line_;
 
     virtual ~AstNodeBase() {}
-    virtual std::string const& getLiteral() = 0;
+    virtual std::string const& getLiteral() const = 0;
 
     virtual enum SyAstType getAstType()            = 0;
     virtual enum SyEbnfType getEbnfType()          = 0;
@@ -92,12 +98,12 @@ class AstNodeBase::AstNodeIterator {
         return node_ != other.node_;
     }
 
-    const AstNodeBase* operator*() { return node_; }
-    const AstNodeBase::AstNodeIterator operator++() {
+    AstNodeBase* operator*() { return node_; }
+    AstNodeBase::AstNodeIterator operator++() {
         node_ = node_->d_.get();
         return *this;
     }
-    const AstNodeBase* operator->() { return node_; }
+    AstNodeBase* operator->() { return node_; }
 
     AstNodeIterator(AstNodeBase* node) : node_(node) {}
 };
@@ -111,7 +117,7 @@ class TokenAstNode : public AstNodeBase {
     TokenAstNode(enum SyAstType ast_type, int line, std::string&& literal)
         : AstNodeBase(line), literal_(literal), ast_type_(ast_type) {}
 
-    std::string const& getLiteral() override { return literal_; }
+    std::string const& getLiteral() const override { return literal_; }
 
     enum SyAstType getAstType() override { return ast_type_; }
     enum SyEbnfType getEbnfType() override { return SyEbnfType::END_OF_ENUM; }
@@ -137,7 +143,7 @@ class AstNode : public AstNodeBase {
         : AstNodeBase(line), ebnf_type_(ebnf_type) {}
 
     virtual ~AstNode() {}
-    virtual std::string const& getLiteral() override {
+    virtual std::string const& getLiteral() const override {
         static std::string null_string = "";
         return null_string;
     }
@@ -523,11 +529,25 @@ class LOrExpAstNode : public AstNode {
 };
 
 class ConstExpAstNode : public AstNode {
+   private:
+    Value const_val_;
+
    public:
-    using AstNode::AstNode;
+    ConstExpAstNode(enum SyEbnfType ebnf_type, int line)
+        : AstNode(ebnf_type, line) {
+        const_val_ = Value::getMaxValue();
+    }
 
     ConstExpAstNode(int line) : AstNode(SyEbnfType::ConstExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    // [true: computed; false: haven't computed, const_val_]
+    std::tuple<bool, Value> const_val() {
+        // if the const_val_ is not computed, then it is equal to max value
+        // if the const_val_ itself is equal to max value,  it won't hurt to
+        // compute it again
+        return std::make_tuple(const_val_ != Value::getMaxValue(), const_val_);
+    }
 };
 
 class EAstNode : public AstNode {

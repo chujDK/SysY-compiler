@@ -1,10 +1,20 @@
 #ifndef _SYTYPE_H_
 #define _SYTYPE_H_
 #include <cstdint>
+#include <limits>
 
 union Value {
     int32_t i32;
     float f32;
+
+    explicit Value(int32_t i) : i32(i) {}
+    explicit Value(float f) : f32(f) {}
+    explicit Value() { i32 = 0; }
+    bool operator==(const Value& other) const { return i32 == other.i32; }
+    bool operator!=(const Value& other) const { return i32 != other.i32; }
+    static Value getMaxValue() {
+        return static_cast<Value>(std::numeric_limits<int32_t>::max());
+    }
     //    uint32_t u32;
 };
 
@@ -77,6 +87,7 @@ enum class SyAstType {
 // 如果需要修改语法，需要注意：
 // 1. 如果修改了语法，需要修改SyEbnfTypeDebugInfo
 // 2. 需要注意修改语法后，对链表类型的影响，链表类型假设 d_ 不会被使用
+// 3. 如果把链表类型和语法类型分开，世界会美好很多。但是涉及较大的修改
 enum class SyEbnfType {
     CompUnit,      // CompUnit -> [ CompUnit ] ( Decl | FuncDef )
     Decl,          // Decl -> ConstDecl | VarDecl
