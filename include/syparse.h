@@ -432,14 +432,26 @@ class FuncRParamsAstNode : public AstNode {
     void accept(AstNodeVisitor& visitor) override;
 };
 
-class MulExpAstNode : public AstNode {
+class ExpBaseAstNode : public AstNode {
+   public:
+    using AstNode::AstNode;
+
+    ExpBaseAstNode(int line) : AstNode(SyEbnfType::Exp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr lhs() { return a_; }
+    AstNodePtr op() { return b_; }
+    AstNodePtr rhs() { return c_; }
+};
+
+class MulExpAstNode : public ExpBaseAstNode {
    private:
     std::weak_ptr<AstNodeBase> parent_;
 
    public:
-    using AstNode::AstNode;
+    using ExpBaseAstNode::ExpBaseAstNode;
 
-    MulExpAstNode(int line) : AstNode(SyEbnfType::MulExp, line) {}
+    MulExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::MulExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
@@ -447,14 +459,33 @@ class MulExpAstNode : public AstNode {
     AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
-class AddExpAstNode : public AstNode {
+class AddExpAstNode : public ExpBaseAstNode {
    private:
     std::weak_ptr<AstNodeBase> parent_;
 
    public:
-    using AstNode::AstNode;
+    using ExpBaseAstNode::ExpBaseAstNode;
 
-    AddExpAstNode(int line) : AstNode(SyEbnfType::AddExp, line) {}
+    AddExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::AddExp, line) {}
+    void accept(AstNodeVisitor& visitor) override;
+    void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
+        parent_ = parent;
+    }
+    AstNodePtr getAstParent() override { return parent_.lock(); }
+
+    AstNodePtr lhs() { return a_; }
+    AstNodePtr rhs() { return c_; }
+    AstNodePtr op() { return b_; }
+};
+
+class RelExpAstNode : public ExpBaseAstNode {
+   private:
+    std::weak_ptr<AstNodeBase> parent_;
+
+   public:
+    using ExpBaseAstNode::ExpBaseAstNode;
+
+    RelExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::RelExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
@@ -462,29 +493,14 @@ class AddExpAstNode : public AstNode {
     AstNodePtr getAstParent() override { return parent_.lock(); }
 };
 
-class RelExpAstNode : public AstNode {
+class EqExpAstNode : public ExpBaseAstNode {
    private:
     std::weak_ptr<AstNodeBase> parent_;
 
    public:
-    using AstNode::AstNode;
+    using ExpBaseAstNode::ExpBaseAstNode;
 
-    RelExpAstNode(int line) : AstNode(SyEbnfType::RelExp, line) {}
-    void accept(AstNodeVisitor& visitor) override;
-    void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
-        parent_ = parent;
-    }
-    AstNodePtr getAstParent() override { return parent_.lock(); }
-};
-
-class EqExpAstNode : public AstNode {
-   private:
-    std::weak_ptr<AstNodeBase> parent_;
-
-   public:
-    using AstNode::AstNode;
-
-    EqExpAstNode(int line) : AstNode(SyEbnfType::EqExp, line) {}
+    EqExpAstNode(int line) : ExpBaseAstNode(SyEbnfType::EqExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
@@ -500,7 +516,6 @@ class LAndExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LAndExpAstNode(int line) : AstNode(SyEbnfType::LAndExp, line) {}
-    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -515,7 +530,6 @@ class LOrExpAstNode : public AstNode {
     using AstNode::AstNode;
 
     LOrExpAstNode(int line) : AstNode(SyEbnfType::LOrExp, line) {}
-    void accept(AstNodeVisitor& visitor) override;
     void setAstParent(std::shared_ptr<AstNodeBase> parent) override {
         parent_ = parent;
     }
@@ -542,6 +556,10 @@ class ConstExpAstNode : public AstNode {
         // compute it again
         return std::make_tuple(const_val_ != Value::getMaxValue(), const_val_);
     }
+
+    void setConstVal(Value const_val) { const_val_ = const_val; }
+
+    AstNodePtr add_exp() { return a_; }
 };
 
 class EAstNode : public AstNode {
