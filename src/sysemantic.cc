@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "syparse.h"
+#include "utils.h"
 
 void SemanticAnalysisVisitor::visitCompUnit(CompUnitAstNode &node) {
     node.getChild()->accept(*this);
@@ -15,7 +16,25 @@ void SemanticAnalysisVisitor::visitDecl(DeclAstNode &node) {
     node.const_decl_or_var_decl()->accept(*this);
 }
 
-static SyAstType bTypeToType(AstNodePtr b_type) { return b_type->getAstType(); }
+static SyAstType bTypeToValType(SyAstType type) {
+    switch (type) {
+        case SyAstType::TYPE_INT:
+            return SyAstType::VAL_TYPE_INT;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            return SyAstType::END_OF_ENUM;
+    }
+}
+
+static SyAstType valTypeToValArrayType(SyAstType type) {
+    switch (type) {
+        case SyAstType::VAL_TYPE_INT:
+            return SyAstType::VAL_TYPE_INT_ARRAY;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            return SyAstType::END_OF_ENUM;
+    }
+}
 
 void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
                                         AstNodeBase *def) {
@@ -45,8 +64,9 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
             array_dimension++;
         }
         // B.b add to the symbol table
-        ArrayMemoryPtr array_mem = std::dynamic_pointer_cast<ArrayMemoryAPI>(
-            symbol_table_->addSymbol(ident_name, type, array_size, is_const));
+        ArrayMemoryPtr array_mem =
+            std::dynamic_pointer_cast<ArrayMemoryAPI>(symbol_table_->addSymbol(
+                ident_name, valTypeToValArrayType(type), array_size, is_const));
 
         // B.c set the dimension and size
         array_mem->setDimension(array_dimension);
@@ -58,7 +78,7 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
         auto init_val = def->getChildAt(2);
         if (init_val != nullptr) {
             // here we need give some context to the init val check, which means
-            // the array_mem
+            // the `array_mem_'
             array_mem_ = array_mem;
             init_val->accept(*this);
             // after checking, remember to clear the context
@@ -66,6 +86,17 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
         }
     } else {
         // this is the non-array case
+        // B.a add to the symbol table
+        ident_mem_ = symbol_table_->addSymbol(ident_name, type, 0, is_const);
+        // B.d check the init val
+        auto init_val = def->getChildAt(2);
+        if (init_val != nullptr) {
+            // here we need give some context to the init val check, which means
+            // the `ident_mem_'
+            init_val->accept(*this);
+            // after checking, remember to clear the context
+            ident_mem_ = nullptr;
+        }
     }
 }
 
@@ -80,7 +111,9 @@ void SemanticAnalysisVisitor::defListHelper(bool is_const, SyAstType type,
 void SemanticAnalysisVisitor::visitVarDecl(VarDeclAstNode &node) {
     auto b_type   = node.b_type();
     auto def_list = node.var_def();
-    auto type     = bTypeToType(b_type);
+
+    node.b_type()->accept(*this);
+    auto type = type_;
     // delegate all the rest to the defListHelper
     defListHelper(false, type, def_list);
 }
@@ -88,7 +121,9 @@ void SemanticAnalysisVisitor::visitVarDecl(VarDeclAstNode &node) {
 void SemanticAnalysisVisitor::visitConstDecl(ConstDeclAstNode &node) {
     auto b_type   = node.b_type();
     auto def_list = node.const_def();
-    auto type     = bTypeToType(b_type);
+
+    node.b_type()->accept(*this);
+    auto type = type_;
     // delegate all the rest to the defListHelper
     defListHelper(true, type, def_list);
 }
@@ -99,7 +134,9 @@ void SemanticAnalysisVisitor::visitAddExp(AddExpAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitBlock(BlockAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitBType(BTypeAstNode &node) {}
+void SemanticAnalysisVisitor::visitBType(BTypeAstNode &node) {
+    type_ = bTypeToValType(node.type()->getAstType());
+}
 
 void SemanticAnalysisVisitor::visitBlockItem(BlockItemAstNode &node) {}
 

@@ -74,10 +74,14 @@ enum class SyAstType {
     EOF_TYPE,
 
     // type for the typing
-    VAL_TYPE_INT,              // int
+    VAL_TYPE_INT,        // int
+    VAL_TYPE_VOID,       // void
+    VAL_TYPE_INT_ARRAY,  // int[]..
+
+    // note: we don't tag the const here. it is done by the symbol_table's
+    // isConst method. this two are here for the interpreter's sake
+    // FIXME: delete them when interpreter is deleted
     VAL_TYPE_CONST_INT,        // const int
-    VAL_TYPE_VOID,             // void
-    VAL_TYPE_INT_ARRAY,        // int[]..
     VAL_TYPE_CONST_INT_ARRAY,  // const int[]..
 
     END_OF_ENUM

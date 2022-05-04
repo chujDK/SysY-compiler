@@ -1,0 +1,8 @@
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+add_executable(semantic_analysis_visitor_test semantic_analysis_visitor_test.cc)
+
+target_link_libraries(semantic_analysis_visitor_test ${GTEST_BOTH_LIBRARIES} ${llvm_libs} pthread sycompiler_base_static)
+
+gtest_discover_tests(semantic_analysis_visitor_test)

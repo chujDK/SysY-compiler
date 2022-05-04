@@ -34,12 +34,6 @@ class InputStream {
     virtual ~InputStream() {}
 };
 
-#ifdef DEBUG
-#define DEBUG_ASSERT_NOT_REACH assert(false && "should not reach here");
-#else
-#define DEBUG_ASSERT_NOT_REACH
-#endif
-
 struct AstNodeBase {
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,

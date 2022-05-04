@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "utils.h"
+
 IdentMemoryPtr SymbolTable::searchTable(std::string ident) {
     for (int i = current_scope_; i >= 0; i--) {
         if (symbol_table_[i].find(ident) != symbol_table_[i].end()) {
@@ -35,7 +37,7 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(std::string ident,
         default:
             // shouldn't reach here
             // cause a bug
-            assert(1 != 1);
+            DEBUG_ASSERT_NOT_REACH
             return nullptr;
     }
 }

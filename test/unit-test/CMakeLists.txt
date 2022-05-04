@@ -1,2 +1,3 @@
 add_subdirectory(parser)
 add_subdirectory(symbol_table)
+add_subdirectory(semantic_analysis_visitor)
