@@ -5,8 +5,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <ostream>
 #include <utility>
 
+#include "sytype.h"
 #include "utils.h"
 
 static void adjustExpLAst(AstNodePtr node);
@@ -1391,6 +1393,31 @@ AstNodePtr Parser::Number() {
     return number;
 }
 
+// becasue after the parser, all types is indicated by the visitor pattern,
+// means that just setEbnfType is not enough, we need a new function to get the
+// corret node here
+static AstNodePtr copyInvaildAstNodeToValidHelper(AstNodePtr node,
+                                                  SyEbnfType type) {
+    auto new_node = AstNodePool::get(type, node->getLine());
+    DEBUG_ASSERT(node->d_ == nullptr);
+    // A. copy all the tree components
+    new_node->a_ = node->a_;
+    new_node->b_ = node->b_;
+    new_node->c_ = node->c_;
+    // B. set the parent (if has child and the child has parent)
+    if (new_node->a_ != nullptr && new_node->a_->getAstParent() != nullptr) {
+        new_node->a_->setAstParent(new_node);
+    }
+    if (new_node->b_ != nullptr && new_node->b_->getAstParent() != nullptr) {
+        new_node->b_->setAstParent(new_node);
+    }
+    if (new_node->c_ != nullptr && new_node->c_->getAstParent() != nullptr) {
+        new_node->c_->setAstParent(new_node);
+    }
+    new_node->setAstParent(node->getAstParent());
+    return new_node;
+}
+
 // todo: parser for MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp maybe can be
 // rewrited to a single template function
 // this two helper can adjust MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp
@@ -1429,15 +1456,21 @@ static void adjustExpLAst(AstNodePtr node) {
                 DEBUG_ASSERT_NOT_REACH
                 break;
         }
-        node->getAstParent()->c_ = node->a_;
-        node->getAstParent()->c_->setEbnfType(ebnf_type);
+        // tend to fix like that
+        auto valid_node = copyInvaildAstNodeToValidHelper(node->a_, ebnf_type);
+        node->getAstParent()->c_ = valid_node;
         return;
     } else {
-        auto add_exp_l = node->c_;
-        node->b_       = add_exp_l->a_;
-        add_exp_l->a_  = add_exp_l->b_;
-        add_exp_l->b_  = nullptr;
-        add_exp_l->setEbnfType(node->getEbnfType());
+        // A. replace add_exp_l to valid node
+        auto add_exp_l =
+            copyInvaildAstNodeToValidHelper(node->c_, node->getEbnfType());
+        node->c_ = add_exp_l;
+        add_exp_l->setAstParent(node);
+
+        node->b_      = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        DEBUG_ASSERT(add_exp_l->getEbnfType() == node->getEbnfType());
         adjustExpLAst(add_exp_l);
     }
 }
@@ -1484,12 +1517,18 @@ static AstNodePtr adjustExpAst(AstNodePtr root) {
     // after addjust, node->b_ is an '+' or '-',
     // and node->c_ is an AddExp
     if (root->b_ != nullptr) {
-        auto add_exp_l = root->b_;
-        root->c_       = add_exp_l;
-        root->b_       = add_exp_l->a_;
-        add_exp_l->a_  = add_exp_l->b_;
-        add_exp_l->b_  = nullptr;
-        add_exp_l->setEbnfType(root->getEbnfType());
+        // A. replace add_exp_l to valid node
+        auto add_exp_l =
+            copyInvaildAstNodeToValidHelper(root->b_, root->getEbnfType());
+        root->b_ = add_exp_l;
+        add_exp_l->setAstParent(root);
+
+        // B. do the job
+        root->c_      = add_exp_l;
+        root->b_      = add_exp_l->a_;
+        add_exp_l->a_ = add_exp_l->b_;
+        add_exp_l->b_ = nullptr;
+        DEBUG_ASSERT(add_exp_l->getEbnfType() == root->getEbnfType());
         adjustExpLAst(add_exp_l);
     }
     return adjustExpAstRightBindToLeftBind(root);
