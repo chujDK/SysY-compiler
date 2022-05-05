@@ -1,10 +1,9 @@
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 
-#include "sy.h"
 #include "sy_interpreter_symbol_table.h"
 #include "sydebug.h"
+#include "syinterpret.h"
+#include "syruntime.h"
 
 int main(int argc, char* argv[]) {
     debugInfoInit();
