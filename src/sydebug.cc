@@ -1,5 +1,7 @@
 #include "sydebug.h"
 
+#include <cxxabi.h>
+
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -204,6 +206,9 @@ void astWalkThrough(AstNodePtr node, int level) {
         std::cout << "\033[35m\td\033[0m";
     }
 #endif
+    std::cout << "\t\033[35mtrue type:\033[0m "
+              << __cxxabiv1::__cxa_demangle(typeid(*node).name(), nullptr,
+                                            nullptr, nullptr);
     std::cout << std::endl;
     astWalkThrough(node->a_, level + 1);
     astWalkThrough(node->b_, level + 1);
