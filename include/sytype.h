@@ -174,4 +174,8 @@ enum class SyEbnfType {
     F(ExpBase)  // note: the ExpBase here is a helper for the
                 // exp handle, as they are all the same
 
+// helper to add two Value
+template <SyAstType lhs_type, SyAstType rhs_type>
+Value ValueAlu(Value lhs, Value rhs, SyAstType op);
+
 #endif
