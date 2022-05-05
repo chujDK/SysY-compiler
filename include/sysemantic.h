@@ -1,5 +1,7 @@
 #ifndef _SYSEMANTIC_H_
 #define _SYSEMANTIC_H_
+#include <string>
+
 #include "syparse.h"
 #include "sysymbol_table.h"
 #include "sytype.h"
@@ -21,9 +23,14 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
     // we need to report an error.
     bool const_exp_flag_;
 
+    // context for the typing pass
+    SyAstType val_type_;
+
     //    SymbolTablePtr symbol_table_;
     void defHelper(bool is_const, SyAstType type, AstNodeBase* def_iter);
     void defListHelper(bool is_const, SyAstType type, AstNodePtr def_iter);
+
+    void semanticError(std::string msg, int line);
 
    public:
     // nessary getter

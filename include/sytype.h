@@ -175,7 +175,7 @@ enum class SyEbnfType {
                 // exp handle, as they are all the same
 
 // helper to add two Value
-template <SyAstType lhs_type, SyAstType rhs_type>
-Value ValueAlu(Value lhs, Value rhs, SyAstType op);
+Value ValueAlu(Value lhs_val, SyAstType lhs_type, Value rhs_val,
+               SyAstType rhs_type, SyAstType op);
 
 #endif

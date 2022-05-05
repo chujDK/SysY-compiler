@@ -2,10 +2,30 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
+#include <tuple>
 #include <vector>
 
+#include "sydebug.h"
 #include "syparse.h"
+#include "sytype.h"
 #include "utils.h"
+
+// pre-define some static helpers
+static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
+                                                     SyAstType rhs_type);
+
+static SyAstType bTypeToValType(SyAstType type);
+static SyAstType valTypeToValArrayType(SyAstType type);
+static std::tuple<Value, SyAstType> literalToValue(const std::string &literal);
+
+void SemanticAnalysisVisitor::semanticError(std::string msg, int line) {
+    fprintf(stderr,
+            "\033[1m\033[31mError in parser\033[0m: line \033[1m%d\033[0m: "
+            "%s\n",
+            line, msg.c_str());
+    error_ = 1;
+}
 
 void SemanticAnalysisVisitor::visitCompUnit(CompUnitAstNode &node) {
     node.getChild()->accept(*this);
@@ -46,8 +66,8 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
     auto ident      = def->getChildAt(0);
     auto ident_name = ident->getLiteral();
 
-    // B. test if the ident is an array. instead of using the type, we directly
-    // use the ConstExp chain
+    // B. test if the ident is an array. instead of using the type, we
+    // directly use the ConstExp chain
     auto const_exp_chain = def->getChildAt(1);
     std::vector<int> size_for_each_dimension;
     uint32_t array_dimension = 0;
@@ -74,13 +94,13 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
             array_mem->setSizeForDimension(i, size_for_each_dimension[i]);
         }
 
-        // B.d check the init val. to const case, the init val is exist promised
-        // by the parser, so we can do a assert here
+        // B.d check the init val. to const case, the init val is exist
+        // promised by the parser, so we can do a assert here
         auto init_val = def->getChildAt(2);
         DEBUG_ASSERT(is_const == true ? init_val != nullptr : 1);
         if (init_val != nullptr) {
-            // here we need give some context to the init val check, which means
-            // the `array_mem_'
+            // here we need give some context to the init val check, which
+            // means the `array_mem_'
             array_mem_ = array_mem;
             init_val->accept(*this);
             // after checking, remember to clear the context
@@ -93,8 +113,8 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
         // B.d check the init val
         auto init_val = def->getChildAt(2);
         if (init_val != nullptr) {
-            // here we need give some context to the init val check, which means
-            // the `ident_mem_'
+            // here we need give some context to the init val check, which
+            // means the `ident_mem_'
             init_val->accept(*this);
             // after checking, remember to clear the context
             ident_mem_ = nullptr;
@@ -132,7 +152,54 @@ void SemanticAnalysisVisitor::visitConstDecl(ConstDeclAstNode &node) {
 
 void SemanticAnalysisVisitor::visitConstDef(ConstDefAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitAddExp(AddExpAstNode &node) {}
+static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
+                                                     SyAstType rhs_type) {
+    // currently, no type check needed
+    return std::make_tuple(true, "");
+}
+
+void SemanticAnalysisVisitor::visitExpBase(ExpBaseAstNode &node) {
+    // A. see if this is a lhs (op) rhs
+    auto op  = node.op();
+    auto lhs = node.lhs();
+    if (op == nullptr) {
+        DEBUG_ASSERT(lhs != nullptr && node.rhs() == nullptr);
+        lhs->accept(*this);
+        return;
+    }
+
+    // B. get the rhs
+    auto rhs = node.rhs();
+
+    // C. check the lhs and rhs
+    Value lhs_val, rhs_val;
+    SyAstType lhs_type, rhs_type;
+    lhs->accept(*this);
+    lhs_type = val_type_;
+    if (const_exp_flag_) {
+        lhs_val = const_exp_val_;
+    }
+    rhs->accept(*this);
+    rhs_type = val_type_;
+    if (const_exp_flag_) {
+        rhs_val = const_exp_val_;
+    }
+    auto [check_pass, fail_msg] = typeCheckHelper(lhs_type, rhs_type);
+    if (!check_pass) {
+        semanticError(fail_msg, node.getLine());
+    }
+
+    // D. do the add if we are computing a const exp
+    if (const_exp_flag_) {
+        const_exp_val_ =
+            ValueAlu(lhs_val, lhs_type, rhs_val, rhs_type, op->getAstType());
+    }
+}
+
+void SemanticAnalysisVisitor::visitAddExp(AddExpAstNode &node) {
+    // FIXME: delegate to ExpBase.. maybe?
+    node.ExpBaseAstNode::accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitBlock(BlockAstNode &node) {}
 
@@ -148,11 +215,20 @@ void SemanticAnalysisVisitor::visitVarDef(VarDefAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitUnaryOp(UnaryOpAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitRelExp(RelExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitRelExp(RelExpAstNode &node) {
+    node.ExpBaseAstNode::accept(*this);
+}
 
-void SemanticAnalysisVisitor::visitMulExp(MulExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitMulExp(MulExpAstNode &node) {
+    node.ExpBaseAstNode::accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {}
+
+static std::tuple<Value, SyAstType> literalToValue(const std::string &literal) {
+    // currently, only have the int literal
+    return std::make_tuple(Value(std::stoi(literal)), SyAstType::VAL_TYPE_INT);
+}
 
 void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
     auto [calced, const_exp_val] = node.const_val();
@@ -174,13 +250,40 @@ void SemanticAnalysisVisitor::visitFuncDef(FuncDefAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitStmt(StmtAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitPrimaryExp(PrimaryExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitPrimaryExp(PrimaryExpAstNode &node) {
+    // PrimaryExp -> '(' Exp ')' | LVal | Number
+    // A. check if it is a exp
+    auto exp = node.exp();
+    if (exp) {
+        exp->accept(*this);
+        return;
+    }
 
-void SemanticAnalysisVisitor::visitLAndExp(LAndExpAstNode &node) {}
+    // B. check if it is a lval
+    auto l_val = node.l_val();
+    if (l_val) {
+        // FIXME: unimplemented
+        return;
+    }
+
+    // C. check if it is a number
+    auto number = node.number();
+    if (number) {
+        number->accept(*this);
+        return;
+    }
+    DEBUG_ASSERT_NOT_REACH
+}
+
+void SemanticAnalysisVisitor::visitLAndExp(LAndExpAstNode &node) {
+    node.ExpBaseAstNode::accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitToken(TokenAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {
+    node.ExpBaseAstNode::accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {}
 
@@ -192,12 +295,36 @@ void SemanticAnalysisVisitor::visitExp(ExpAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitLVal(LValAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitNumber(NumberAstNode &node) {}
+void SemanticAnalysisVisitor::visitNumber(NumberAstNode &node) {
+    // Number -> IntConst
+    auto [val, type] = literalToValue(node.token()->getLiteral());
+    const_exp_val_   = val;
+    val_type_        = type;
+}
 
-void SemanticAnalysisVisitor::visitUnaryExp(UnaryExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitUnaryExp(UnaryExpAstNode &node) {
+    // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+
+    // A. test if this is a primary exp
+    auto primary_exp = node.primary_exp();
+    if (primary_exp) {
+        primary_exp->accept(*this);
+        return;
+    }
+
+    // B. test if this is a func call
+    // FIXME: unfinished
+
+    // C. test if this is a unary op + unary exp
+    // FIXME: unfinished
+
+    DEBUG_ASSERT_NOT_REACH
+}
 
 void SemanticAnalysisVisitor::visitFuncRParams(FuncRParamsAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitEqExp(EqExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitEqExp(EqExpAstNode &node) {
+    node.ExpBaseAstNode::accept(*this);
+}
 
-void SemanticAnalysisVisitor::visitE(EAstNode &node) {}
+void SemanticAnalysisVisitor::visitE(EAstNode &node) { DEBUG_ASSERT_NOT_REACH }

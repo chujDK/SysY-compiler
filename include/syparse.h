@@ -59,6 +59,7 @@ struct AstNodeBase {
 
     virtual ~AstNodeBase() {}
     virtual std::string const& getLiteral() const = 0;
+    virtual unsigned int getLine() const { return line_; }
 
     virtual enum SyAstType getAstType()            = 0;
     virtual enum SyEbnfType getEbnfType()          = 0;
@@ -387,6 +388,30 @@ class PrimaryExpAstNode : public AstNode {
 
     PrimaryExpAstNode(int line) : AstNode(SyEbnfType::PrimaryExp, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr number() {
+        if (a_->getEbnfType() == SyEbnfType::Number) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr l_val() {
+        if (a_->getEbnfType() == SyEbnfType::LVal) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr exp() {
+        if (a_->getEbnfType() == SyEbnfType::Exp) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class NumberAstNode : public AstNode {
@@ -412,6 +437,40 @@ class UnaryExpAstNode : public AstNode {
         parent_ = parent;
     }
     AstNodePtr getAstParent() override { return parent_.lock(); }
+
+    AstNodePtr primary_exp() {
+        if (a_->getEbnfType() == SyEbnfType::PrimaryExp) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr ident() {
+        if (a_->getAstType() == SyAstType::IDENT) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr func_r_params() {
+        if (ident() != nullptr) {
+            DEBUG_ASSERT(b_ != nullptr &&
+                         b_->getEbnfType() == SyEbnfType::FuncRParams);
+            return b_;
+        } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr unary_op() {
+        if (a_->getEbnfType() == SyEbnfType::UnaryOp) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class UnaryOpAstNode : public AstNode {

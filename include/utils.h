@@ -1,5 +1,6 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
+#include <cassert>
 
 #ifdef DEBUG
 #define DEBUG_ASSERT_NOT_REACH assert(false && "should not reach here");
