@@ -9,6 +9,7 @@
 
 #include "syparse.h"
 #include "sytype.h"
+#include "utils.h"
 
 struct AstNodeBase;
 using AstNodePtr = std::shared_ptr<AstNodeBase>;
@@ -62,7 +63,10 @@ class IdentMemory : IdentMemoryAPI {
     SyAstType getType() override { return type_; }
     size_t getSize() override { return size_; }
     bool isConst() override { return is_const_; }
-    Value* getInitVal() override { return init_val_; }
+    Value* getInitVal() override {
+        DEBUG_ASSERT(!(is_const_ ^ (init_val_ != nullptr)));
+        return init_val_;
+    }
     void setInitVal(Value*& init_val) override {
         init_val_ = init_val;
         init_val  = nullptr;

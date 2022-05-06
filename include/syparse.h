@@ -293,6 +293,13 @@ class InitValAstNode : public AstNode {
     void accept(AstNodeVisitor& visitor) override;
 
     // TODO: consider add a new type of init_val_list
+    AstNodePtr exp() {
+        if (a_->getEbnfType() == SyEbnfType::Exp) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class FuncDefAstNode : public AstNode {

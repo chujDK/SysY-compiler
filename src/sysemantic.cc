@@ -101,10 +101,12 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
         if (init_val != nullptr) {
             // here we need give some context to the init val check, which
             // means the `array_mem_'
-            array_mem_ = array_mem;
+            array_mem_      = array_mem;
+            const_exp_flag_ = is_const;
             init_val->accept(*this);
             // after checking, remember to clear the context
-            array_mem_ = nullptr;
+            const_exp_flag_ = false;
+            array_mem_      = nullptr;
         }
     } else {
         // this is the non-array case
@@ -115,9 +117,11 @@ void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
         if (init_val != nullptr) {
             // here we need give some context to the init val check, which
             // means the `ident_mem_'
+            const_exp_flag_ = is_const;
             init_val->accept(*this);
             // after checking, remember to clear the context
-            ident_mem_ = nullptr;
+            const_exp_flag_ = false;
+            ident_mem_      = nullptr;
         }
     }
 }
@@ -150,7 +154,10 @@ void SemanticAnalysisVisitor::visitConstDecl(ConstDeclAstNode &node) {
     defListHelper(true, type, def_list);
 }
 
-void SemanticAnalysisVisitor::visitConstDef(ConstDefAstNode &node) {}
+void SemanticAnalysisVisitor::visitConstDef(ConstDefAstNode &node) {
+    // this part is delegated to the defHelper
+    DEBUG_ASSERT_NOT_REACH
+}
 
 static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
                                                      SyAstType rhs_type) {
@@ -215,7 +222,10 @@ void SemanticAnalysisVisitor::visitBlockItem(BlockItemAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitCond(CondAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitVarDef(VarDefAstNode &node) {}
+void SemanticAnalysisVisitor::visitVarDef(VarDefAstNode &node) {
+    // this part is delegated to the defHelper
+    DEBUG_ASSERT_NOT_REACH
+}
 
 void SemanticAnalysisVisitor::visitUnaryOp(UnaryOpAstNode &node) {
     // FIXME: add an unary op helper
@@ -252,7 +262,35 @@ void SemanticAnalysisVisitor::visitMulExp(MulExpAstNode &node) {
     node.ExpBaseAstNode::accept(*this);
 }
 
-void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {}
+void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {
+    // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+    if (array_mem_ != nullptr) {
+        // FIXME: unimplemented
+    } else {
+        DEBUG_ASSERT(ident_mem_ != nullptr);
+        // InitVal -> Exp
+        auto const_exp  = node.const_exp();
+        Value *init_val = nullptr;
+        if (const_exp == nullptr) {
+            // wow, error here
+            semanticError("excess elements in scalar initializer",
+                          node.getLine());
+            // to this kind of error, just set it to 0.
+            init_val = new Value(0);
+        } else {
+            const_exp->accept(*this);
+            // type_ is set
+            auto [check_pass, msg] =
+                typeCheckHelper(ident_mem_->getType(), type_);
+            if (!check_pass) {
+                semanticError(msg, node.getLine());
+            }
+            // even error here, we can still set
+            init_val = new Value(const_exp_val_);
+        }
+        ident_mem_->setInitVal(init_val);
+    }
+}
 
 static std::tuple<Value, SyAstType> literalToValue(const std::string &literal) {
     // currently, only have the int literal
@@ -295,7 +333,7 @@ void SemanticAnalysisVisitor::visitPrimaryExp(PrimaryExpAstNode &node) {
     // B. check if it is a lval
     auto l_val = node.l_val();
     if (l_val) {
-        // FIXME: unimplemented
+        l_val->accept(*this);
         return;
     }
 
@@ -318,7 +356,30 @@ void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {
     node.ExpBaseAstNode::accept(*this);
 }
 
-void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {}
+void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {
+    // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
+    if (array_mem_ != nullptr) {
+        // FIXME: unimplemented
+    } else {
+        DEBUG_ASSERT(ident_mem_ != nullptr);
+        // InitVal -> Exp
+        auto exp = node.exp();
+        if (exp == nullptr) {
+            // wow, error here
+            semanticError("excess elements in scalar initializer",
+                          node.getLine());
+            // to this kind of error, just set it to 0.
+        } else {
+            exp->accept(*this);
+            // type_ is set
+            auto [check_pass, msg] =
+                typeCheckHelper(ident_mem_->getType(), type_);
+            if (!check_pass) {
+                semanticError(msg, node.getLine());
+            }
+        }
+    }
+}
 
 void SemanticAnalysisVisitor::visitFuncFParams(FuncFParamsAstNode &node) {}
 
