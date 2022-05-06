@@ -64,7 +64,7 @@ class IdentMemory : IdentMemoryAPI {
     size_t getSize() override { return size_; }
     bool isConst() override { return is_const_; }
     Value* getInitVal() override {
-        DEBUG_ASSERT(!(is_const_ ^ (init_val_ != nullptr)));
+        DEBUG_ASSERT(is_const_ ? init_val_ != nullptr : 1);
         return init_val_;
     }
     void setInitVal(Value*& init_val) override {
