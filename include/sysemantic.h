@@ -1,12 +1,19 @@
 #ifndef _SYSEMANTIC_H_
 #define _SYSEMANTIC_H_
 #include <string>
+#include <tuple>
 
 #include "syparse.h"
 #include "sysymbol_table.h"
 #include "sytype.h"
 
 class FunctionTable {};
+
+// note: to this analysis, a const exp can only constains const lval with init
+// val, like "const int a = 1;" is valid, but "const int a;" or
+// "int a; const int b = a;" is not valid. containing such a invaild lval can
+// cause a undefined behavior. (in Debug build, symbol_table will assert to
+// abort)
 
 class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
    private:
@@ -31,6 +38,8 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
     void defListHelper(bool is_const, SyAstType type, AstNodePtr def_iter);
 
     void semanticError(std::string msg, int line);
+    std::tuple<Value*, uint32_t> arrayIndexToValueMemoryChecker(
+        IdentMemoryPtr array_mem, AstNodePtr const_exp_chain);
 
    public:
     // nessary getter

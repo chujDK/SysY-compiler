@@ -81,8 +81,8 @@ enum class SyAstType {
     // note: we don't tag the const here. it is done by the symbol_table's
     // isConst method. this two are here for the interpreter's sake
     // FIXME: delete them when interpreter is deleted
-    VAL_TYPE_CONST_INT,        // const int
-    VAL_TYPE_CONST_INT_ARRAY,  // const int[]..
+    VAL_TYPE_CONST_INT_DEPRECATE,        // const int
+    VAL_TYPE_CONST_INT_ARRAY_DEPRECATE,  // const int[]..
 
     END_OF_ENUM
 };
@@ -177,5 +177,10 @@ enum class SyEbnfType {
 // helper to add two Value
 Value ValueAlu(Value lhs_val, SyAstType lhs_type, Value rhs_val,
                SyAstType rhs_type, SyAstType op);
+
+bool isArrayType(SyAstType type);
+
+SyAstType valArrayTypeToValType(SyAstType type);
+SyAstType valTypeToValArrayType(SyAstType type);
 
 #endif

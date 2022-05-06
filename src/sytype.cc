@@ -70,14 +70,32 @@ Value ValueAluHelper<SyAstType::VAL_TYPE_INT, SyAstType::VAL_TYPE_INT>(
 
 Value ValueAlu(Value lhs_val, SyAstType lhs_type, Value rhs_val,
                SyAstType rhs_type, SyAstType op) {
-    if ((lhs_type == SyAstType::VAL_TYPE_INT ||
-         lhs_type == SyAstType::VAL_TYPE_CONST_INT) &&
-        (rhs_type == SyAstType::VAL_TYPE_INT ||
-         rhs_type == SyAstType::VAL_TYPE_CONST_INT)) {
+    if ((lhs_type == SyAstType::VAL_TYPE_INT) &&
+        (rhs_type == SyAstType::VAL_TYPE_INT)) {
         return SYTYPEHELPER::ValueAluHelper<SyAstType::VAL_TYPE_INT,
                                             SyAstType::VAL_TYPE_INT>(
             lhs_val, rhs_val, op);
     } else {
         DEBUG_ASSERT_NOT_REACH
+    }
+}
+
+SyAstType valTypeToValArrayType(SyAstType type) {
+    switch (type) {
+        case SyAstType::VAL_TYPE_INT:
+            return SyAstType::VAL_TYPE_INT_ARRAY;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            return SyAstType::END_OF_ENUM;
+    }
+}
+
+SyAstType valArrayTypeToValType(SyAstType type) {
+    switch (type) {
+        case SyAstType::VAL_TYPE_INT_ARRAY:
+            return SyAstType::VAL_TYPE_INT;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            return SyAstType::END_OF_ENUM;
     }
 }

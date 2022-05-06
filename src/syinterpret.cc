@@ -610,7 +610,7 @@ Value Interpreter::lValRightHandler(AstNodePtr exp) {
     auto [mem, type] = lValLeftHandler(exp);
     Value ret;
     switch (type) {
-        case SyAstType::VAL_TYPE_CONST_INT:
+        case SyAstType::VAL_TYPE_CONST_INT_DEPRECATE:
         case SyAstType::VAL_TYPE_INT:
             ret.i32 = *(reinterpret_cast<int*>(mem));
             break;
@@ -632,7 +632,7 @@ std::tuple<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
         // this is a non-array ident
         if (mem->isConst()) {
             return std::make_tuple(mem->getMem(),
-                                   SyAstType::VAL_TYPE_CONST_INT);
+                                   SyAstType::VAL_TYPE_CONST_INT_DEPRECATE);
         } else {
             return std::make_tuple(mem->getMem(), SyAstType::VAL_TYPE_INT);
         }
@@ -661,7 +661,8 @@ std::tuple<char*, SyAstType> Interpreter::lValLeftHandler(AstNodePtr l_val) {
             exp = exp->d_;
         }
         if (mem->isConst()) {
-            return std::make_tuple(mem_raw, SyAstType::VAL_TYPE_CONST_INT);
+            return std::make_tuple(mem_raw,
+                                   SyAstType::VAL_TYPE_CONST_INT_DEPRECATE);
         } else {
             return std::make_tuple(mem_raw, SyAstType::VAL_TYPE_INT);
         }
@@ -740,7 +741,7 @@ std::tuple<StmtState, Value> Interpreter::stmtHandler(AstNodePtr stmt) {
         auto exp_val     = expDispatcher(exp);
         if (type == SyAstType::VAL_TYPE_INT) {
             *(reinterpret_cast<int*>(mem)) = exp_val.i32;
-        } else if (type == SyAstType::VAL_TYPE_CONST_INT) {
+        } else if (type == SyAstType::VAL_TYPE_CONST_INT_DEPRECATE) {
             interpretError("can't assign to a const variable", exp->line_);
         }
     } else if (stmt->a_->getEbnfType() == SyEbnfType::Exp) {

@@ -2534,3 +2534,12 @@ AstNodeBase::AstNodeIterator AstNodeBase::begin() {
 AstNodeBase::AstNodeIterator AstNodeBase::end() {
     return AstNodeIterator(nullptr);
 }
+
+bool isArrayType(SyAstType type) {
+    switch (type) {
+        case SyAstType::VAL_TYPE_INT_ARRAY:
+            return true;
+        default:
+            return false;
+    }
+}

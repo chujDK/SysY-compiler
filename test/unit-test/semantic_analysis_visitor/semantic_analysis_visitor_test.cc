@@ -68,7 +68,12 @@ TEST(SemanticAnalysisVisitorTest, const_exp_test) {
     const char* test_str =
         "int arr_a[42][- 2 * 3][30 - 26][2 / 1];\
         int arr_b[(10 + 2 * 3 - (30 - 25) * (2 / 1) + 0) * (8 % 7) * 7];\
+        const int a_c = 10;\
+        const int b_c = a_c * 4 + 2;\
         \xFF";
+
+    // there is a test case: `const int c_c = arr_a[0][0][0][0] * 4 + 2;`, will
+    // trigger a "ub", in debug mode, will directly crash
 
     CharStream* char_stream = new CharStream(test_str, strlen(test_str));
     Parser parser(char_stream);
@@ -96,4 +101,16 @@ TEST(SemanticAnalysisVisitorTest, const_exp_test) {
     ASSERT_NE(arr_b, nullptr);
     EXPECT_EQ(arr_b->getDimension(), 1);
     EXPECT_EQ(arr_b->getSizeForDimension(0), 42);
+
+    auto a_c = symbol_table->searchTable("a_c");
+    ASSERT_NE(a_c, nullptr);
+    EXPECT_EQ(a_c->getType(), SyAstType::VAL_TYPE_INT);
+    EXPECT_EQ(a_c->isConst(), true);
+    EXPECT_EQ(a_c->getInitVal()->i32, 10);
+
+    auto b_c = symbol_table->searchTable("b_c");
+    ASSERT_NE(b_c, nullptr);
+    EXPECT_EQ(b_c->getType(), SyAstType::VAL_TYPE_INT);
+    EXPECT_EQ(b_c->isConst(), true);
+    EXPECT_EQ(b_c->getInitVal()->i32, 42);
 }

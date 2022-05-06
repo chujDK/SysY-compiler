@@ -1,6 +1,7 @@
 #ifndef _SYPARSE_H_
 #define _SYPARSE_H_
 #include <cassert>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <string>
@@ -256,8 +257,21 @@ class ConstInitValAstNode : public AstNode {
     ConstInitValAstNode(int line) : AstNode(SyEbnfType::ConstInitVal, line) {}
     void accept(AstNodeVisitor& visitor) override;
 
-    AstNodePtr const_exp() { return a_; }
-    AstNodePtr const_init_val() { return a_; }
+    AstNodeBase::AstNodeIterator begin() override {
+        if (a_->getEbnfType() != SyEbnfType::ConstExp) {
+            return AstNodeIterator(this);
+        } else {
+            return AstNodeIterator(nullptr);
+        }
+    }
+
+    AstNodePtr const_exp() {
+        if (a_->getEbnfType() == SyEbnfType::ConstExp) {
+            return a_;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class VarDeclAstNode : public AstNode {
@@ -292,7 +306,14 @@ class InitValAstNode : public AstNode {
     InitValAstNode(int line) : AstNode(SyEbnfType::InitVal, line) {}
     void accept(AstNodeVisitor& visitor) override;
 
-    // TODO: consider add a new type of init_val_list
+    AstNodeBase::AstNodeIterator begin() override {
+        if (a_->getEbnfType() != SyEbnfType::Exp) {
+            return AstNodeIterator(this);
+        } else {
+            return AstNodeIterator(nullptr);
+        }
+    }
+
     AstNodePtr exp() {
         if (a_->getEbnfType() == SyEbnfType::Exp) {
             return a_;
@@ -355,6 +376,12 @@ class BlockItemAstNode : public AstNode {
 
     BlockItemAstNode(int line) : AstNode(SyEbnfType::BlockItem, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr decl_or_stmt() {
+        DEBUG_ASSERT(a_->getEbnfType() == SyEbnfType::Decl ||
+                     a_->getEbnfType() == SyEbnfType::Stmt);
+        return a_;
+    }
 };
 
 class StmtAstNode : public AstNode {
@@ -381,6 +408,11 @@ class CondAstNode : public AstNode {
 
     CondAstNode(int line) : AstNode(SyEbnfType::Cond, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr l_or_exp() {
+        DEBUG_ASSERT(a_->getEbnfType() == SyEbnfType::LOrExp);
+        return a_;
+    }
 };
 
 class LValAstNode : public AstNode {
@@ -389,6 +421,12 @@ class LValAstNode : public AstNode {
 
     LValAstNode(int line) : AstNode(SyEbnfType::LVal, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr ident() {
+        DEBUG_ASSERT(a_->getAstType() == SyAstType::IDENT);
+        return a_;
+    }
+    AstNodePtr exp_chain() { return b_; }
 };
 
 class PrimaryExpAstNode : public AstNode {
@@ -682,8 +720,8 @@ class Lexer {
     int line_;
     bool error_occured_;
     std::list<TokenPtr> token_stream_;
-    // to the std::list, the iterator won't be invalid, we will take advantage
-    // of that
+    // to the std::list, the iterator won't be invalid, we will take
+    // advantage of that
     TokenPtrIter current_token_;
 
     void lexError(std::string msg);
@@ -775,13 +813,13 @@ class Parser : ParserAPI {
     AstNodePtr Stmt();          // error handling: DONE
     AstNodePtr Exp();           // no error handling
     AstNodePtr Cond();          // no errror handling
-    AstNodePtr LVal();  // no error handling TODO: check if it really needn't
-                        // error handling
-    AstNodePtr PrimaryExp();   // no error handling
-    AstNodePtr Number();       // no error handling
-    AstNodePtr UnaryExp();     // no error handling
-    AstNodePtr UnaryOp();      // no error handling
-    AstNodePtr FuncRParams();  // error handling: DONE
+    AstNodePtr LVal();          // no error handling TODO: check if it really
+                                // needn't error handling
+    AstNodePtr PrimaryExp();    // no error handling
+    AstNodePtr Number();        // no error handling
+    AstNodePtr UnaryExp();      // no error handling
+    AstNodePtr UnaryOp();       // no error handling
+    AstNodePtr FuncRParams();   // error handling: DONE
     // following function with the L suffix means left recursion elimination
     AstNodePtr MulExp();    // no error handling
     AstNodePtr MulExpL();   // won't error

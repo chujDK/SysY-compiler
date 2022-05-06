@@ -154,7 +154,7 @@ void debugInfoInit() {
 }
 
 void printSyToken(TokenPtr token) {
-    std::cout << "\033[1m\033[34m"
+    std::clog << "\033[1m\033[34m"
               << SyAstTypeDebugInfo[(int)token->getAstType()] << "\033[0m"
               << " \""
                  "\033[32m"
@@ -167,26 +167,26 @@ void astWalkThrough(AstNodePtr node, int level) {
         return;
     }
     for (int i = 0; i < level; i++) {
-        std::cout << ". ";
+        std::clog << ". ";
     }
     if (node->getLiteral().empty()) {
         if (node->getEbnfType() != SyEbnfType::END_OF_ENUM) {
-            std::cout << "\033[1m\033[33m"
+            std::clog << "\033[1m\033[33m"
                       << SyEbnfTypeDebugInfo[(int)node->getEbnfType()]
                       << "\033[0m";
         } else {
-            std::cout << "\033[1m\033[33m"
+            std::clog << "\033[1m\033[33m"
                       << SyAstTypeDebugInfo[(int)node->getAstType()]
                       << "\033[0m";
         }
     } else {
         if (node->getEbnfType() != SyEbnfType::END_OF_ENUM) {
-            std::cout << "\033[1m\033[34m"
+            std::clog << "\033[1m\033[34m"
                       << SyEbnfTypeDebugInfo[(int)node->getEbnfType()]
                       << "\033[0m \"\033[32m" << node->getLiteral()
                       << "\033[0m\"";
         } else {
-            std::cout << "\033[1m\033[34m"
+            std::clog << "\033[1m\033[34m"
                       << SyAstTypeDebugInfo[(int)node->getAstType()]
                       << "\033[0m \"\033[32m" << node->getLiteral()
                       << "\033[0m\"";
@@ -194,22 +194,22 @@ void astWalkThrough(AstNodePtr node, int level) {
     }
 #ifdef AST_WALK_SHOW_CHILDERN
     if (node->a_ != nullptr) {
-        std::cout << "\033[35m\ta\033[0m";
+        std::clog << "\033[35m\ta\033[0m";
     }
     if (node->b_ != nullptr) {
-        std::cout << "\033[35m\tb\033[0m";
+        std::clog << "\033[35m\tb\033[0m";
     }
     if (node->c_ != nullptr) {
-        std::cout << "\033[35m\tc\033[0m";
+        std::clog << "\033[35m\tc\033[0m";
     }
     if (node->d_ != nullptr) {
-        std::cout << "\033[35m\td\033[0m";
+        std::clog << "\033[35m\td\033[0m";
     }
 #endif
-    std::cout << "\t\033[35mtrue type:\033[0m "
+    std::clog << "\t\033[35mtrue type:\033[0m "
               << __cxxabiv1::__cxa_demangle(typeid(*node).name(), nullptr,
                                             nullptr, nullptr);
-    std::cout << std::endl;
+    std::clog << std::endl;
     astWalkThrough(node->a_, level + 1);
     astWalkThrough(node->b_, level + 1);
     astWalkThrough(node->c_, level + 1);
