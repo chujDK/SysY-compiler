@@ -40,6 +40,7 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
         : symbol_table_((SymbolTableAPI*)new SymbolTable()) {
         error_          = false;
         const_exp_flag_ = false;
+        const_exp_val_  = Value(0);
     }
 
 #define DEF_VISIT_FUNC(type) void visit##type(type##AstNode& node) override;

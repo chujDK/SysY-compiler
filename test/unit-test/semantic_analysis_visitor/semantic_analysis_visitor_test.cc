@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <cstring>
 #include <memory>
 
 #include "sydebug.h"
@@ -62,13 +61,13 @@ TEST(SemanticAnalysisVisitorTest, decl_test) {
     EXPECT_EQ(b_c->getInitVal()->i32, 1);
 }
 
-// TODO: add test for const exp
+// TODO: add more test for const exp
 TEST(SemanticAnalysisVisitorTest, const_exp_test) {
     // as there is no const exp alone, we can't test it directly
     // instead, we use the const exp in the array decl
     const char* test_str =
-        "int arr_a[42];\
-        int arr_b[(10 + 2 * 3 - (20 - 30) * (2 / 1) + 0) * (8 % 7) * 7];\
+        "int arr_a[42][- 2 * 3][30 - 26][2 / 1];\
+        int arr_b[(10 + 2 * 3 - (30 - 25) * (2 / 1) + 0) * (8 % 7) * 7];\
         \xFF";
 
     CharStream* char_stream = new CharStream(test_str, strlen(test_str));
@@ -86,8 +85,11 @@ TEST(SemanticAnalysisVisitorTest, const_exp_test) {
     auto arr_a        = std::dynamic_pointer_cast<ArrayMemoryAPI>(
         symbol_table->searchTable("arr_a"));
     ASSERT_NE(arr_a, nullptr);
-    EXPECT_EQ(arr_a->getDimension(), 1);
+    EXPECT_EQ(arr_a->getDimension(), 4);
     EXPECT_EQ(arr_a->getSizeForDimension(0), 42);
+    EXPECT_EQ(arr_a->getSizeForDimension(1), -6);
+    EXPECT_EQ(arr_a->getSizeForDimension(2), 4);
+    EXPECT_EQ(arr_a->getSizeForDimension(3), 2);
 
     auto arr_b = std::dynamic_pointer_cast<ArrayMemoryAPI>(
         symbol_table->searchTable("arr_b"));

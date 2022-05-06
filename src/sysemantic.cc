@@ -154,7 +154,12 @@ void SemanticAnalysisVisitor::visitConstDef(ConstDefAstNode &node) {}
 
 static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
                                                      SyAstType rhs_type) {
-    // currently, no type check needed
+    // currently, no type check needed, however, we can assert all the types are
+    // VAL_TYPE_INT or VAL_TYPE_CONST_INT
+    DEBUG_ASSERT(lhs_type == SyAstType::VAL_TYPE_INT ||
+                 lhs_type == SyAstType::VAL_TYPE_CONST_INT);
+    DEBUG_ASSERT(rhs_type == SyAstType::VAL_TYPE_INT ||
+                 rhs_type == SyAstType::VAL_TYPE_CONST_INT);
     return std::make_tuple(true, "");
 }
 
@@ -197,7 +202,6 @@ void SemanticAnalysisVisitor::visitExpBase(ExpBaseAstNode &node) {
 }
 
 void SemanticAnalysisVisitor::visitAddExp(AddExpAstNode &node) {
-    // FIXME: delegate to ExpBase.. maybe?
     node.ExpBaseAstNode::accept(*this);
 }
 
@@ -213,7 +217,32 @@ void SemanticAnalysisVisitor::visitCond(CondAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitVarDef(VarDefAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitUnaryOp(UnaryOpAstNode &node) {}
+void SemanticAnalysisVisitor::visitUnaryOp(UnaryOpAstNode &node) {
+    // FIXME: add an unary op helper
+    // check if the type of the operand can be used in the unary op and do the
+    // op if const_exp_flag_ is set
+    auto op = node.op();
+    switch (op->getAstType()) {
+        case SyAstType::ALU_ADD:
+            if (const_exp_flag_) {  // do nothing
+            }
+            return;
+        case SyAstType::ALU_SUB:
+            if (const_exp_flag_) {
+                const_exp_val_.i32 = -const_exp_val_.i32;
+            }
+            return;
+        case SyAstType::LOGIC_NOT:
+            if (const_exp_flag_) {
+                const_exp_val_.i32 = !const_exp_val_.i32;
+            }
+            return;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            break;
+    }
+    DEBUG_ASSERT_NOT_REACH
+}
 
 void SemanticAnalysisVisitor::visitRelExp(RelExpAstNode &node) {
     node.ExpBaseAstNode::accept(*this);
@@ -227,10 +256,13 @@ void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {}
 
 static std::tuple<Value, SyAstType> literalToValue(const std::string &literal) {
     // currently, only have the int literal
-    return std::make_tuple(Value(std::stoi(literal)), SyAstType::VAL_TYPE_INT);
+    return std::make_tuple(Value(std::stoi(literal)),
+                           SyAstType::VAL_TYPE_CONST_INT);
 }
 
 void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
+    // the following code is not good, visitor shouldn't set the
+    // ConstExpAstNode's data. however, it is usefull, so keep it.
     auto [calced, const_exp_val] = node.const_val();
     if (calced) {
         // good, just set the context and return
@@ -240,6 +272,7 @@ void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
         // do the calc
         const_exp_flag_ = true;
         node.add_exp()->accept(*this);
+        node.setConstVal(const_exp_val_);
         const_exp_flag_ = false;
     }
 }
@@ -291,15 +324,18 @@ void SemanticAnalysisVisitor::visitFuncFParams(FuncFParamsAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitFuncFParam(FuncFParamAstNode &node) {}
 
-void SemanticAnalysisVisitor::visitExp(ExpAstNode &node) {}
+void SemanticAnalysisVisitor::visitExp(ExpAstNode &node) {
+    node.add_exp()->accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitLVal(LValAstNode &node) {}
 
 void SemanticAnalysisVisitor::visitNumber(NumberAstNode &node) {
     // Number -> IntConst
     auto [val, type] = literalToValue(node.token()->getLiteral());
-    const_exp_val_   = val;
-    val_type_        = type;
+    // always set the const_exp_val_ here, won't hurt
+    const_exp_val_ = val;
+    val_type_      = type;
 }
 
 void SemanticAnalysisVisitor::visitUnaryExp(UnaryExpAstNode &node) {
@@ -307,7 +343,7 @@ void SemanticAnalysisVisitor::visitUnaryExp(UnaryExpAstNode &node) {
 
     // A. test if this is a primary exp
     auto primary_exp = node.primary_exp();
-    if (primary_exp) {
+    if (primary_exp != nullptr) {
         primary_exp->accept(*this);
         return;
     }
@@ -316,7 +352,12 @@ void SemanticAnalysisVisitor::visitUnaryExp(UnaryExpAstNode &node) {
     // FIXME: unfinished
 
     // C. test if this is a unary op + unary exp
-    // FIXME: unfinished
+    auto unary_op = node.unary_op();
+    if (unary_op != nullptr) {
+        node.unary_exp()->accept(*this);
+        unary_op->accept(*this);
+        return;
+    }
 
     DEBUG_ASSERT_NOT_REACH
 }

@@ -364,6 +364,8 @@ class ExpAstNode : public AstNode {
 
     ExpAstNode(int line) : AstNode(SyEbnfType::Exp, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr add_exp() { return a_; }
 };
 
 class CondAstNode : public AstNode {
@@ -468,6 +470,20 @@ class UnaryExpAstNode : public AstNode {
         if (a_->getEbnfType() == SyEbnfType::UnaryOp) {
             return a_;
         } else {
+            return nullptr;
+        }
+    }
+
+    AstNodePtr unary_exp() {
+        if (b_ != nullptr) {
+            DEBUG_ASSERT(unary_op() != nullptr);
+            if (b_->getEbnfType() == SyEbnfType::UnaryExp) {
+                return b_;
+            } else {
+                return nullptr;
+            }
+        } else {
+            DEBUG_ASSERT(unary_op() == nullptr);
             return nullptr;
         }
     }
@@ -600,11 +616,12 @@ class LOrExpAstNode : public ExpBaseAstNode {
 class ConstExpAstNode : public AstNode {
    private:
     Value const_val_;
+    bool const_val_computed_;
 
    public:
     ConstExpAstNode(enum SyEbnfType ebnf_type, int line)
         : AstNode(ebnf_type, line) {
-        const_val_ = Value::getMaxValue();
+        const_val_computed_ = false;
     }
 
     ConstExpAstNode(int line) : AstNode(SyEbnfType::ConstExp, line) {}
@@ -615,10 +632,14 @@ class ConstExpAstNode : public AstNode {
         // if the const_val_ is not computed, then it is equal to max value
         // if the const_val_ itself is equal to max value,  it won't hurt to
         // compute it again
-        return std::make_tuple(const_val_ != Value::getMaxValue(), const_val_);
+        return std::make_tuple(const_val_computed_, const_val_);
     }
 
-    void setConstVal(Value const_val) { const_val_ = const_val; }
+    void setConstVal(Value const_val) {
+        DEBUG_ASSERT(const_val_computed_ == 0);
+        const_val_computed_ = true;
+        const_val_          = const_val;
+    }
 
     AstNodePtr add_exp() { return a_; }
 };
