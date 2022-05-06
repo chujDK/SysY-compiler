@@ -99,7 +99,7 @@ enum class SyEbnfType {
     CompUnit,      // CompUnit -> [ CompUnit ] ( Decl | FuncDef )
     Decl,          // Decl -> ConstDecl | VarDecl
     ConstDecl,     // ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
-    BType,         // BType -> 'int'
+    BType,         // BType -> 'int' | 'float'
     ConstDef,      // ConstDef -> Ident { '[' ConstExp ']' } '=' ConstInitVal
     ConstInitVal,  // ConstInitVal -> ConstExp | '{' [ ConstInitVal { ','
                    // ConstInitVal } ] '}'
@@ -108,7 +108,7 @@ enum class SyEbnfType {
               // } '=' InitVal
     InitVal,  // InitVal -> Exp | '{' [ InitVal { ',' InitVal } ] '}'
     FuncDef,  // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block
-    FuncType,     // FuncType -> 'void' | 'int'
+    FuncType,     // FuncType -> 'void' | 'int' | 'float'
     FuncFParams,  // FuncFParams -> FuncFParam { ',' FuncFParam }
     FuncFParam,   // FuncFParam -> BType Ident ['[' ']' { '[' Exp ']' }]
     Block,        // Block -> '{' { BlockItem } '}'

@@ -2339,10 +2339,11 @@ AstNodePtr Parser::Decl() {
 }
 
 AstNodePtr Parser::FuncType() {
-    // origin: FuncType -> 'void' | 'int'
+    // origin: FuncType -> 'void' | 'int' | 'float'
     AstNodePtr token = *token_iter_;
     if (token->getAstType() == SyAstType::TYPE_VOID ||
-        token->getAstType() == SyAstType::TYPE_INT) {
+        token->getAstType() == SyAstType::TYPE_INT ||
+        token->getAstType() == SyAstType::TYPE_FLOAT) {
         auto func_type = AstNodePool::get(SyEbnfType::FuncType, token->line_);
         func_type->a_  = token;
         ++token_iter_;
@@ -2353,8 +2354,9 @@ AstNodePtr Parser::FuncType() {
 }
 
 AstNodePtr Parser::BType() {
-    // origin: BType -> 'int'
-    if ((token_iter_)->getAstType() != SyAstType::TYPE_INT) {
+    // origin: BType -> 'int' | 'float'
+    if ((token_iter_)->getAstType() != SyAstType::TYPE_INT &&
+        (token_iter_)->getAstType() != SyAstType::TYPE_FLOAT) {
         return nullptr;
     }
     auto b_type = AstNodePool::get(SyEbnfType::BType, (token_iter_)->line_);

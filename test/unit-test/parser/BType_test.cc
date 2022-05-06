@@ -14,7 +14,7 @@ class BTypeVisitor : public AstNodeBase::AstNodeVisitor {
     }
 };
 
-class ParserTest : public Parser {
+class ParserIntTest : public Parser {
    public:
     using Parser::Parser;
     void testBType() {
@@ -25,10 +25,29 @@ class ParserTest : public Parser {
     }
 };
 
-TEST(BTypeTest, type_test) {
+TEST(BTypeTest, int_type_test) {
     const char* test_input = "int ";
 
     CharStream* cs = new CharStream(test_input, strlen(test_input));
-    ParserTest parser(cs);
+    ParserIntTest parser(cs);
+    parser.testBType();
+}
+
+class ParserFloatTest : public Parser {
+   public:
+    using Parser::Parser;
+    void testBType() {
+        auto btype = BType();
+        BTypeVisitor visitor;
+        btype->accept(visitor);
+        EXPECT_EQ(visitor.type_return_, SyAstType::TYPE_FLOAT);
+    }
+};
+
+TEST(BTypeTest, float_type_test) {
+    const char* test_input = "float ";
+
+    CharStream* cs = new CharStream(test_input, strlen(test_input));
+    ParserFloatTest parser(cs);
     parser.testBType();
 }
