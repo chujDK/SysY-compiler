@@ -33,6 +33,7 @@ add_executable(LAndExp_test LAndExp_test.cc)
 add_executable(LOrExp_test LOrExp_test.cc)
 add_executable(ConstExp_test ConstExp_test.cc)
 add_executable(Ident_test Ident_test.cc)
+add_executable(Lexer_test Lexer_test.cc)
 
 target_link_libraries(BType_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
 target_link_libraries(CompUnit_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
@@ -66,6 +67,7 @@ target_link_libraries(LAndExp_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread
 target_link_libraries(LOrExp_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
 target_link_libraries(ConstExp_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
 target_link_libraries(Ident_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
+target_link_libraries(Lexer_test ${GTEST_BOTH_LIBRARIES}  ${llvm_libs} pthread sycompiler_base_static)
 
 gtest_discover_tests(BType_test)
 gtest_discover_tests(CompUnit_test)
@@ -99,3 +101,5 @@ gtest_discover_tests(LAndExp_test)
 gtest_discover_tests(LOrExp_test)
 gtest_discover_tests(ConstExp_test)
 gtest_discover_tests(Ident_test)
+gtest_discover_tests(Lexer_test)
+

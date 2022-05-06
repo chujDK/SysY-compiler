@@ -54,8 +54,9 @@ enum class SyAstType {
     DOT,        // '.'
 
     // type name
-    TYPE_INT,   // 'int'
-    TYPE_VOID,  // 'void'
+    TYPE_INT,    // 'int'
+    TYPE_FLOAT,  // 'float'
+    TYPE_VOID,   // 'void'
 
     // statement
     STM_IF,        // 'if'
@@ -74,9 +75,11 @@ enum class SyAstType {
     EOF_TYPE,
 
     // type for the typing
-    VAL_TYPE_INT,        // int
-    VAL_TYPE_VOID,       // void
-    VAL_TYPE_INT_ARRAY,  // int[]..
+    VAL_TYPE_INT,          // int
+    VAL_TYPE_FLOAT,        // int
+    VAL_TYPE_VOID,         // void
+    VAL_TYPE_INT_ARRAY,    // int[]..
+    VAL_TYPE_FLOAT_ARRAY,  // float[]..
 
     // note: we don't tag the const here. it is done by the symbol_table's
     // isConst method. this two are here for the interpreter's sake

@@ -782,11 +782,9 @@ class ParserAPI {
     virtual ~ParserAPI(){};
 };
 
-using LexerIterator = typename Lexer::iterator;
-
 class Parser : ParserAPI {
    private:
-    LexerIterator token_iter_;
+    Lexer::iterator token_iter_;
     Lexer* lexer_;
     bool error_occured_;
     bool end_parse_;

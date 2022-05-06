@@ -9,8 +9,8 @@ int main(int argc, char* argv[]) {
     debugInfoInit();
     FileStream* fileStream = new FileStream(argv[1]);
     // this is the code for lexer
-    Lexer* lexer       = new Lexer(fileStream);
-    LexerIterator iter = lexer->begin();
+    Lexer* lexer = new Lexer(fileStream);
+    auto iter    = lexer->begin();
     while (iter->getAstType() != SyAstType::EOF_TYPE) {
         printSyToken(*iter);
         ++iter;

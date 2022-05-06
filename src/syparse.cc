@@ -11,6 +11,8 @@
 #include "sytype.h"
 #include "utils.h"
 
+using LexerIterator = Lexer::iterator;
+
 static void adjustExpLAst(AstNodePtr node);
 static AstNodePtr adjustExpAst(AstNodePtr node);
 static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
@@ -120,6 +122,10 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
             break;
         case SyAstType::TYPE_INT:
             token = std::make_shared<TokenAstNode>(SyAstType::TYPE_INT, line,
+                                                   std::move(literal));
+            break;
+        case SyAstType::TYPE_FLOAT:
+            token = std::make_shared<TokenAstNode>(SyAstType::TYPE_FLOAT, line,
                                                    std::move(literal));
             break;
         case SyAstType::TYPE_VOID:
@@ -557,6 +563,19 @@ TokenPtr Lexer::getIdent() {
             SyAstType::STM_RETURN;
         ident_jump[static_cast<int>('n')][(int)SyAstType::STM_RETURN] =
             SyAstType::END_OF_ENUM;
+
+        // float
+        ident_jump[static_cast<int>('f')][(int)SyAstType::END_OF_ENUM] =
+            SyAstType::TYPE_FLOAT;
+        ident_jump[static_cast<int>('l')][(int)SyAstType::TYPE_FLOAT] =
+            SyAstType::TYPE_FLOAT;
+        ident_jump[static_cast<int>('o')][(int)SyAstType::TYPE_FLOAT] =
+            SyAstType::TYPE_FLOAT;
+        ident_jump[static_cast<int>('a')][(int)SyAstType::TYPE_FLOAT] =
+            SyAstType::TYPE_FLOAT;
+        ident_jump[static_cast<int>('t')][(int)SyAstType::TYPE_FLOAT] =
+            SyAstType::END_OF_ENUM;
+
         init = true;
     }
     char current_char = input_stream_->getChar();
