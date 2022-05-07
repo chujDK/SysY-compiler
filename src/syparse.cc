@@ -390,6 +390,7 @@ std::string Lexer::getString() {
 // if the case is [number][EOF], we take the [EOF] is "in" the [number] and
 // report an error
 std::string Lexer::getNumber() {
+    // FIXME: handle the floating point number here
     std::string num_str;
     char c;
     if (input_stream_->peakChar() == '0' &&

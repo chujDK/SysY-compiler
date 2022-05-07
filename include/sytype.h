@@ -15,7 +15,6 @@ union Value {
     static Value getMaxValue() {
         return static_cast<Value>(std::numeric_limits<int32_t>::max());
     }
-    //    uint32_t u32;
 };
 
 enum class SyAstType {

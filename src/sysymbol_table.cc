@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 #include "utils.h"
@@ -29,10 +30,11 @@ IdentMemoryPtr IdentMemory::AllocMemoryForIdent(std::string ident,
     std::shared_ptr<IdentMemoryAPI> mem(nullptr);
     switch (type) {
         case SyAstType::VAL_TYPE_INT:
-            mem.reset((IdentMemoryAPI*)new IdentMemory(type, is_const));
+            mem.reset((IdentMemoryAPI *)new IdentMemory(type, is_const));
             return mem;
         case SyAstType::VAL_TYPE_INT_ARRAY:
-            mem.reset((ArrayMemoryAPI*)new ArrayMemory(n_elem, type, is_const));
+            mem.reset(
+                (ArrayMemoryAPI *)new ArrayMemory(n_elem, type, is_const));
             return mem;
         default:
             // shouldn't reach here
@@ -76,4 +78,29 @@ inline void SymbolTable::enterScope() {
 inline void SymbolTable::exitScope() {
     symbol_table_.pop_back();
     current_scope_--;
+}
+
+std::tuple<bool, FunctionTableAPI::Function> FunctionTable::searchFunction(
+    std::string ident) {
+    if (function_table_.find(ident) != function_table_.end()) {
+        return std::make_tuple(true, function_table_[ident]);
+    }
+    return std::make_tuple(
+        false, std::make_tuple(SyAstType::VAL_TYPE_VOID, "", FunctionArgs()));
+}
+
+void FunctionTable::addFunction(std::string ident, SyAstType type) {
+    function_table_[ident] = std::make_tuple(type, ident, FunctionArgs());
+}
+
+int FunctionTable::addFunctionArg(std::string ident, SyAstType type,
+                                  std::string name) {
+    // A. search the function
+    auto func_iter = function_table_.find(ident);
+    if (func_iter == function_table_.end()) {
+        return -1;
+    }
+    auto &[func_type, func_name, func_args] = func_iter->second;
+    func_args.push_back(std::make_tuple(type, name));
+    return 0;
 }

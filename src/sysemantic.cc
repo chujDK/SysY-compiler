@@ -152,10 +152,11 @@ void SemanticAnalysisVisitor::visitConstDef(ConstDefAstNode &node) {
 static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
                                                      SyAstType rhs_type) {
     // error can occurr when one type is non-array and one type is array
-    if (lhs_type == rhs_type) {
+    if ((!isArrayType(lhs_type)) && (!isArrayType(rhs_type))) {
         return std::make_tuple(true, "");
     } else {
-        return std::make_tuple(false, "type mismatch");
+        // this part is in fact a pointer arithmetic
+        return std::make_tuple(false, "pointer arithmetic is not allowed");
     }
 }
 
@@ -295,6 +296,7 @@ void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {
 
 static std::tuple<Value, SyAstType> literalToValue(const std::string &literal) {
     // currently, only have the int literal
+    // FIXME: add support for the floating point literal
     return std::make_tuple(Value(std::stoi(literal)), SyAstType::VAL_TYPE_INT);
 }
 

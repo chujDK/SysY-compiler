@@ -2,81 +2,73 @@
 
 #include "utils.h"
 
-template <typename T>
-static T basicTypeAlu(T lhs_val, T rhs_val, SyAstType op) {
-    T ans;
+// let the C++ compiler do the magic
+template <typename LHS_TYPE, typename RHS_TYPE>
+static auto basicTypeAlu(LHS_TYPE lhs_val, RHS_TYPE rhs_val, SyAstType op)
+    -> decltype(lhs_val + rhs_val) {
     switch (op) {
         case SyAstType::ALU_ADD:
-            ans = lhs_val + rhs_val;
+            return lhs_val + rhs_val;
             break;
         case SyAstType::ALU_SUB:
-            ans = lhs_val - rhs_val;
+            return lhs_val - rhs_val;
             break;
         case SyAstType::ALU_MUL:
-            ans = lhs_val * rhs_val;
+            return lhs_val * rhs_val;
             break;
         case SyAstType::ALU_DIV:
-            ans = lhs_val / rhs_val;
+            return lhs_val / rhs_val;
             break;
         case SyAstType::ALU_MOD:
-            ans = lhs_val % rhs_val;
+            return ((int)lhs_val) % ((int)rhs_val);
             break;
         case SyAstType::EQ:
-            ans = lhs_val == rhs_val;
+            return lhs_val == rhs_val;
             break;
         case SyAstType::NEQ:
-            ans = lhs_val != rhs_val;
+            return lhs_val != rhs_val;
             break;
         case SyAstType::LNE:
-            ans = lhs_val < rhs_val;
+            return lhs_val < rhs_val;
             break;
         case SyAstType::LE:
-            ans = lhs_val <= rhs_val;
+            return lhs_val <= rhs_val;
             break;
         case SyAstType::GNE:
-            ans = lhs_val > rhs_val;
+            return lhs_val > rhs_val;
             break;
         case SyAstType::GE:
-            ans = lhs_val >= rhs_val;
+            return lhs_val >= rhs_val;
             break;
         case SyAstType::LOGIC_AND:
-            ans = lhs_val && rhs_val;
+            return lhs_val && rhs_val;
             break;
         case SyAstType::LOGIC_OR:
-            ans = lhs_val || rhs_val;
+            return lhs_val || rhs_val;
             break;
         default:
             DEBUG_ASSERT_NOT_REACH
             break;
     }
-    return ans;
 }
-
-namespace SYTYPEHELPER {
-
-template <SyAstType, SyAstType>
-Value ValueAluHelper(Value lhs_val, Value rhs_val, SyAstType op) {
-    // unimplemented
-    DEBUG_ASSERT_NOT_REACH
-}
-
-template <>
-Value ValueAluHelper<SyAstType::VAL_TYPE_INT, SyAstType::VAL_TYPE_INT>(
-    Value lhs, Value rhs, SyAstType op) {
-    return Value(basicTypeAlu(lhs.i32, rhs.i32, op));
-}
-
-}  // namespace SYTYPEHELPER
 
 Value ValueAlu(Value lhs_val, SyAstType lhs_type, Value rhs_val,
                SyAstType rhs_type, SyAstType op) {
-    if ((lhs_type == SyAstType::VAL_TYPE_INT) &&
-        (rhs_type == SyAstType::VAL_TYPE_INT)) {
-        return SYTYPEHELPER::ValueAluHelper<SyAstType::VAL_TYPE_INT,
-                                            SyAstType::VAL_TYPE_INT>(
-            lhs_val, rhs_val, op);
+    // this code is not good :(
+    if (lhs_type == SyAstType::TYPE_INT && rhs_type == SyAstType::TYPE_INT) {
+        return Value(basicTypeAlu(lhs_val.i32, rhs_val.i32, op));
+    } else if (lhs_type == SyAstType::TYPE_FLOAT &&
+               rhs_type == SyAstType::TYPE_FLOAT) {
+        return Value(basicTypeAlu(lhs_val.f32, rhs_val.f32, op));
+    } else if (lhs_type == SyAstType::TYPE_INT &&
+               rhs_type == SyAstType::TYPE_FLOAT) {
+        return Value(basicTypeAlu(lhs_val.i32, rhs_val.f32, op));
+    } else if (lhs_type == SyAstType::TYPE_FLOAT &&
+               rhs_type == SyAstType::TYPE_INT) {
+        return Value(basicTypeAlu(lhs_val.f32, rhs_val.i32, op));
     } else {
         DEBUG_ASSERT_NOT_REACH
+        return Value(0);
     }
 }
 
@@ -84,6 +76,8 @@ SyAstType valTypeToValArrayType(SyAstType type) {
     switch (type) {
         case SyAstType::VAL_TYPE_INT:
             return SyAstType::VAL_TYPE_INT_ARRAY;
+        case SyAstType::VAL_TYPE_FLOAT:
+            return SyAstType::VAL_TYPE_FLOAT_ARRAY;
         default:
             DEBUG_ASSERT_NOT_REACH
             return SyAstType::END_OF_ENUM;
@@ -94,6 +88,8 @@ SyAstType valArrayTypeToValType(SyAstType type) {
     switch (type) {
         case SyAstType::VAL_TYPE_INT_ARRAY:
             return SyAstType::VAL_TYPE_INT;
+        case SyAstType::VAL_TYPE_FLOAT_ARRAY:
+            return SyAstType::VAL_TYPE_FLOAT;
         default:
             DEBUG_ASSERT_NOT_REACH
             return SyAstType::END_OF_ENUM;

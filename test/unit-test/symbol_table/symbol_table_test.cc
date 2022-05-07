@@ -83,3 +83,23 @@ TEST(SymbolTableTest, ident_test) {
 // 1. add a function
 // 2. search a function
 // 3. get a function's argument list
+// 4. get a function's body
+TEST(SymbolTableTest, function_test) {
+    FunctionTableAPI* function_table = (FunctionTableAPI*)new FunctionTable();
+
+    // int foo(int a, float b)
+    function_table->addFunction("foo", SyAstType::VAL_TYPE_INT);
+    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_INT, "a");
+    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_FLOAT, "b");
+
+    auto [searched, foo] = function_table->searchFunction("foo");
+    ASSERT_EQ(searched, true);
+    auto [foo_type, foo_name, foo_args] = foo;
+    EXPECT_EQ(foo_type, SyAstType::VAL_TYPE_INT);
+    EXPECT_EQ(foo_name, "foo");
+    EXPECT_EQ(foo_args.size(), 2);
+    EXPECT_EQ(std::get<0>(foo_args[0]), SyAstType::VAL_TYPE_INT);
+    EXPECT_EQ(std::get<1>(foo_args[0]), "a");
+    EXPECT_EQ(std::get<0>(foo_args[1]), SyAstType::VAL_TYPE_FLOAT);
+    EXPECT_EQ(std::get<1>(foo_args[1]), "b");
+}

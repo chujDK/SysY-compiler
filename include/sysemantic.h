@@ -7,8 +7,6 @@
 #include "sysymbol_table.h"
 #include "sytype.h"
 
-class FunctionTable {};
-
 // note: to this analysis, a const exp can only constains const lval with init
 // val, like "const int a = 1;" is valid, but "const int a;" or
 // "int a; const int b = a;" is not valid. containing such a invaild lval can
