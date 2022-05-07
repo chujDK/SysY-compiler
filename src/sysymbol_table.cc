@@ -5,6 +5,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "syparse.h"
 #include "utils.h"
 
 IdentMemoryPtr SymbolTable::searchTable(std::string ident) {
@@ -85,12 +86,15 @@ std::tuple<bool, FunctionTableAPI::Function> FunctionTable::searchFunction(
     if (function_table_.find(ident) != function_table_.end()) {
         return std::make_tuple(true, function_table_[ident]);
     }
-    return std::make_tuple(
-        false, std::make_tuple(SyAstType::VAL_TYPE_VOID, "", FunctionArgs()));
+    return std::make_tuple(false, std::make_tuple(SyAstType::VAL_TYPE_VOID, "",
+                                                  FunctionArgs(), nullptr));
 }
 
-void FunctionTable::addFunction(std::string ident, SyAstType type) {
-    function_table_[ident] = std::make_tuple(type, ident, FunctionArgs());
+FunctionTable::Function FunctionTable::addFunction(std::string ident,
+                                                   SyAstType type) {
+    auto funciton = std::make_tuple(type, ident, FunctionArgs(), nullptr);
+    function_table_[ident] = funciton;
+    return funciton;
 }
 
 int FunctionTable::addFunctionArg(std::string ident, SyAstType type,
@@ -100,7 +104,27 @@ int FunctionTable::addFunctionArg(std::string ident, SyAstType type,
     if (func_iter == function_table_.end()) {
         return -1;
     }
-    auto &[func_type, func_name, func_args] = func_iter->second;
+    auto &[func_type, func_name, func_args, body] = func_iter->second;
     func_args.push_back(std::make_tuple(type, name));
     return 0;
+}
+
+AstNodePtr FunctionTable::function_body(std::string ident) {
+    auto func_iter = function_table_.find(ident);
+    if (func_iter == function_table_.end()) {
+        return nullptr;
+    }
+    auto &[func_type, func_name, func_args, body] = func_iter->second;
+    return body;
+}
+
+void FunctionTable::set_function_body(std::string name,
+                                      AstNodePtr function_body) {
+    auto func_iter = function_table_.find(name);
+    if (func_iter == function_table_.end()) {
+        DEBUG_ASSERT_NOT_REACH
+        return;
+    }
+    auto &[func_type, func_name, func_args, body] = func_iter->second;
+    body                                          = function_body;
 }

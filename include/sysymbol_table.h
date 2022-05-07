@@ -159,13 +159,14 @@ class FunctionTableAPI {
    public:
     using FunctionArg  = std::tuple<SyAstType, std::string>;
     using FunctionArgs = std::vector<FunctionArg>;
-    using Function     = std::tuple<SyAstType, std::string, FunctionArgs>;
-    virtual void addFunction(std::string ident, SyAstType type)          = 0;
+    using Function =
+        std::tuple<SyAstType, std::string, FunctionArgs, AstNodePtr>;
+    virtual Function addFunction(std::string ident, SyAstType type)      = 0;
     virtual std::tuple<bool, Function> searchFunction(std::string ident) = 0;
     virtual int addFunctionArg(std::string ident, SyAstType type,
                                std::string name)                         = 0;
-    virtual AstNodePtr function_body()                                   = 0;
-    virtual void set_function_body(AstNodePtr body)                      = 0;
+    virtual AstNodePtr function_body(std::string name)                   = 0;
+    virtual void set_function_body(std::string name, AstNodePtr body)    = 0;
     virtual ~FunctionTableAPI() {}
 };
 
@@ -178,18 +179,15 @@ class FunctionTable : public FunctionTableAPI {
     // 5. get function body
    private:
     std::unordered_map<std::string, Function> function_table_;
-    AstNodePtr function_body_;
 
    public:
-    void addFunction(std::string ident, SyAstType type) override;
+    Function addFunction(std::string ident, SyAstType type) override;
     std::tuple<bool, Function> searchFunction(std::string ident) override;
     int addFunctionArg(std::string ident, SyAstType type,
                        std::string name) override;
 
-    AstNodePtr function_body() override { return function_body_; }
-    void set_function_body(AstNodePtr function_body) override {
-        function_body_ = function_body;
-    }
+    AstNodePtr function_body(std::string name) override;
+    void set_function_body(std::string name, AstNodePtr function_body) override;
 };
 
 #endif
