@@ -14,7 +14,7 @@
 #include "sytype.h"
 #include "utils.h"
 
-struct AstNodeBase;
+class AstNodeBase;
 using AstNodePtr = std::shared_ptr<AstNodeBase>;
 
 class IdentMemoryAPI {

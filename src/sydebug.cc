@@ -210,9 +210,8 @@ void astWalkThrough(AstNodePtr node, int level) {
               << __cxxabiv1::__cxa_demangle(typeid(*node).name(), nullptr,
                                             nullptr, nullptr);
     std::clog << std::endl;
-    astWalkThrough(node->a_, level + 1);
-    astWalkThrough(node->b_, level + 1);
-    astWalkThrough(node->c_, level + 1);
-    astWalkThrough(node->d_, level + 1);
+    for (int i = 0; i < 4; i++) {
+        astWalkThrough(node->getChildAt(0), level + 1);
+    }
     return;
 }

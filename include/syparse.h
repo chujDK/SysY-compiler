@@ -11,7 +11,7 @@
 #include "sytype.h"
 #include "utils.h"
 
-struct AstNodeBase;
+class AstNodeBase;
 class TokenAstNode;
 using TokenPtr   = std::shared_ptr<TokenAstNode>;
 using AstNodePtr = std::shared_ptr<AstNodeBase>;
@@ -35,16 +35,14 @@ class InputStream {
     virtual ~InputStream() {}
 };
 
-struct AstNodeBase {
+class AstNodeBase {
+    // TODO: after refactor, change this to protected
+   public:
     // in the ast, the meaning is self-explained;
     // if the nodes are in a list, like FuncFParam to FuncFParams,
     // parent_ and d_ link up a double linked list
     AstNodePtr a_, b_, c_, d_;  // TODO: maybe delete this field in the future?
                                 // anyway, this field won't used in the visitors
-
-    // getter for the children. sometimes we want to treat two kinds of nodes as
-    // the same in visiting, in that case, we need a more common getter
-    virtual AstNodePtr getChildAt(int index) const;
 
     // only to the EBnfType::TYPE_INT_ARRAY, array_size_ can be used
     // this also means that this complier can only support array size up to
@@ -57,6 +55,11 @@ struct AstNodeBase {
         unsigned int const_val_;
     } u_;
     unsigned int line_;
+
+   public:
+    // getter for the children. sometimes we want to treat two kinds of nodes as
+    // the same in visiting, in that case, we need a more common getter
+    virtual AstNodePtr getChildAt(int index) const;
 
     virtual ~AstNodeBase() {}
     virtual std::string const& getLiteral() const = 0;
@@ -78,15 +81,18 @@ struct AstNodeBase {
     class AstNodeIterator;
     virtual AstNodeIterator begin();
     virtual AstNodeIterator end();
+
+    // consider to add a comment setter
+    friend class Parser;
 };
 
 // a simple iterator.
 class AstNodeBase::AstNodeIterator {
    private:
-    // note: here we use raw ptr to avoid the samrt pointer problem. moreover,
-    // when iterator is used, the node itself can't be deleted. after the
-    // iterator is used, the node do nothing to the node (means no effects to
-    // the smart pointer's ref count).
+    // note: here we use raw ptr to avoid the samrt pointer problem.
+    // moreover, when iterator is used, the node itself can't be deleted.
+    // after the iterator is used, the node do nothing to the node (means no
+    // effects to the smart pointer's ref count).
     AstNodeBase* node_;
 
    public:
@@ -833,6 +839,13 @@ class Parser : ParserAPI {
     AstNodePtr LOrExpL();   // won't error
     AstNodePtr ConstExp();  // no error handling
     AstNodePtr Ident();     // no error handling
+
+    // helper for the *L suffix node elemination
+    AstNodePtr copyInvaildAstNodeToValidHelper(AstNodePtr node,
+                                               SyEbnfType type);
+    void adjustExpLAst(AstNodePtr node);
+    AstNodePtr adjustExpAst(AstNodePtr root);
+    AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
 
    public:
     AstNodePtr parse();

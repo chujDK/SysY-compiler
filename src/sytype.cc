@@ -55,16 +55,17 @@ static auto basicTypeAlu(LHS_TYPE lhs_val, RHS_TYPE rhs_val, SyAstType op)
 Value ValueAlu(Value lhs_val, SyAstType lhs_type, Value rhs_val,
                SyAstType rhs_type, SyAstType op) {
     // this code is not good :(
-    if (lhs_type == SyAstType::TYPE_INT && rhs_type == SyAstType::TYPE_INT) {
+    if (lhs_type == SyAstType::VAL_TYPE_INT &&
+        rhs_type == SyAstType::VAL_TYPE_INT) {
         return Value(basicTypeAlu(lhs_val.i32, rhs_val.i32, op));
-    } else if (lhs_type == SyAstType::TYPE_FLOAT &&
-               rhs_type == SyAstType::TYPE_FLOAT) {
+    } else if (lhs_type == SyAstType::VAL_TYPE_FLOAT &&
+               rhs_type == SyAstType::VAL_TYPE_FLOAT) {
         return Value(basicTypeAlu(lhs_val.f32, rhs_val.f32, op));
-    } else if (lhs_type == SyAstType::TYPE_INT &&
-               rhs_type == SyAstType::TYPE_FLOAT) {
+    } else if (lhs_type == SyAstType::VAL_TYPE_INT &&
+               rhs_type == SyAstType::VAL_TYPE_FLOAT) {
         return Value(basicTypeAlu(lhs_val.i32, rhs_val.f32, op));
-    } else if (lhs_type == SyAstType::TYPE_FLOAT &&
-               rhs_type == SyAstType::TYPE_INT) {
+    } else if (lhs_type == SyAstType::VAL_TYPE_FLOAT &&
+               rhs_type == SyAstType::VAL_TYPE_INT) {
         return Value(basicTypeAlu(lhs_val.f32, rhs_val.i32, op));
     } else {
         DEBUG_ASSERT_NOT_REACH

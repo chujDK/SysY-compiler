@@ -13,10 +13,6 @@
 
 using LexerIterator = Lexer::iterator;
 
-static void adjustExpLAst(AstNodePtr node);
-static AstNodePtr adjustExpAst(AstNodePtr node);
-static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node);
-
 TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
     TokenPtr token = nullptr;
     switch (type) {
@@ -1416,8 +1412,8 @@ AstNodePtr Parser::Number() {
 // becasue after the parser, all types is indicated by the visitor pattern,
 // means that just setEbnfType is not enough, we need a new function to get the
 // corret node here
-static AstNodePtr copyInvaildAstNodeToValidHelper(AstNodePtr node,
-                                                  SyEbnfType type) {
+AstNodePtr Parser::copyInvaildAstNodeToValidHelper(AstNodePtr node,
+                                                   SyEbnfType type) {
     auto new_node = AstNodePool::get(type, node->getLine());
     DEBUG_ASSERT(node->d_ == nullptr);
     // A. copy all the tree components
@@ -1443,7 +1439,7 @@ static AstNodePtr copyInvaildAstNodeToValidHelper(AstNodePtr node,
 // this two helper can adjust MulExp, AddExp, RelExp, EqExp, LAndExp, LOrExp
 // they are all left recursive in the same form
 // this comment inside uses AddExp as example
-static void adjustExpLAst(AstNodePtr node) {
+void Parser::adjustExpLAst(AstNodePtr node) {
     // before addjust, node is already an AddExp
     // but node->b_ is nullptr
     // after addjust, node->b_ is an '+' or '-',
@@ -1532,7 +1528,7 @@ static void adjustExpLAst(AstNodePtr node) {
 // MulExp '+' MulExp
 
 // @input: root of the ast
-static AstNodePtr adjustExpAst(AstNodePtr root) {
+AstNodePtr Parser::adjustExpAst(AstNodePtr root) {
     // before addjust, node->b_ is an AddExpL
     // after addjust, node->b_ is an '+' or '-',
     // and node->c_ is an AddExp
@@ -1554,7 +1550,7 @@ static AstNodePtr adjustExpAst(AstNodePtr root) {
     return adjustExpAstRightBindToLeftBind(root);
 }
 
-static AstNodePtr adjustExpAstRightBindToLeftBind(AstNodePtr node) {
+AstNodePtr Parser::adjustExpAstRightBindToLeftBind(AstNodePtr node) {
     auto right_node = node->c_;
     if (right_node->getEbnfType() != node->getEbnfType()) {
         return node;
