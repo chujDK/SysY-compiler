@@ -18,6 +18,7 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
     bool error_;
     Value const_exp_val_;
     SymbolTableAPI* symbol_table_;
+    FunctionTableAPI* function_table_;
     ArrayMemoryPtr array_mem_;
     IdentMemoryPtr ident_mem_;
     // context for the tour of b_type
@@ -30,6 +31,9 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
 
     // context for the typing pass
     SyAstType val_type_;
+
+    // context for the args handle
+    std::string current_function_name_;
 
     //    SymbolTablePtr symbol_table_;
     void defHelper(bool is_const, SyAstType type, AstNodeBase* def_iter);
@@ -44,7 +48,8 @@ class SemanticAnalysisVisitor : public AstNodeBase::AstNodeVisitor {
     SymbolTableAPI* symbol_table() { return symbol_table_; }
 
     SemanticAnalysisVisitor()
-        : symbol_table_((SymbolTableAPI*)new SymbolTable()) {
+        : symbol_table_((SymbolTableAPI*)new SymbolTable()),
+          function_table_((FunctionTableAPI*)(new FunctionTable())) {
         error_          = false;
         const_exp_flag_ = false;
         const_exp_val_  = Value(0);

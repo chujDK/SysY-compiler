@@ -15,7 +15,6 @@
 static std::tuple<bool, std::string> typeCheckHelper(SyAstType lhs_type,
                                                      SyAstType rhs_type);
 
-static SyAstType bTypeToValType(SyAstType type);
 static std::tuple<Value, SyAstType> literalToValue(const std::string &literal);
 
 void SemanticAnalysisVisitor::semanticError(std::string msg, int line) {
@@ -34,16 +33,6 @@ void SemanticAnalysisVisitor::visitCompUnit(CompUnitAstNode &node) {
 void SemanticAnalysisVisitor::visitDecl(DeclAstNode &node) {
     // just visit the child
     node.const_decl_or_var_decl()->accept(*this);
-}
-
-static SyAstType bTypeToValType(SyAstType type) {
-    switch (type) {
-        case SyAstType::TYPE_INT:
-            return SyAstType::VAL_TYPE_INT;
-        default:
-            DEBUG_ASSERT_NOT_REACH
-            return SyAstType::END_OF_ENUM;
-    }
 }
 
 void SemanticAnalysisVisitor::defHelper(bool is_const, SyAstType type,
@@ -317,9 +306,48 @@ void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
     }
 }
 
-void SemanticAnalysisVisitor::visitFuncType(FuncTypeAstNode &node) {}
+void SemanticAnalysisVisitor::visitFuncType(FuncTypeAstNode &node) {
+    // this job is done by the visitFuncDef
+    DEBUG_ASSERT_NOT_REACH
+}
 
-void SemanticAnalysisVisitor::visitFuncDef(FuncDefAstNode &node) {}
+void SemanticAnalysisVisitor::visitFuncDef(FuncDefAstNode &node) {
+    // FuncDef -> FuncType Ident '(' [FuncFParams] ')' Block
+    // A. get the function type
+    auto func_type_token = node.func_type();
+    auto func_type       = func_type_token->getAstType();
+    DEBUG_ASSERT(func_type == SyAstType::TYPE_INT ||
+                 func_type == SyAstType::TYPE_FLOAT ||
+                 func_type == SyAstType::TYPE_VOID);
+    // B. get the function name
+    auto func_name_token = node.ident();
+    auto func_name       = func_name_token->getLiteral();
+
+    // C. check if the function name is already defined
+    auto [searched, previous_defined_function] =
+        function_table_->searchFunction(func_name);
+
+    if (searched) {
+        // this is a redefinition of function
+        semanticError(
+            "redefinition of function \033[1m" + func_name + "\033[0m",
+            node.getLine());
+    }
+    // D. create the function
+    auto function = function_table_->addFunction(func_name, func_type);
+
+    // E. handle the args
+    current_function_name_ = func_name;
+    auto func_f_params     = node.func_f_params();
+    if (func_f_params != nullptr) {
+        func_f_params->accept(*this);
+    }
+
+    // F. add the block to the function, and visit the block
+    auto block = node.block();
+    function_table_->set_function_body(func_name, block);
+    block->accept(*this);
+}
 
 void SemanticAnalysisVisitor::visitStmt(StmtAstNode &node) {}
 
@@ -354,6 +382,7 @@ void SemanticAnalysisVisitor::visitLAndExp(LAndExpAstNode &node) {
 
 void SemanticAnalysisVisitor::visitToken(TokenAstNode &node) {
     // seems like we don't need to do anything here
+    DEBUG_ASSERT_NOT_REACH
 }
 
 void SemanticAnalysisVisitor::visitLOrExp(LOrExpAstNode &node) {
@@ -385,9 +414,17 @@ void SemanticAnalysisVisitor::visitInitVal(InitValAstNode &node) {
     }
 }
 
-void SemanticAnalysisVisitor::visitFuncFParams(FuncFParamsAstNode &node) {}
+void SemanticAnalysisVisitor::visitFuncFParams(FuncFParamsAstNode &node) {
+    // FuncFParams -> FuncFParam { ',' FuncFParam }
+    for (auto func_f_param : *node.func_f_param_list()) {
+        func_f_param->accept(*this);
+    }
+}
 
-void SemanticAnalysisVisitor::visitFuncFParam(FuncFParamAstNode &node) {}
+void SemanticAnalysisVisitor::visitFuncFParam(FuncFParamAstNode &node) {
+    // FuncFParam -> Type Ident ['[' ']' { '[' Exp ']' }]
+    // TODO: implement it
+}
 
 void SemanticAnalysisVisitor::visitExp(ExpAstNode &node) {
     node.add_exp()->accept(*this);

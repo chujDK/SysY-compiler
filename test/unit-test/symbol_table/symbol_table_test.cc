@@ -54,6 +54,8 @@ TEST(SymbolTableTest, ident_test) {
     ArrayMemoryPtr array_c = std::dynamic_pointer_cast<ArrayMemoryAPI>(
         symbol_table->searchTable("c"));
 
+    ASSERT_NE(array_c, nullptr);
+
     array_c->setDimension(2);
     array_c->setSizeForDimension(0, 0x8);
     array_c->setSizeForDimension(1, 0x20);
@@ -89,12 +91,19 @@ TEST(SymbolTableTest, function_test) {
 
     // int foo(int a, float b)
     function_table->addFunction("foo", SyAstType::VAL_TYPE_INT);
-    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_INT, "a");
-    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_FLOAT, "b");
+    auto ident_a =
+        IdentMemory::AllocMemoryForIdent(SyAstType::VAL_TYPE_INT, 0, false);
+    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_INT, "a",
+                                   ident_a);
+
+    auto ident_b =
+        IdentMemory::AllocMemoryForIdent(SyAstType::VAL_TYPE_FLOAT, 0, false);
+    function_table->addFunctionArg("foo", SyAstType::VAL_TYPE_FLOAT, "b",
+                                   ident_b);
 
     auto [searched, foo] = function_table->searchFunction("foo");
     ASSERT_EQ(searched, true);
-    auto [foo_type, foo_name, foo_args] = foo;
+    auto [foo_type, foo_name, foo_args, body] = foo;
     EXPECT_EQ(foo_type, SyAstType::VAL_TYPE_INT);
     EXPECT_EQ(foo_name, "foo");
     EXPECT_EQ(foo_args.size(), 2);

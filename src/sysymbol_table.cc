@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "syparse.h"
+#include "sytype.h"
 #include "utils.h"
 
 IdentMemoryPtr SymbolTable::searchTable(std::string ident) {
@@ -25,23 +26,15 @@ IdentMemoryPtr SymbolTable::searchCurrentScope(std::string ident) {
     return nullptr;
 }
 
-IdentMemoryPtr IdentMemory::AllocMemoryForIdent(std::string ident,
-                                                SyAstType type, int n_elem,
+IdentMemoryPtr IdentMemory::AllocMemoryForIdent(SyAstType type, int n_elem,
                                                 bool is_const) {
     std::shared_ptr<IdentMemoryAPI> mem(nullptr);
-    switch (type) {
-        case SyAstType::VAL_TYPE_INT:
-            mem.reset((IdentMemoryAPI *)new IdentMemory(type, is_const));
-            return mem;
-        case SyAstType::VAL_TYPE_INT_ARRAY:
-            mem.reset(
-                (ArrayMemoryAPI *)new ArrayMemory(n_elem, type, is_const));
-            return mem;
-        default:
-            // shouldn't reach here
-            // cause a bug
-            DEBUG_ASSERT_NOT_REACH
-            return nullptr;
+    if (isArrayType(type)) {
+        mem.reset((ArrayMemoryAPI *)new ArrayMemory(n_elem, type, is_const));
+        return mem;
+    } else {
+        mem.reset((IdentMemoryAPI *)new IdentMemory(type, is_const));
+        return mem;
     }
 }
 
@@ -50,7 +43,7 @@ IdentMemoryPtr SymbolTable::addSymbolInternal(std::string ident, SyAstType type,
                                               int scope) {
     // no need to delete the ident, just write through it
     IdentMemoryPtr mem =
-        IdentMemory::AllocMemoryForIdent(ident, type, n_elem, is_const);
+        IdentMemory::AllocMemoryForIdent(type, n_elem, is_const);
     symbol_table_[scope][ident] = mem;
     return mem;
 }
@@ -98,14 +91,14 @@ FunctionTable::Function FunctionTable::addFunction(std::string ident,
 }
 
 int FunctionTable::addFunctionArg(std::string ident, SyAstType type,
-                                  std::string name) {
+                                  std::string arg_name, IdentMemoryPtr arg) {
     // A. search the function
     auto func_iter = function_table_.find(ident);
     if (func_iter == function_table_.end()) {
         return -1;
     }
     auto &[func_type, func_name, func_args, body] = func_iter->second;
-    func_args.push_back(std::make_tuple(type, name));
+    func_args.push_back(std::make_tuple(type, arg_name, arg));
     return 0;
 }
 

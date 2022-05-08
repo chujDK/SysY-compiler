@@ -96,3 +96,15 @@ SyAstType valArrayTypeToValType(SyAstType type) {
             return SyAstType::END_OF_ENUM;
     }
 }
+
+SyAstType bTypeToValType(SyAstType type) {
+    switch (type) {
+        case SyAstType::TYPE_INT:
+            return SyAstType::VAL_TYPE_INT;
+        case SyAstType::TYPE_FLOAT:
+            return SyAstType::VAL_TYPE_FLOAT;
+        default:
+            DEBUG_ASSERT_NOT_REACH
+            return SyAstType::END_OF_ENUM;
+    }
+}

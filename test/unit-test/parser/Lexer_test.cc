@@ -4,7 +4,7 @@
 #include "syparse.h"
 
 TEST(LexerTest, test_float) {
-    const char* test_input = "float int float1234 ";
+    const char* test_input = "float int float1234 1234. ";
 
     CharStream* cs = new CharStream(test_input, strlen(test_input));
     Lexer lexer(cs);

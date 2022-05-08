@@ -48,8 +48,8 @@ class IdentMemory : IdentMemoryAPI {
 
    public:
     // this is a factory method
-    static IdentMemoryPtr AllocMemoryForIdent(std::string ident, SyAstType type,
-                                              int n_elem, bool is_const);
+    static IdentMemoryPtr AllocMemoryForIdent(SyAstType type, int n_elem,
+                                              bool is_const);
     IdentMemory(SyAstType type, bool is_const) {
         // this can cause a serious memory waste when too much
         // small memory (< 0x18 with glibc) is allocated
@@ -157,14 +157,15 @@ class SymbolTable : SymbolTableAPI {
 
 class FunctionTableAPI {
    public:
-    using FunctionArg  = std::tuple<SyAstType, std::string>;
+    using FunctionArg  = std::tuple<SyAstType, std::string, IdentMemoryPtr>;
     using FunctionArgs = std::vector<FunctionArg>;
     using Function =
         std::tuple<SyAstType, std::string, FunctionArgs, AstNodePtr>;
     virtual Function addFunction(std::string ident, SyAstType type)      = 0;
     virtual std::tuple<bool, Function> searchFunction(std::string ident) = 0;
     virtual int addFunctionArg(std::string ident, SyAstType type,
-                               std::string name)                         = 0;
+                               std::string arg_name,
+                               IdentMemoryPtr arg_mem)                   = 0;
     virtual AstNodePtr function_body(std::string name)                   = 0;
     virtual void set_function_body(std::string name, AstNodePtr body)    = 0;
     virtual ~FunctionTableAPI() {}
@@ -183,8 +184,8 @@ class FunctionTable : public FunctionTableAPI {
    public:
     Function addFunction(std::string ident, SyAstType type) override;
     std::tuple<bool, Function> searchFunction(std::string ident) override;
-    int addFunctionArg(std::string ident, SyAstType type,
-                       std::string name) override;
+    int addFunctionArg(std::string ident, SyAstType type, std::string arg_name,
+                       IdentMemoryPtr arg_mem) override;
 
     AstNodePtr function_body(std::string name) override;
     void set_function_body(std::string name, AstNodePtr function_body) override;

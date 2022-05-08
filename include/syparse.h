@@ -358,6 +358,8 @@ class FuncFParamsAstNode : public AstNode {
 
     FuncFParamsAstNode(int line) : AstNode(SyEbnfType::FuncFParams, line) {}
     void accept(AstNodeVisitor& visitor) override;
+
+    AstNodePtr func_f_param_list() { return a_; }
 };
 
 class FuncFParamAstNode : public AstNode {
