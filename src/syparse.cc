@@ -112,10 +112,6 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
             token = std::make_shared<TokenAstNode>(SyAstType::COMMA, line,
                                                    std::move(literal));
             break;
-        case SyAstType::DOT:
-            token = std::make_shared<TokenAstNode>(SyAstType::DOT, line,
-                                                   std::move(literal));
-            break;
         case SyAstType::TYPE_INT:
             token = std::make_shared<TokenAstNode>(SyAstType::TYPE_INT, line,
                                                    std::move(literal));
@@ -752,10 +748,6 @@ TokenPtr Lexer::getNextTokenInternal() {
                 input_stream_->getChar();
                 return AstNodePool::get(SyAstType::COMMA, line_,
                                         std::string(","));
-            case '.':
-                input_stream_->getChar();
-                return AstNodePool::get(SyAstType::DOT, line_,
-                                        std::string("."));
             case '\n':
                 input_stream_->getChar();
                 line_++;
@@ -2556,6 +2548,7 @@ AstNodeBase::AstNodeIterator AstNodeBase::end() {
 bool isArrayType(SyAstType type) {
     switch (type) {
         case SyAstType::VAL_TYPE_INT_ARRAY:
+        case SyAstType::VAL_TYPE_FLOAT_ARRAY:
             return true;
         default:
             return false;

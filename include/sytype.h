@@ -50,7 +50,6 @@ enum class SyAstType {
     SEMICOLON,  // ';'
     QUOTE,      // '"'
     COMMA,      // ','
-    DOT,        // '.'
 
     // type name
     TYPE_INT,    // 'int'
@@ -184,5 +183,6 @@ bool isArrayType(SyAstType type);
 
 SyAstType valArrayTypeToValType(SyAstType type);
 SyAstType valTypeToValArrayType(SyAstType type);
+SyAstType bTypeToValType(SyAstType type);
 
 #endif

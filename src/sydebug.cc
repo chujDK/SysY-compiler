@@ -86,7 +86,6 @@ static void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int)SyAstType::ALU_MOD]          = "ALU_MOD";
     SyAstTypeDebugInfo[(int)SyAstType::ASSIGN]           = "ASSIGN";
     SyAstTypeDebugInfo[(int)SyAstType::COMMA]            = "COMMA";
-    SyAstTypeDebugInfo[(int)SyAstType::DOT]              = "DOT";
     SyAstTypeDebugInfo[(int)SyAstType::EQ]               = "EQ";
     SyAstTypeDebugInfo[(int)SyAstType::NEQ]              = "NEQ";
     SyAstTypeDebugInfo[(int)SyAstType::LNE]              = "LNE";
