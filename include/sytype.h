@@ -67,6 +67,7 @@ enum class SyAstType {
 
     // number
     INT_IMM,
+    FLOAT_IMM,
 
     STRING,
     IDENT,  // [_a-zA-Z][_-a-zA-Z0-9]*
@@ -120,7 +121,7 @@ enum class SyEbnfType {
     Cond,         // Cond -> LOrExp
     LVal,         // LVal -> Ident {'[' Exp ']'}
     PrimaryExp,   // PrimaryExp -> '(' Exp ')' | LVal | Number
-    Number,       // Number -> IntConst
+    Number,       // Number -> INT_IMM | FLOAT_IMM
     UnaryExp,  // UnaryExp -> PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp
                // UnaryExp
     UnaryOp,   // UnaryOp -> '+' | '-' | '!'

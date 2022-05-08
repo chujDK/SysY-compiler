@@ -107,6 +107,7 @@ static void SyAstTypeDebugInfoInit() {
     SyAstTypeDebugInfo[(int)SyAstType::STM_CONST]        = "STM_CONST";
     SyAstTypeDebugInfo[(int)SyAstType::STM_RETURN]       = "STM_RETURN";
     SyAstTypeDebugInfo[(int)SyAstType::INT_IMM]          = "INT_IMM";
+    SyAstTypeDebugInfo[(int)SyAstType::FLOAT_IMM]        = "FLOAT_IMM";
     SyAstTypeDebugInfo[(int)SyAstType::STRING]           = "STRING";
     SyAstTypeDebugInfo[(int)SyAstType::IDENT]            = "IDENT";
     SyAstTypeDebugInfo[(int)SyAstType::EOF_TYPE]         = "EOF_TYPE";

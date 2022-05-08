@@ -2,6 +2,7 @@
 #define _SYPARSE_H_
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <memory>
 #include <string>
@@ -735,7 +736,8 @@ class Lexer {
     void lexError(std::string msg);
     void lexWarning(std::string msg);
     std::string getString();
-    std::string getNumber();
+    std::string getPartialNumberHelper(std::function<bool(char)> isInRange);
+    TokenPtr getNumber();
     TokenPtr getIdent();
     TokenPtr getNextTokenInternal();
     TokenPtrIter getNextToken();

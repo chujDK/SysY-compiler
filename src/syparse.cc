@@ -4,8 +4,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <ostream>
+#include <string>
 #include <utility>
 
 #include "sytype.h"
@@ -154,6 +156,10 @@ TokenPtr AstNodePool::get(SyAstType type, int line, std::string&& literal) {
             break;
         case SyAstType::INT_IMM:
             token = std::make_shared<TokenAstNode>(SyAstType::INT_IMM, line,
+                                                   std::move(literal));
+            break;
+        case SyAstType::FLOAT_IMM:
+            token = std::make_shared<TokenAstNode>(SyAstType::FLOAT_IMM, line,
                                                    std::move(literal));
             break;
         case SyAstType::STRING:
@@ -379,80 +385,87 @@ std::string Lexer::getString() {
     return str;
 }
 
+std::string Lexer::getPartialNumberHelper(std::function<bool(char)> isInRange) {
+    char c;
+    std::string num_str;
+    while (1) {
+        c = input_stream_->getChar();
+        if (c == EOF) {
+            lexError(std::string("unexpected EOF in hex number"));
+            return std::string("0");
+        }
+        if (c == '_') {
+            continue;
+        }
+        if (isEndForIdentAndNumber(c)) {
+            input_stream_->ungetChar();
+            break;
+        }
+        if (!isInRange(c)) {
+            lexError(std::string("invalid '\033[1m" + std::string(c, 1) +
+                                 "\033[0m' in number"));
+            break;
+        }
+        num_str += c;
+    }
+    return num_str;
+}
+
 // if the case is [number][EOF], we take the [EOF] is "in" the [number] and
 // report an error
-std::string Lexer::getNumber() {
+TokenPtr Lexer::getNumber() {
     // FIXME: handle the floating point number here
     std::string num_str;
-    char c;
+    SyAstType type;
     if (input_stream_->peakChar() == '0' &&
-        input_stream_->peakNextChar() == 'x') {
+        (input_stream_->peakNextChar() == 'x' ||
+         input_stream_->peakNextChar() == 'X')) {
         // hex number
         input_stream_->getChar();
         input_stream_->getChar();
-        while (1) {
-            c = input_stream_->getChar();
-            if (c == EOF) {
-                lexError(std::string("unexpected EOF in hex number"));
-                return std::string("0");
-            }
-            if (c == '_') {
-                continue;
-            }
-            if (isEndForIdentAndNumber(c)) {
-                input_stream_->ungetChar();
-                break;
-            }
-            if (!isDigit(c) && !(c >= 'a' && c <= 'f') &&
-                !(c >= 'A' && c <= 'F')) {
-                lexError(std::string("invalid hex number"));
-                break;
-            }
-            num_str += c;
-        }
+        type = SyAstType::INT_IMM;
+
+        auto hexNumInRangeVerifier = [](char c) -> bool {
+            return isDigit(c) || ('a' <= c && c <= 'f') ||
+                   ('A' <= c && c <= 'F');
+        };
+
+        num_str = getPartialNumberHelper(hexNumInRangeVerifier);
+        // NOTE: we use the C++ std<17 standard, hex floating point literal is
+        // not supported
         num_str = "0x" + num_str;
         num_str = std::to_string(strtol(num_str.c_str(), NULL, 16));
     } else if (input_stream_->peakChar() == '0' &&
                isDigit(input_stream_->peakNextChar())) {
         // oct number
         input_stream_->getChar();
-        while (1) {
-            c = input_stream_->getChar();
-            if (c == EOF) {
-                lexError(std::string("unexpected EOF in oct number"));
-                return std::string("0");
-            }
-            if (isEndForIdentAndNumber(c)) {
-                input_stream_->ungetChar();
-                break;
-            }
-            if (!isDigit(c)) {
-                lexError(std::string("invalid oct number"));
-                break;
-            }
-            num_str += c;
-        }
+        type = SyAstType::INT_IMM;
+
+        auto octNumInRangeVerifier = [](char c) -> bool {
+            return isDigit(c) && c <= '7';
+        };
+
+        num_str = getPartialNumberHelper(octNumInRangeVerifier);
+
         num_str = std::to_string(strtol(num_str.c_str(), NULL, 8));
     } else {
         // decimal number
-        while (1) {
-            c = input_stream_->getChar();
-            if (c == EOF) {
-                lexError(std::string("unexpected EOF in decimal number"));
-                return std::string("0");
-            }
-            if (isEndForIdentAndNumber(c)) {
-                input_stream_->ungetChar();
-                break;
-            }
-            if (!isDigit(c)) {
-                lexError(std::string("invalid decimal number"));
-                break;
-            }
-            num_str += c;
+        auto decNumInRangeVerifier = [](char c) -> bool { return isDigit(c); };
+        type                       = SyAstType::INT_IMM;
+
+        num_str = getPartialNumberHelper(decNumInRangeVerifier);
+        if (input_stream_->peakChar() == '.') {
+            type = SyAstType::FLOAT_IMM;
+            input_stream_->getChar();
+            num_str += '.';
+            num_str += getPartialNumberHelper(decNumInRangeVerifier);
+            // NOTE: there used to double, so to float is enough
+            num_str = std::to_string(strtod(num_str.c_str(), NULL));
+        } else {
+            num_str = std::to_string(strtol(num_str.c_str(), NULL, 10));
         }
     }
-    return num_str;
+    return AstNodePool::get(type, line_, std::move(num_str));
 }
 
 TokenPtr Lexer::getIdent() {
@@ -767,9 +780,7 @@ TokenPtr Lexer::getNextTokenInternal() {
                 break;
         }
         if (isDigit(current_char)) {
-            auto num = getNumber();
-            return AstNodePool::get(SyAstType::INT_IMM, line_, std::move(num));
-
+            return getNumber();
         } else if (isIdentStart(current_char)) {
             return getIdent();
         } else {
@@ -1390,8 +1401,9 @@ AstNodePtr Parser::Cond() {
 }
 
 AstNodePtr Parser::Number() {
-    // origin: Number -> IntConst
-    if ((token_iter_)->getAstType() != SyAstType::INT_IMM) {
+    // origin: Number -> INT_IMM | FLOAT_IMM
+    if ((token_iter_)->getAstType() != SyAstType::INT_IMM &&
+        (token_iter_)->getAstType() != SyAstType::FLOAT_IMM) {
         // giveup
         return nullptr;
     }
