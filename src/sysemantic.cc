@@ -285,8 +285,15 @@ void SemanticAnalysisVisitor::visitConstInitVal(ConstInitValAstNode &node) {
 
 static std::tuple<Value, SyAstType> literalToValue(const std::string &literal) {
     // currently, only have the int literal
-    // FIXME: add support for the floating point literal
-    return std::make_tuple(Value(std::stoi(literal)), SyAstType::VAL_TYPE_INT);
+    if (literal.find(".") == std::string::npos) {
+        // integer literal
+        return std::make_tuple(Value(std::stoi(literal)),
+                               SyAstType::VAL_TYPE_INT);
+    } else {
+        // floating point literal
+        return std::make_tuple(Value(std::stof(literal)),
+                               SyAstType::VAL_TYPE_FLOAT);
+    }
 }
 
 void SemanticAnalysisVisitor::visitConstExp(ConstExpAstNode &node) {
