@@ -586,7 +586,7 @@ llvm::Function* JITCompiler::functionDefinitionLLVMIrGen(AstNodePtr func) {
     // record the function arguments in the NamedValues map
     named_values_.clear();
     for (auto& arg : this_func->args()) {
-        named_values_[arg.getName()] =
+        named_values_[(std::string)arg.getName()] =
             createFunctionArgReAlloca(this_func, arg);
     }
 
