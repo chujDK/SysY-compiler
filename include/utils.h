@@ -8,7 +8,7 @@
     std::cerr << "\033[1mFATAL ERROR, aborting now..\033[0m\n"; \
     assert(false && "should not reach here");
 #else
-#define DEBUG_ASSERT_NOT_REACH std::cerr() << "FATAL ERROR, aborting now..\n";
+#define DEBUG_ASSERT_NOT_REACH ;
 #endif
 
 #ifdef DEBUG
