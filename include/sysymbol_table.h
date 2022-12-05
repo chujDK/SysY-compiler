@@ -1,6 +1,5 @@
 #ifndef _SYSYMBOL_TABLE_H_
 #define _SYSYMBOL_TABLE_H_
-#include <llvm-10/llvm/Support/VirtualFileSystem.h>
 
 #include <cstddef>
 #include <functional>
